@@ -1,0 +1,260 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{feadd0e7-1814-4acf-8501-072e28f6762f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs">
+      <UniqueIdentifier>{34b95dff-10fe-4c3b-b2e8-8c9cf55c655e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs-linux">
+      <UniqueIdentifier>{e81af086-38ad-4d28-9311-c4961b85256c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libs-win">
+      <UniqueIdentifier>{6b212ff3-f4d6-4375-b9c8-1f1eda8b1a94}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="linux">
+      <UniqueIdentifier>{c25e50b9-cff9-42c4-9361-c2cd32bafc95}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Text Include="ReadMe.txt" />
+    <Text Include="..\libs\license.txt">
+      <Filter>libs</Filter>
+    </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="famsa_cpu.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\libs\instrset_detect.cpp">
+      <Filter>libs</Filter>
+    </ClCompile>
+    <ClCompile Include="..\core\input_file.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\core\lcsbp_avx2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\core\lcsbp_classic.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\core\msa.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\core\output_file.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\core\profile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\core\sequence.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\core\timer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\core\queues.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\core\lcsbp_avx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\core\defs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\core\input_file.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\core\lcsbp_avx2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\core\lcsbp_classic.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\core\msa.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\core\output_file.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\core\params.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\core\profile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\core\sequence.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\core\timer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\asmlib.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\instrset.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\vectorclass.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\vectorf128.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\vectorf256.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\vectorf256e.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\vectorf512.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\vectorf512e.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\vectori128.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\vectori256.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\vectori256e.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\vectori512.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\vectori512e.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\vectormath_common.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\vectormath_exp.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\vectormath_hyp.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\vectormath_lib.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\vectormath_trig.h">
+      <Filter>libs</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-linux\CL\cl.h">
+      <Filter>libs-linux</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-linux\CL\cl.hpp">
+      <Filter>libs-linux</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-linux\CL\cl_d3d10.h">
+      <Filter>libs-linux</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-linux\CL\cl_ext.h">
+      <Filter>libs-linux</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-linux\CL\cl_gl.h">
+      <Filter>libs-linux</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-linux\CL\cl_gl_ext.h">
+      <Filter>libs-linux</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-linux\CL\cl_platform.h">
+      <Filter>libs-linux</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-linux\CL\opencl.h">
+      <Filter>libs-linux</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-win\CL\cl.h">
+      <Filter>libs-win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-win\CL\cl.hpp">
+      <Filter>libs-win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-win\CL\cl_d3d10.h">
+      <Filter>libs-win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-win\CL\cl_d3d11.h">
+      <Filter>libs-win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-win\CL\cl_dx9_media_sharing.h">
+      <Filter>libs-win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-win\CL\cl_ext.h">
+      <Filter>libs-win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-win\CL\cl_gl.h">
+      <Filter>libs-win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-win\CL\cl_gl_ext.h">
+      <Filter>libs-win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-win\CL\cl_platform.h">
+      <Filter>libs-win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs-win\CL\opencl.h">
+      <Filter>libs-win</Filter>
+    </ClInclude>
+    <ClInclude Include="..\core\meta_oper.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\core\queues.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\core\lcsbp_avx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\libs\asmlib-instructions.pdf">
+      <Filter>libs</Filter>
+    </None>
+    <None Include="..\libs\vectorclass.pdf">
+      <Filter>libs</Filter>
+    </None>
+    <None Include="..\libs-linux\libaelf64.a">
+      <Filter>libs-linux</Filter>
+    </None>
+    <None Include="..\makefile">
+      <Filter>linux</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Object Include="..\libs-win\dispatchpatch64.obj">
+      <Filter>libs-win</Filter>
+    </Object>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\libs-win\CL\GlAux.Lib">
+      <Filter>libs-win</Filter>
+    </Library>
+    <Library Include="..\libs-win\CL\glew64.lib">
+      <Filter>libs-win</Filter>
+    </Library>
+    <Library Include="..\libs-win\CL\glut64.lib">
+      <Filter>libs-win</Filter>
+    </Library>
+    <Library Include="..\libs-win\CL\OpenCL.lib">
+      <Filter>libs-win</Filter>
+    </Library>
+    <Library Include="..\libs-win\libacof32.lib">
+      <Filter>libs-win</Filter>
+    </Library>
+    <Library Include="..\libs-win\libacof64.lib">
+      <Filter>libs-win</Filter>
+    </Library>
+  </ItemGroup>
+</Project>

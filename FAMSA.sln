@@ -1,0 +1,53 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 14
+VisualStudioVersion = 14.0.23107.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{55B06ECA-DFED-44C7-AA85-D7524B3DD596}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "famsa_gpu", "famsa_gpu\famsa_gpu.vcxproj", "{A2441EDD-4708-4131-9A1A-C55264A658A9}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "famsa_cpu", "famsa_cpu\famsa_cpu.vcxproj", "{CDAA5F75-7B1B-4E32-82E3-1026DDEAFFC5}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Mixed Platforms = Debug|Mixed Platforms
+		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
+		Release|Mixed Platforms = Release|Mixed Platforms
+		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A2441EDD-4708-4131-9A1A-C55264A658A9}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{A2441EDD-4708-4131-9A1A-C55264A658A9}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{A2441EDD-4708-4131-9A1A-C55264A658A9}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A2441EDD-4708-4131-9A1A-C55264A658A9}.Debug|Win32.Build.0 = Debug|Win32
+		{A2441EDD-4708-4131-9A1A-C55264A658A9}.Debug|x64.ActiveCfg = Debug|x64
+		{A2441EDD-4708-4131-9A1A-C55264A658A9}.Debug|x64.Build.0 = Debug|x64
+		{A2441EDD-4708-4131-9A1A-C55264A658A9}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{A2441EDD-4708-4131-9A1A-C55264A658A9}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{A2441EDD-4708-4131-9A1A-C55264A658A9}.Release|Win32.ActiveCfg = Release|Win32
+		{A2441EDD-4708-4131-9A1A-C55264A658A9}.Release|Win32.Build.0 = Release|Win32
+		{A2441EDD-4708-4131-9A1A-C55264A658A9}.Release|x64.ActiveCfg = Release|x64
+		{A2441EDD-4708-4131-9A1A-C55264A658A9}.Release|x64.Build.0 = Release|x64
+		{CDAA5F75-7B1B-4E32-82E3-1026DDEAFFC5}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{CDAA5F75-7B1B-4E32-82E3-1026DDEAFFC5}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{CDAA5F75-7B1B-4E32-82E3-1026DDEAFFC5}.Debug|Win32.ActiveCfg = Debug|Win32
+		{CDAA5F75-7B1B-4E32-82E3-1026DDEAFFC5}.Debug|Win32.Build.0 = Debug|Win32
+		{CDAA5F75-7B1B-4E32-82E3-1026DDEAFFC5}.Debug|x64.ActiveCfg = Debug|x64
+		{CDAA5F75-7B1B-4E32-82E3-1026DDEAFFC5}.Debug|x64.Build.0 = Debug|x64
+		{CDAA5F75-7B1B-4E32-82E3-1026DDEAFFC5}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{CDAA5F75-7B1B-4E32-82E3-1026DDEAFFC5}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{CDAA5F75-7B1B-4E32-82E3-1026DDEAFFC5}.Release|Win32.ActiveCfg = Release|Win32
+		{CDAA5F75-7B1B-4E32-82E3-1026DDEAFFC5}.Release|Win32.Build.0 = Release|Win32
+		{CDAA5F75-7B1B-4E32-82E3-1026DDEAFFC5}.Release|x64.ActiveCfg = Release|x64
+		{CDAA5F75-7B1B-4E32-82E3-1026DDEAFFC5}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		VisualSVNWorkingCopyRoot = .
+	EndGlobalSection
+EndGlobal
