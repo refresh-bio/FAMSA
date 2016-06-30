@@ -4,8 +4,8 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
-Version: 1.0
-Date   : 2016-03-11
+Version: 1.1
+Date   : 2016-06-29
 */
 
 #include "../core_gpu/gpumsa.h"
@@ -63,6 +63,52 @@ CGpuFAMSA::CGpuFAMSA(int platform, int device, int pairsPerWave, int pairsPerTas
 	kernelLCS = KernelFactory::instance(cl).create(files, "calculateLCSs", defines);
 }
 
+
+void CGpuFAMSA::UPGMA_CalculateDistances(UPGMA_dist_t * dist_matrix)
+{
+	cout << "UPGMA guide trees are not supported in a GPU mode.";
+	exit(-1);
+
+	::size_t n_seq = sequences.size();
+
+	// calculate max sequence length to be calculated on the GPU
+	::size_t maxGpuLength =
+		(cl->mainDevice->info->localMemSize - (pairsPerTask * threadsPerPair * (sizeof(cl_int)))) /
+		((24 + pairsPerTask) * sizeof(cl_uint));
+	maxGpuLength *= 32;
+
+	// process cpu portion
+	auto it = std::lower_bound(sequences.begin(), sequences.end(), maxGpuLength, [](const CSequence& c1, size_t val)->bool {
+		return c1.length > val;
+	});
+
+	::size_t cpuLo = 0;
+	::size_t cpuHi = distance(sequences.begin(), it);
+	::size_t gpuLo = cpuHi;
+	::size_t gpuHi = n_seq;
+
+	std::thread cpuTasksThread;
+
+	if (cpuHi < 0) {
+		cout << "CPU range: " << cpuLo << " to " << cpuHi << endl;
+		cpuTasksThread = std::thread([this, cpuLo, cpuHi, dist_matrix]()->void {
+			std::vector<int> lcs(cpuHi - cpuLo);
+			calculateReferenceLCSs(cpuLo, cpuHi, lcs);
+			for (int i = cpuLo, j = 0; i < cpuHi; ++i, ++j) {
+			//	double indel = (*sequences)[row_id].length + (*sequences)[j * 4 + k].length - 2 * lcs_lens[k];
+			//	dist_matrix[i] = 1.0 / (lcs[j] / pow(indel, indel_exp));
+			}
+		});
+	}
+
+	// process waves of given size
+//	::size_t lo = gpuLo;
+//	while (lo < gpuHi) {
+//		::size_t hi = std::min(gpuHi, calculateRangeHi(lo, pairsPerWave));
+
+//		this->calculateLCSs(lo, hi, lcs, postprocessingThread, events[0]);
+
+}
 
 void CGpuFAMSA::SingleLinkage() {
 	
@@ -351,6 +397,8 @@ void CGpuFAMSA::partialLinkage(
 	int next;
 	::size_t n_seq = sequences.size();
 	
+	double indel_exp = params.indel_exp;
+
 	auto lcs_itr = lcs.begin();
 	for (i = (int) verticalRangeLo; i < (int) verticalRangeHi; ++i) {
 
@@ -369,7 +417,8 @@ void CGpuFAMSA::partialLinkage(
 		for (j = 0; j < i; ++j) {
 			double lcs_len = (double)(*lcs_itr++);
 			double indel = sequences[i].length + sequences[j].length - 2 * lcs_len;
-			sim_vector[j] = lcs_len / (indel * indel);
+//			sim_vector[j] = lcs_len / (indel * indel);
+			sim_vector[j] = lcs_len / pow(indel, indel_exp);
 		}
 
 /*		for (j = 0; j < i; ++j) {
@@ -460,7 +509,7 @@ void CGpuFAMSA::partialLinkage(
 }
 
 
-std::vector<int> CGpuFAMSA::calculateReferenceLCSs(
+void CGpuFAMSA::calculateReferenceLCSs(
 	::size_t verticalRangeLo,
 	::size_t verticalRangeHi,
 	std::vector<int>& lcs)
@@ -474,8 +523,6 @@ std::vector<int> CGpuFAMSA::calculateReferenceLCSs(
 			lcs[taskId] = res;
 		}
 	}
-
-	return lcs;
 }
 
 ::size_t CGpuFAMSA::calculateRangeHi(::size_t rangeLo, ::size_t elements) const

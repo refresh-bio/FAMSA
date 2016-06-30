@@ -4,8 +4,8 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
-Version: 1.0
-Date   : 2016-03-11
+Version: 1.1
+Date   : 2016-06-29
 */
 
 #ifndef _QUEUES_H
@@ -46,12 +46,16 @@ class CProfileQueue
 
 	size_t counter;
 
+	uint64_t sackin_index;
+
 public:
 	CProfileQueue(vector<CGappedSequence> *_gapped_sequences, map<size_t, CProfile*> *_profiles, vector<pair<int, int>> *_guide_tree);
 	~CProfileQueue();
 
 	bool GetTask(size_t &prof_id, CGappedSequence *&gs, CProfile *&prof1, CProfile *&prof2);
 	void AddSolution(size_t prof_id, CProfile *prof);
+
+	uint64_t GetSackinIndex();
 };
 
 class CSingleLinkageQueue
@@ -83,5 +87,31 @@ public:
 	void ReleaseSolution(int row_id);
 };
 
+
+class CUPGMAQueue
+{
+	vector<CSequence> *sequences;
+
+	vector<pair<int, bool>> ready_rows;
+	stack<int, vector<int>> available_buffers;
+
+	uint32_t lowest_uncomputed_row;
+	uint32_t n_rows;
+	uint32_t max_buffered_rows;
+	UPGMA_dist_t *dist_matrix;
+
+	bool eoq_flag;
+
+	mutex mtx;
+	condition_variable cv_tasks, cv_rows;
+
+	inline long long TriangleSubscript(long long uIndex1, long long uIndex2);
+
+public:
+	CUPGMAQueue(vector<CSequence> *_sequences, uint32_t _n_rows, UPGMA_dist_t *_dist_matrix);
+	~CUPGMAQueue();
+
+	bool GetTask(int &row_id, vector<CSequence> *&_sequences, UPGMA_dist_t *&dist_row);
+};
 
 #endif

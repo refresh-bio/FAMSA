@@ -4,8 +4,8 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
-Version: 1.0
-Date   : 2016-03-11
+Version: 1.1
+Date   : 2016-06-29
 */
 
 #ifndef _PARAMS_H
@@ -13,6 +13,7 @@ Date   : 2016-03-11
 
 #include <vector>
 #include <math.h>
+#include <string>
 #include "../core/defs.h"
 
 using namespace std;
@@ -27,12 +28,23 @@ struct CParams
 	uint32_t scaler_log;
 	uint32_t scaler_div;
 	uint32_t thr_refinement;
+	uint32_t thr_internal_refinement;
 	bool enable_gap_rescaling;
 	bool enable_gap_optimization;
 	bool enable_total_score_calculation;
 	bool enable_auto_refinement;
 	bool verbose_mode;
 	bool very_verbose_mode;
+	uint64_t sackin_index;
+	uint64_t ref_seq_subtree_size;
+	double indel_exp;
+
+	GT_method guide_tree;
+	int guide_tree_seed;
+	string guide_treee_file_name;
+
+	bool test_ref_sequences;
+	string ref_file_name;
 
 	int guided_alignment_radius;
 	uint32_t n_threads;
@@ -62,6 +74,7 @@ struct CParams
 		scaler_log     = _scaler_log;
 		scaler_div     = _scaler_div;
 		thr_refinement = _thr_refinement;
+		thr_internal_refinement = 0;
 
 		enable_gap_rescaling		   = _enable_gap_rescaling;
 		enable_gap_optimization		   = _enable_gap_optimization;
@@ -69,6 +82,14 @@ struct CParams
 		enable_auto_refinement		   = _enable_auto_refinement;
 		verbose_mode				   = _verbose_mode;
 		very_verbose_mode			   = _very_verbose_mode;
+
+		guide_tree = GT_method::single_linkage;
+
+		sackin_index = 0;
+		ref_seq_subtree_size = 0;
+		test_ref_sequences = false;
+
+		indel_exp = 1.0;
 	};
 };
 

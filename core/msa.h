@@ -4,8 +4,8 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
-Version: 1.0
-Date   : 2016-03-11
+Version: 1.1
+Date   : 2016-06-29
 */
 
 #ifndef _MSA_H
@@ -78,6 +78,10 @@ public:
 
 class CFAMSA 
 {
+#ifdef DEVELOPER_MODE
+	const int monte_carlo_trials = 1000;
+#endif
+
 protected:
 	CParams params;
 	static double SM_MIQS[24][24];
@@ -107,9 +111,9 @@ protected:
 
 	set<int> already_refined;
 
-	vector<size_t> gap_stats;
-
 	CStopWatch timers[4];
+
+	vector<CSequence> ref_sequences;
 
 #ifdef DEBUG_MODE
 	double estimated_identity;
@@ -120,12 +124,28 @@ protected:
 
 	void GetLCSBP(int thread_id, CSequence *seq0, CSequence *seq1, CSequence *seq2, CSequence *seq3, CSequence *seq4, 
 		uint32_t &dist1, uint32_t &dist2, uint32_t &dist3, uint32_t &dist4);
+#ifdef DEVELOPER_MODE
 	double GetLCS(CSequence &seq1, CSequence &seq2);
+#endif
 
+	// Guide tree construction method
+	virtual void UPGMA();
+	inline uint64_t UPGMA_TriangleSubscript(uint64_t uIndex1, uint64_t uIndex2);
+	virtual void UPGMA_CalculateDistances(UPGMA_dist_t *dist_matrix);
 	virtual void SingleLinkage();
+#ifdef DEVELOPER_MODE
+	void GuideTreeChained();
+#endif
+	bool ImportGuideTreeFromNewick();
 
-	void RefineRandom(vector<size_t> &dest_prof_id);
-	void RefineMostEmptyAndFullColumn(vector<size_t> &dest_prof_id, bool valid_gap_stats);
+#ifdef DEVELOPER_MODE
+	bool LoadRefSequences();
+	uint64_t CalculateRefSequencesSubTreeSize(double *monte_carlo_subtree_size);
+	int SubTreeSize(set<int> &seq_ids);
+#endif
+
+	void RefineRandom(CProfile* profile_to_refine, vector<size_t> &dest_prof_id);
+	void RefineMostEmptyAndFullColumn(CProfile *profile_to_refine, vector<size_t> &dest_prof_id, vector<size_t> &gap_stats, bool valid_gap_stats);
 
 public:
 	CFAMSA();
@@ -140,7 +160,7 @@ public:
 #ifdef DEBUG_MODE
 	bool RefineAlignment(string output_file_name = "");
 #else
-	bool RefineAlignment();
+	bool RefineAlignment(CProfile *&profile_to_refine);
 #endif
 
 	bool GetAlignment(vector<CGappedSequence*> &result);

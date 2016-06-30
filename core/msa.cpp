@@ -4,11 +4,12 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
-Version: 1.0
-Date   : 2016-03-21
+Version: 1.1
+Date   : 2016-06-29
 */
 
 #include "../core/msa.h"
+#include "../core/input_file.h"
 
 #include <algorithm>
 #include <set>
@@ -17,20 +18,19 @@ Date   : 2016-03-21
 #include <list>
 #include <stack>
 #include <thread>
-#include <omp.h>
 
 #include <iostream>
 #include <iomanip>
 #include <numeric>
+#include <fstream>
+#include <sstream>
 
 #include "../core/output_file.h"
+#include "../core/NewickTree.h"
 
 #include "../libs/vectorclass.h"
 
 using namespace std;
-
-#define MAX3(x, y, z)		(max(x, max(y, z)))
-#define ABS(x)				((x) >= 0 ? (x) : -(x))
 
 #define SHOW_PROGRESS
 
@@ -76,7 +76,6 @@ CFAMSA::CFAMSA()
 // *******************************************************************
 CFAMSA::~CFAMSA()
 {
-	// !!! To do poprawy, bo trzeba ustalic kiedy jest zwalniany final_profile - moze to zrzucic na uzytkownika klasy CFAMSA?
 	if(final_profile)
 		delete final_profile;
 }
@@ -180,9 +179,9 @@ void CFAMSA::DetermineInstructionSet()
 		instruction_set = instruction_set_t::avx2;
 }
 
+#ifdef DEVELOPER_MODE
 // *******************************************************************
-// Compute LCS length for two sequences
-// !!! Now in classic DP way -- in future in BP way
+// Compute LCS length for two sequences in the classical way - just for development
 double CFAMSA::GetLCS(CSequence &seq1, CSequence &seq2)
 {
 	int **dp_row = new int*[2];
@@ -205,6 +204,7 @@ double CFAMSA::GetLCS(CSequence &seq1, CSequence &seq2)
 
 	return dp_row[seq1.length % 2][seq2.length];
 }
+#endif
 
 // *******************************************************************
 // Compute LCS length for two sequences using bit-parallel algorithm based on Hyyro's code
@@ -257,7 +257,17 @@ bool CFAMSA::ComputeGuideTree()
 	}
 
 	// Construct guide tree using UPGMA algorithm
-	SingleLinkage();
+	if (params.guide_tree == GT_method::single_linkage)
+		SingleLinkage();
+	else if (params.guide_tree == GT_method::UPGMA)
+		UPGMA();
+#ifdef DEVELOPER_MODE
+	else if (params.guide_tree == GT_method::chained)
+		GuideTreeChained();
+#endif
+	else if (params.guide_tree == GT_method::imported)
+		if (!ImportGuideTreeFromNewick())			// file can be unexisting, so need to terminate the code here
+			return false;
 
 	// Convert sequences into gapped sequences
 	gapped_sequences.reserve(sequences.size());
@@ -278,10 +288,14 @@ bool CFAMSA::ComputeAlignment()
 
 	CProfileQueue pq(&gapped_sequences, &profiles, &guide_tree);
 
+	params.sackin_index = pq.GetSackinIndex();
+
 	vector<thread *> workers(n_threads, nullptr);
 
 	uint32_t computed_prof = 0;
 	mutex mtx;
+
+	size_t ref_thr = params.thr_internal_refinement;
 
 	for(uint32_t i = 0; i < n_threads; ++i)
 		workers[i] = new thread([&]{
@@ -299,7 +313,17 @@ bool CFAMSA::ComputeAlignment()
 				}
 				else
 				{
+					// Internal refinement
+					if (prof1->Size() + prof2->Size() > ref_thr)
+					{
+						if (prof1->Size() <= ref_thr && prof1->Size() > 2)
+							RefineAlignment(prof1);
+						if (prof2->Size() <= ref_thr && prof2->Size() > 2)
+							RefineAlignment(prof2);
+					}
+
 					prof_sol = new CProfile(prof1, prof2, &params);
+
 					delete prof1;
 					delete prof2;
 				}
@@ -338,12 +362,13 @@ bool CFAMSA::ComputeAlignment()
 // Single linkage guide tree construction (SLINK algorithm) - uses native threads rather than OpenMP
 void CFAMSA::SingleLinkage()
 {
-	//	int i, j;
 	int next;
 	int n_seq = sequences.size();
 
 	int prefetch_offset = 64*2;
 	int prefetch_offset_2nd = 128*2;
+
+	double indel_exp = params.indel_exp;
 
 	vector<int> pi(n_seq + max(prefetch_offset, prefetch_offset_2nd), 0);
 	vector<double> lambda(n_seq);
@@ -379,7 +404,8 @@ void CFAMSA::SingleLinkage()
 					for (int k = 0; k < 4; ++k)
 					{
 						double indel = (*sequences)[row_id].length + (*sequences)[j * 4 + k].length - 2 * lcs_lens[k];
-						(*sim_vector)[j * 4 + k] = lcs_lens[k] / (indel * indel);
+						double seq_lens = (*sequences)[row_id].length + (*sequences)[j * 4 + k].length;
+						(*sim_vector)[j * 4 + k] = lcs_lens[k] / pow(indel, indel_exp);
 					}
 				}
 
@@ -394,7 +420,8 @@ void CFAMSA::SingleLinkage()
 					for (int k = 0; k < 4 && row_id / 4 * 4 + k < row_id; ++k)
 					{
 						double indel = (*sequences)[row_id].length + (*sequences)[row_id / 4 * 4 + k].length - 2 * lcs_lens[k];
-						(*sim_vector)[row_id / 4 * 4 + k] = lcs_lens[k] / (indel * indel);
+						double seq_lens = (*sequences)[row_id].length + (*sequences)[row_id / 4 * 4 + k].length;
+						(*sim_vector)[row_id / 4 * 4 + k] = lcs_lens[k] / pow(indel, indel_exp);
 					}
 				}
 
@@ -415,9 +442,6 @@ void CFAMSA::SingleLinkage()
 		}
 
 		slq.GetSolution(i, sim_vector);
-
-//		vector<double> sim_vector0(sim_vector->begin(), sim_vector->end());
-//		slq.ReleaseSolution(i);
 
 		auto p_lambda = lambda.begin();
 		auto p_sim_vector = (*sim_vector).begin();
@@ -517,10 +541,65 @@ void CFAMSA::SingleLinkage()
 		sequences[i].data.resize(sequences[i].length, UNKNOWN_SYMBOL);
 }
 
+
 // *******************************************************************
-void CFAMSA::RefineRandom(vector<size_t> &dest_prof_id)
+#ifdef DEVELOPER_MODE
+void CFAMSA::GuideTreeChained()
 {
-	for(size_t i = 0; i < final_profile->data.size(); ++i)
+	mt19937 rnd;
+
+	if (sequences.size() < 2)
+		return;
+
+	vector<int> idx(sequences.size());
+
+	for (int i = 0; i < sequences.size(); ++i)
+		idx[i] = i;
+
+	random_device rd;
+	
+	// Skip some number of initial values
+	for (int i = 0; i < params.guide_tree_seed; ++i)
+		rd();
+
+	mt19937 g(rd());
+
+	shuffle(idx.begin(), idx.end(), g);
+
+	guide_tree.push_back(make_pair(idx[0], idx[1]));
+
+	for (int i = 2; i < sequences.size(); ++i)
+		guide_tree.push_back(make_pair(idx[i], guide_tree.size() - 1));
+}
+#endif
+
+// *******************************************************************
+bool CFAMSA::ImportGuideTreeFromNewick()
+{
+	// Load newick description
+	ifstream newickFile;
+	newickFile.open(params.guide_treee_file_name);
+	if (!newickFile.good()) {
+		return false;
+	}
+
+	std::stringstream ss;
+	ss << newickFile.rdbuf();
+	std::string description(ss.str());
+	auto newend = std::remove_if(description.begin(), description.end(),
+		[](char c)->bool { return c == '\r' || c == '\n';  });
+	description.erase(newend, description.end());
+
+	// Load guide tree
+	parseNewickTree(sequences, description, guide_tree, params.verbose_mode);
+
+	return true;
+}
+
+// *******************************************************************
+void CFAMSA::RefineRandom(CProfile* profile_to_refine, vector<size_t> &dest_prof_id)
+{
+	for(size_t i = 0; i < profile_to_refine->data.size(); ++i)
 		dest_prof_id.push_back(rnd_rfn() % 2);
 
 	if(count(dest_prof_id.begin(), dest_prof_id.end(), 0) == 0 ||
@@ -532,15 +611,15 @@ void CFAMSA::RefineRandom(vector<size_t> &dest_prof_id)
 }
 
 // *******************************************************************
-void CFAMSA::RefineMostEmptyAndFullColumn(vector<size_t> &dest_prof_id, bool valid_gap_stats)
+void CFAMSA::RefineMostEmptyAndFullColumn(CProfile *profile_to_refine, vector<size_t> &dest_prof_id, vector<size_t> &gap_stats, bool valid_gap_stats)
 {
-	size_t size = final_profile->data.front()->gapped_size;
-	size_t card = final_profile->data.size();
+	size_t size = profile_to_refine->data.front()->gapped_size;
+	size_t card = profile_to_refine->data.size();
 
 	dest_prof_id.clear();
 
 	if(!valid_gap_stats)
-		final_profile->GetGapStats(gap_stats);
+		profile_to_refine->GetGapStats(gap_stats);
 
 	vector<pair<size_t, size_t>> tmp;
 
@@ -560,7 +639,7 @@ void CFAMSA::RefineMostEmptyAndFullColumn(vector<size_t> &dest_prof_id, bool val
 
 	if(tmp.empty())
 	{
-		RefineRandom(dest_prof_id);
+		RefineRandom(profile_to_refine, dest_prof_id);
 		return;
 	}
 
@@ -569,11 +648,11 @@ void CFAMSA::RefineMostEmptyAndFullColumn(vector<size_t> &dest_prof_id, bool val
 	int first_prof_id = 0;
 	int second_prof_id = 1;
 
-	if(final_profile->data[0]->GetSymbol(col_id) == GAP)
+	if(profile_to_refine->data[0]->GetSymbol(col_id) == GAP)
 		swap(first_prof_id, second_prof_id);
 
 	for(size_t j = 0; j < card; ++j)
-		if(final_profile->data[j]->GetSymbol(col_id) == GAP)
+		if(profile_to_refine->data[j]->GetSymbol(col_id) == GAP)
 			dest_prof_id.push_back(first_prof_id);
 		else
 			dest_prof_id.push_back(second_prof_id);
@@ -584,19 +663,23 @@ void CFAMSA::RefineMostEmptyAndFullColumn(vector<size_t> &dest_prof_id, bool val
 #ifdef DEBUG_MODE
 bool CFAMSA::RefineAlignment(string output_file_name)
 #else
-bool CFAMSA::RefineAlignment()
+bool CFAMSA::RefineAlignment(CProfile *&profile_to_refine)
 #endif
 {
 	// Restart generator
 	rnd_rfn.seed(5489u);
 
-	if (params.enable_auto_refinement && sequences.size() > params.thr_refinement)
+	if (params.enable_auto_refinement && profile_to_refine->Size() > params.thr_refinement)
 		return true;
 
 	size_t n_ref = params.n_refinements;
-	if(n_ref > 2*sequences.size())
-		n_ref = 2*sequences.size();
-	if(n_ref > 0 && n_ref < 100 && sequences.size() < 100)
+	size_t n_seq = profile_to_refine->Size();
+
+	vector<size_t> gap_stats;
+
+	if(n_ref > 2*n_seq)
+		n_ref = 2*n_seq;
+	if(n_ref > 0 && n_ref < 100 && n_seq < 100)
 		n_ref = 100;
 
 #ifdef DEBUG_MODE
@@ -619,9 +702,9 @@ bool CFAMSA::RefineAlignment()
 #endif
 
 	int n_ref_succ = 0;
-	score_t prev_total_score = final_profile->CalculateTotalScore();
+	score_t prev_total_score = profile_to_refine->CalculateTotalScore();
 
-	sort(final_profile->data.begin(), final_profile->data.end(), [](CGappedSequence *p, CGappedSequence *q){return p->id < q->id; });
+	sort(profile_to_refine->data.begin(), profile_to_refine->data.end(), [](CGappedSequence *p, CGappedSequence *q){return p->id < q->id; });
 
 	vector<size_t> dest_prof_id;
 	vector<vector<size_t>> old_dest_prof_ids;
@@ -646,17 +729,17 @@ bool CFAMSA::RefineAlignment()
 
 		CProfile profile1(&params), profile2(&params);
 
-		RefineMostEmptyAndFullColumn(dest_prof_id, valid_gap_stats);
+		RefineMostEmptyAndFullColumn(profile_to_refine, dest_prof_id, gap_stats, valid_gap_stats);
 		valid_gap_stats = true;
 
 		if(find(old_dest_prof_ids.begin(), old_dest_prof_ids.end(), dest_prof_id) == old_dest_prof_ids.end())
 		{
 			// Split into two profiles
-			for(size_t i = 0; i < final_profile->data.size(); ++i)
+			for(size_t i = 0; i < profile_to_refine->data.size(); ++i)
 				if(dest_prof_id[i])
-					profile1.AppendRawSequence(*final_profile->data[i]);
+					profile1.AppendRawSequence(*profile_to_refine->data[i]);
 				else
-					profile2.AppendRawSequence(*final_profile->data[i]);
+					profile2.AppendRawSequence(*profile_to_refine->data[i]);
 
 			// Condense the profiles (remove empty columns)
 			bool p1_cond = profile1.Condense(column_mapping1);
@@ -678,7 +761,7 @@ bool CFAMSA::RefineAlignment()
 			prof->Align(&profile1, &profile2, &column_mapping1, &column_mapping2);
 			sort(prof->data.begin(), prof->data.end(), [](CGappedSequence *p, CGappedSequence *q){return p->id < q->id; });
 
-			if (*prof != *final_profile)		// if the new profile is the same as previous do not score it
+			if (*prof != *profile_to_refine)		// if the new profile is the same as previous do not score it
 			{
 				prof->CalculateTotalScore();
 #ifdef DEBUG_MODE
@@ -686,9 +769,9 @@ bool CFAMSA::RefineAlignment()
 #endif
 
 				if (prof->total_score >= prev_total_score)
-				{
+					{
 					prev_total_score = prof->total_score;
-					swap(final_profile, prof);
+					swap(profile_to_refine, prof);
 					++n_ref_succ;
 					old_dest_prof_ids.clear();
 					valid_gap_stats = false;
@@ -738,16 +821,117 @@ bool CFAMSA::GetAlignment(vector<CGappedSequence*> &result)
 	return !result.empty();
 }
 
+#ifdef DEVELOPER_MODE
+// *******************************************************************
+bool CFAMSA::LoadRefSequences()
+{
+	// ***** Read input file
+	CInputFile ref_file;
+
+	if (params.verbose_mode)
+		cerr << "Processing reference sequence set: " << params.ref_file_name << "\n";
+
+	if (!ref_file.ReadFile(params.ref_file_name))
+	{
+		cout << "Error: no (or incorrect) input file\n";
+		return false;
+	}
+
+	ref_file.StealSequences(ref_sequences);
+
+	return true;
+}
+
+// *******************************************************************
+int CFAMSA::SubTreeSize(set<int> &seq_ids)
+{
+	vector<pair<int, set<int>>> node_stats;
+	set<int> tmp_set;
+	int n_seq = sequences.size();
+
+	// Calculate stats for single sequence nodes
+	for (int i = 0; i < n_seq; ++i)
+	{
+		tmp_set.clear();
+		if (seq_ids.count(i) > 0)
+			tmp_set.insert(i);
+
+		node_stats.push_back(make_pair(1, tmp_set));
+	}
+
+	// Calculate stats for internal nodes
+	for (int i = n_seq; i < 2 * n_seq - 1; ++i)
+	{
+		tmp_set.clear();
+		auto &x = node_stats[guide_tree[i].first];
+		auto &y = node_stats[guide_tree[i].second];
+		tmp_set.insert(x.second.begin(), x.second.end());
+		tmp_set.insert(y.second.begin(), y.second.end());
+
+		node_stats.push_back(make_pair(x.first + y.first, tmp_set));
+
+		if (tmp_set.size() == ref_sequences.size())
+			return node_stats.back().first;
+	}
+
+	return 0;
+}
+
+// *******************************************************************
+uint64_t CFAMSA::CalculateRefSequencesSubTreeSize(double *monte_carlo_subtree_size)
+{
+	set<int> ref_seq_ids;
+	int n_seq = sequences.size();
+	int r = 0;
+
+	if (ref_sequences.size() == 1)
+		return 1;
+
+	// Find the ids of the referential sequences in the input file
+	for (int i = 0; i < n_seq; ++i)
+	{
+		bool is_ref = false;
+		for (auto &y : ref_sequences)
+			if (sequences[i].id == y.id)
+				is_ref = true;
+
+		if (is_ref)
+			ref_seq_ids.insert(i);
+	}
+
+	r = SubTreeSize(ref_seq_ids);
+
+	if (monte_carlo_subtree_size)
+	{
+		mt19937 mt;
+		double mc_r = 0;
+
+		for (int i = 0; i < monte_carlo_trials; ++i)
+		{
+			set<int> mc_seq_ids;
+
+			while (mc_seq_ids.size() < ref_seq_ids.size())
+				mc_seq_ids.insert(mt() % n_seq);
+			mc_r += SubTreeSize(mc_seq_ids);
+		}
+
+		*monte_carlo_subtree_size = mc_r / (double) monte_carlo_trials;
+	}
+
+	return r;
+}
+#endif
+
 // *******************************************************************
 bool CFAMSA::ComputeMSA()
 {
 	if (params.verbose_mode)
 	{
 		cerr << "Params:\n";
-		cerr << "  gap open cost: " << params.gap_open << "\n";
-		cerr << "  gap extension cost: " << params.gap_ext << "\n";
-		cerr << "  gap terminal open cost: " << params.gap_term_open << "\n";
-		cerr << "  gap terminal extension cost: " << params.gap_term_ext << "\n";
+		cerr << "  gap open cost (rescalled): " << params.gap_open << "\n";
+		cerr << "  gap extension cost (rescalled): " << params.gap_ext << "\n";
+		cerr << "  gap terminal open cost (rescalled): " << params.gap_term_open << "\n";
+		cerr << "  gap terminal extension cost (rescalled): " << params.gap_term_ext << "\n";
 		cerr << "  no. of refinements: " << params.n_refinements << "\n";
 		cerr << "  gap cost scaller log-term: " << params.scaler_log << "\n";
 		cerr << "  gap cost scaller div-term: " << params.scaler_div << "\n";
@@ -758,8 +942,30 @@ bool CFAMSA::ComputeMSA()
 		cerr << "  enable auto refinement: " << params.enable_auto_refinement << "\n";
 		cerr << "  guided alignment radius: " << params.guided_alignment_radius << "\n";
 		cerr << "  no. of threads: " << params.n_threads << "\n";
+		cerr << "  guide tree method: ";
+		switch (params.guide_tree)
+		{
+		case GT_method::chained:
+			cerr << "chained\n";
+			break;
+		case GT_method::imported:
+			cerr << "imported\n";
+			cerr << "  guide tree file: " << params.guide_treee_file_name << "\n";
+			break;
+		case GT_method::single_linkage:
+			cerr << "single linkage\n";
+			break;
+		case GT_method::UPGMA:
+			cerr << "UPGMA\n";
+			break;
+		}
 	}
 		
+#ifdef DEVELOPER_MODE
+	if (params.test_ref_sequences)
+		LoadRefSequences();
+#endif
+
 	if (params.very_verbose_mode)
 	{
 		string instr_names[] = { "None", "SSE", "SSE2", "SSE3", "SSE3S", "SSE41", "SSE42", "AVX", "AVX2" };
@@ -780,6 +986,12 @@ bool CFAMSA::ComputeMSA()
 		cout << "Computing guide tree - complete                                          \n";
 		fflush(stdout);
 	}
+
+#ifdef DEVELOPER_MODE
+	double monte_carlo_subtree_size;
+	if(params.test_ref_sequences)
+		params.ref_seq_subtree_size = CalculateRefSequencesSubTreeSize(&monte_carlo_subtree_size);
+#endif
 
 	timers[1].StartTimer();
 	if (params.very_verbose_mode)
@@ -802,7 +1014,7 @@ bool CFAMSA::ComputeMSA()
 		cout << "Computing refinement...\r";
 		fflush(stdout);
 	}
-	if (!RefineAlignment())
+	if (!RefineAlignment(final_profile))
 		return false;
 	if (params.very_verbose_mode)
 	{
@@ -818,6 +1030,29 @@ bool CFAMSA::ComputeMSA()
 		cerr << "Guide tree construction (incl. similatiry calc.): " << timers[0].GetElapsedTime() << "s\n";
 		cerr << "Alignment construction                          : " << timers[1].GetElapsedTime() << "s\n";
 		cerr << "Iterative refinement                            : " << timers[2].GetElapsedTime() << "s\n";
+
+		cerr << "No. of sequences : " << sequences.size() << "\n";
+		cerr << "Sackin index for guide tree: " << params.sackin_index << "\n";
+		cerr << "Sackin index for guide tree (normalized): " << params.sackin_index / (double)sequences.size() << "\n";
+
+#ifdef DEVELOPER_MODE
+		if (params.test_ref_sequences)
+		{
+			cerr << "Ref. seq. subtree size: " << params.ref_seq_subtree_size << "\n";
+			cerr << "Monte Carlo subtree size: " << monte_carlo_subtree_size << "\n";
+		}
+
+#ifdef LOG_STATS
+		FILE *out = fopen("execution.stats", "wt");
+		fprintf(out, "[stats]\n");
+		fprintf(out, "No_sequences=%d\n", sequences.size());
+		fprintf(out, "Sackin_idx=%lld\n", params.sackin_index);
+		fprintf(out, "Sackin_idx_norm=%.3f\n", params.sackin_index / (double) sequences.size());
+		fprintf(out, "Ref_seq_subtree_size=%lld\n", params.ref_seq_subtree_size);
+		fprintf(out, "Monte_carlo_subtree_size=%.1f", monte_carlo_subtree_size);
+		fclose(out);
+#endif
+#endif
 	}
 
 	return true;

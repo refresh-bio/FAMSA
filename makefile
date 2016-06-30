@@ -48,6 +48,8 @@ famsa-gpu: famsa_gpu/famsa_gpu.o \
 	core/lcsbp_avx2.o \
 	core/queues.o \
 	core/timer.o \
+	core/upgma.o \
+	core/NewickTree.o \
 	libs/instrset_detect.o \
 	opencl_utils/common/Log.o \
 	opencl_utils/common/mathex.o \
@@ -65,6 +67,8 @@ famsa-gpu: famsa_gpu/famsa_gpu.o \
 	core/lcsbp_avx2.o \
 	core/queues.o \
 	core/timer.o \
+	core/upgma.o \
+	core/NewickTree.o \
 	libs/instrset_detect.o \
 	opencl_utils/common/Log.o \
 	opencl_utils/common/mathex.o \
@@ -83,6 +87,8 @@ famsa: famsa_cpu/famsa_cpu.o \
 	core/lcsbp_avx2.o \
 	core/queues.o \
 	core/timer.o \
+	core/upgma.o \
+	core/NewickTree.o \
 	libs/instrset_detect.o
 	$(CC) $(CLINK_NOOPENCL) -o $@ famsa_cpu/famsa_cpu.o \
 	core/input_file.o \
@@ -95,6 +101,8 @@ famsa: famsa_cpu/famsa_cpu.o \
 	core/lcsbp_avx2.o \
 	core/queues.o \
 	core/timer.o \
+	core/upgma.o \
+	core/NewickTree.o \
 	libs/instrset_detect.o \
 	$(LIBS_LINUX_DIR)/libaelf64.a
 
@@ -106,4 +114,4 @@ clean:
 	-rm opencl_utils/hardware/*.o
 	-rm opencl_utils/common/*.o
 	-rm famsa
-	-rm famsa_gpu
+	-rm famsa-gpu

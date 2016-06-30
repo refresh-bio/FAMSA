@@ -4,8 +4,8 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
-Version: 1.0
-Date   : 2016-03-21
+Version: 1.1
+Date   : 2016-06-29
 */
 
 #include "../core/profile.h"
@@ -2078,7 +2078,7 @@ score_t CProfile::CalculateTotalScore(void)
 
 	score_t score = 0;
 
-	// Do not calculate total score if unnecessary!
+	// Calculate total score only if necessary!
 	if(!params->enable_total_score_calculation)
 	{
 		total_score = 0;

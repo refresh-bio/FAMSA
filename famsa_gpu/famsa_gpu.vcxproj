@@ -104,7 +104,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
       <OpenMPSupport>true</OpenMPSupport>
-      <AdditionalIncludeDirectories>$(ProjectDir)../libs-win/</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\..\libs-win;$(ProjectDir)/../libs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -139,7 +139,7 @@
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <EnableParallelCodeGeneration>true</EnableParallelCodeGeneration>
-      <AdditionalIncludeDirectories>$(ProjectDir)\..\libs-win;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)\..\libs-win;$(ProjectDir)/../libs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
@@ -163,11 +163,13 @@
     </ClCompile>
     <ClCompile Include="..\core\lcsbp_classic.cpp" />
     <ClCompile Include="..\core\msa.cpp" />
+    <ClCompile Include="..\core\NewickTree.cpp" />
     <ClCompile Include="..\core\output_file.cpp" />
     <ClCompile Include="..\core\profile.cpp" />
     <ClCompile Include="..\core\queues.cpp" />
     <ClCompile Include="..\core\sequence.cpp" />
     <ClCompile Include="..\core\timer.cpp" />
+    <ClCompile Include="..\core\upgma.cpp" />
     <ClCompile Include="..\core_gpu\gpumsa.cpp" />
     <ClCompile Include="..\libs\instrset_detect.cpp" />
     <ClCompile Include="..\opencl_utils\common\Log.cpp" />
@@ -192,12 +194,14 @@
     <ClInclude Include="..\core\lcsbp_classic.h" />
     <ClInclude Include="..\core\meta_oper.h" />
     <ClInclude Include="..\core\msa.h" />
+    <ClInclude Include="..\core\NewickTree.h" />
     <ClInclude Include="..\core\output_file.h" />
     <ClInclude Include="..\core\params.h" />
     <ClInclude Include="..\core\profile.h" />
     <ClInclude Include="..\core\queues.h" />
     <ClInclude Include="..\core\sequence.h" />
     <ClInclude Include="..\core\timer.h" />
+    <ClInclude Include="..\core\TreeGrammar.h" />
     <ClInclude Include="..\core_gpu\gpumsa.h" />
     <ClInclude Include="..\libs-linux\CL\cl.h" />
     <ClInclude Include="..\libs-linux\CL\cl.hpp" />

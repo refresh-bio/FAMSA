@@ -4,8 +4,8 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
-Version: 1.0
-Date   : 2016-03-11
+Version: 1.1
+Date   : 2016-06-29
 */
 
 #include "../core/queues.h"
@@ -54,6 +54,11 @@ CProfileQueue::CProfileQueue(vector<CGappedSequence> *_gapped_sequences, map<siz
 		child_parent_mapping[id1] = i;
 		child_parent_mapping[id2] = i;
 	}
+
+	// Calculate Sackin index for guide tree
+	sackin_index = 0;
+	for (int i = 0; i < gapped_sequences->size(); ++i)
+		sackin_index += prof_depth[i] + 1;
 
 	counter = 0;
 }
@@ -117,6 +122,13 @@ void CProfileQueue::AddSolution(size_t prof_id, CProfile *prof)
 	cv.notify_all();
 }
 
+// *******************************************************************
+// Return Sackin index 
+// *******************************************************************
+uint64_t CProfileQueue::GetSackinIndex()
+{
+	return sackin_index;
+}
 
 // *******************************************************************
 // CSingleLinkageQueue
@@ -227,4 +239,51 @@ void CSingleLinkageQueue::ReleaseSolution(int row_id)
 	cv_tasks.notify_all();
 }
 
+
+// *******************************************************************
+// Queue for UPGMA
+// *******************************************************************
+CUPGMAQueue::CUPGMAQueue(vector<CSequence> *_sequences, uint32_t _n_rows, UPGMA_dist_t *_dist_matrix)
+{
+	sequences = _sequences;
+	n_rows = _n_rows;
+	lowest_uncomputed_row = 0;
+	eoq_flag = false;
+	dist_matrix = _dist_matrix;
+}
+
+CUPGMAQueue::~CUPGMAQueue()
+{
+}
+
+inline long long CUPGMAQueue::TriangleSubscript(long long uIndex1, long long uIndex2)
+{
+	long long v;
+
+	if (uIndex1 >= uIndex2)
+		v = uIndex2 + (uIndex1*(uIndex1 - 1)) / 2;
+	else
+		v = uIndex1 + (uIndex2*(uIndex2 - 1)) / 2;
+
+	return v;
+}
+
+bool CUPGMAQueue::GetTask(int &row_id, vector<CSequence> *&_sequences, UPGMA_dist_t *&dist_row)
+{
+	unique_lock<mutex> lck(mtx);
+
+	if (eoq_flag)
+		return false;	// End of data in the profiles queue
+
+	row_id = lowest_uncomputed_row++;
+
+	if (lowest_uncomputed_row >= n_rows)
+		eoq_flag = true;
+
+	_sequences = sequences;
+
+	dist_row = dist_matrix + TriangleSubscript(row_id, 0);
+
+	return true;
+}
 

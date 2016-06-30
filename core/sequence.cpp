@@ -4,8 +4,8 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
-Version: 1.0
-Date   : 2016-03-21
+Version: 1.1
+Date   : 2016-06-29
 */
 
 #include "../core/sequence.h"
@@ -77,7 +77,9 @@ CSequence::CSequence(const CSequence &_sequence)
 #endif
 }
 
-CSequence::CSequence(CSequence&& rhs) {
+// *******************************************************************
+CSequence::CSequence(CSequence&& rhs) 
+{
 	this->id = std::move(rhs.id);
 	this->data = std::move(rhs.data);
 	this->uppercase = std::move(rhs.uppercase);
@@ -89,6 +91,7 @@ CSequence::CSequence(CSequence&& rhs) {
 	}
 }
 
+// *******************************************************************
 CSequence& CSequence::operator=(CSequence&& rhs)
 {
 	this->id = std::move(rhs.id);
@@ -104,6 +107,7 @@ CSequence& CSequence::operator=(CSequence&& rhs)
 	return *this;
 }
 
+// *******************************************************************
 CSequence& CSequence::operator=(const CSequence& rhs)
 {
 	this->id = rhs.id;
@@ -122,9 +126,7 @@ CSequence& CSequence::operator=(const CSequence& rhs)
 // *******************************************************************
 CSequence::~CSequence()
 {
-
 }
-
 
 // *******************************************************************
 string CSequence::DecodeSequence()

@@ -101,8 +101,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>
-      </AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\Visual Leak Detector\include;$(ProjectDir)/../libs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -141,6 +140,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <ControlFlowGuard>false</ControlFlowGuard>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\Visual Leak Detector\include;$(ProjectDir)/../libs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -170,11 +170,13 @@
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AdvancedVectorExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <ClCompile Include="..\core\msa.cpp" />
+    <ClCompile Include="..\core\NewickTree.cpp" />
     <ClCompile Include="..\core\output_file.cpp" />
     <ClCompile Include="..\core\profile.cpp" />
     <ClCompile Include="..\core\queues.cpp" />
     <ClCompile Include="..\core\sequence.cpp" />
     <ClCompile Include="..\core\timer.cpp" />
+    <ClCompile Include="..\core\upgma.cpp" />
     <ClCompile Include="..\libs\instrset_detect.cpp" />
     <ClCompile Include="famsa_cpu.cpp" />
   </ItemGroup>
@@ -186,12 +188,14 @@
     <ClInclude Include="..\core\lcsbp_avx.h" />
     <ClInclude Include="..\core\meta_oper.h" />
     <ClInclude Include="..\core\msa.h" />
+    <ClInclude Include="..\core\NewickTree.h" />
     <ClInclude Include="..\core\output_file.h" />
     <ClInclude Include="..\core\params.h" />
     <ClInclude Include="..\core\profile.h" />
     <ClInclude Include="..\core\queues.h" />
     <ClInclude Include="..\core\sequence.h" />
     <ClInclude Include="..\core\timer.h" />
+    <ClInclude Include="..\core\TreeGrammar.h" />
     <ClInclude Include="..\libs-linux\CL\cl.h" />
     <ClInclude Include="..\libs-linux\CL\cl.hpp" />
     <ClInclude Include="..\libs-linux\CL\cl_d3d10.h" />

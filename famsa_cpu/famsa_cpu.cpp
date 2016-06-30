@@ -4,8 +4,8 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
-Version: 1.0
-Date   : 2016-03-11
+Version: 1.1
+Date   : 2016-06-29
 */
 
 #include <string>
@@ -29,6 +29,7 @@ typedef struct {
 	int guided_alignment_radius;	// internal param
 	int n_refinements;
 	int thr_refinement;
+	int thr_internal_refinement;
 
 	bool enable_gap_rescaling;
 	bool enable_gap_optimization;
@@ -36,6 +37,14 @@ typedef struct {
 	bool enable_auto_refinement;
 	bool verbose_mode;
 	bool very_verbose_mode;
+
+	GT_method guide_tree;
+	int guide_tree_seed;
+	string guide_treee_file_name;
+	double indel_exp;
+
+	bool test_ref_sequenes;
+	string ref_file_name;
 
 /*	bool use_gpu;					// internal param
 	int gpu_platform;
@@ -82,6 +91,26 @@ void show_usage()
 	cout << "  -fr - disable auto refinement turning off (for sets larger than " << execution_params.thr_refinement << " seq.)\n";
 	cout << "  -t <value> - no. of threads, 0 means all available (default: " << execution_params.n_threads << ")\n";
 	cout << "  -v - verbose mode, show timing information (default: disabled)\n";
+#ifdef DEVELOPER_MODE
+	cout << "  -vv - very verbose mode, show timing information (default: disabled)\n";
+#endif
+
+#ifdef DEVELOPER_MODE
+	cout << "  -gt <sl, upgma, chained> - guide tree method (single linkage, UPGMA, chained)\n";
+#else
+	cout << "  -gt <sl, upgma> - guide tree method (single linkage, UPGMA, chained)\n";
+#endif
+	cout << "  -gt <sl, upgma, chained> - choice of guide tree method (single linkage, UPGMA, chained)\n";
+	cout << "      (default: sl)\n";
+#ifdef DEVELOPER_MODE
+	cout << "  -gt_chained <value> - seed for random number generator in chained method\n";
+	cout << "      (defualt: " << execution_params.guide_tree_seed << ")\n";
+#endif
+	cout << "  -gt_import <file_name> - import guide tree in Newick format\n";
+
+#ifdef DEVELOPER_MODE
+	cout << "  -ref <file_name> - load referential sequences (for benchmarks) and calculate the minimal subtree size containing them\n";
+#endif
 
 /*	cout << "  -gpu_p <value> - gpu platform id \n";
 	cout << "  -gpu_d <value> - gpu device id \n";
@@ -92,13 +121,13 @@ void show_usage()
 // Set default execution parameter values
 void init_params()
 {
-	execution_params.gap_open = 14.85;
-	execution_params.gap_ext = 1.25;
-	execution_params.gap_term_open = 0.66;
-	execution_params.gap_term_ext = 0.66;
-	execution_params.gap_scaler_div = 7;
-	execution_params.gap_scaler_log = 45;
-	execution_params.guided_alignment_radius = 50;
+	execution_params.gap_open						= 14.85;
+	execution_params.gap_ext						= 1.25;
+	execution_params.gap_term_open					= 0.66;
+	execution_params.gap_term_ext					= 0.66;
+	execution_params.gap_scaler_div					= 7;
+	execution_params.gap_scaler_log					= 45;
+	execution_params.guided_alignment_radius		= 50;
 
 	execution_params.enable_gap_rescaling			= true;
 	execution_params.enable_gap_optimization		= true;
@@ -107,12 +136,22 @@ void init_params()
 
 	execution_params.n_refinements					= 100;
 	execution_params.thr_refinement					= 1000;
+	execution_params.thr_internal_refinement		= 0;
+
+	execution_params.guide_tree						= GT_method::single_linkage;
+	execution_params.guide_tree_seed				= 0;
+	execution_params.guide_treee_file_name			= "guide_tree.txt";
+
+	execution_params.test_ref_sequenes				= false;
+	execution_params.ref_file_name					= "";
 
 	execution_params.n_threads						= 1;
 	execution_params.input_file_name				= "";
 	execution_params.output_file_name				= "";
 	execution_params.verbose_mode					= false;
 	execution_params.very_verbose_mode				= false;
+
+	execution_params.indel_exp						= 1.0;
 }
 
 // ****************************************************************************
@@ -152,10 +191,40 @@ bool parse_params(int argc, char **argv)
 			execution_params.enable_auto_refinement = false;
 		else if (cur_par == "-t")
 			execution_params.n_threads = atoi(argv[argno++]);
+		else if (cur_par == "-ie")
+			execution_params.indel_exp = atof(argv[argno++]);
+		else if (cur_par == "-ri")
+			execution_params.thr_internal_refinement = atoi(argv[argno++]);
+		else if (cur_par == "-gt")
+		{
+			if (string(argv[argno]) == "sl")
+				execution_params.guide_tree = GT_method::single_linkage;
+			else if (string(argv[argno]) == "upgma")
+				execution_params.guide_tree = GT_method::UPGMA;
+#ifdef DEVELOPER_MODE
+			else if (string(argv[argno]) == "chained")
+				execution_params.guide_tree = GT_method::chained;
+#endif			
+			argno++;
+		}
+		else if (cur_par == "-gt_import") {
+			execution_params.guide_tree = GT_method::imported;
+			execution_params.guide_treee_file_name = argv[argno++];
+		}
+#ifdef DEVELOPER_MODE
+		else if (cur_par == "-gt_chained")
+			execution_params.guide_tree_seed = atoi(argv[argno++]);
+		else if (cur_par == "-ref") {
+			execution_params.test_ref_sequenes = true;
+			execution_params.ref_file_name = argv[argno++];
+		}
+#endif
 		else if (cur_par == "-v")
 			execution_params.verbose_mode = true;
+#ifdef DEVELOPER_MODE
 		else if (cur_par == "-vv")
 			execution_params.very_verbose_mode = true;
+#endif
 		/*		else if(cur_par == "-gpu_p")
 			execution_params.gpu_platform = atoi(argv[argno++]);
 		else if(cur_par == "-gpu_d")
@@ -198,9 +267,19 @@ void set_famsa_params(CParams &famsa_params)
 	famsa_params.enable_auto_refinement			= execution_params.enable_auto_refinement;
 	famsa_params.n_refinements					= execution_params.n_refinements;
 	famsa_params.thr_refinement					= execution_params.thr_refinement;
+	famsa_params.thr_internal_refinement		= execution_params.thr_internal_refinement;
 	famsa_params.n_threads						= execution_params.n_threads;
 	famsa_params.verbose_mode					= execution_params.verbose_mode;
 	famsa_params.very_verbose_mode				= execution_params.very_verbose_mode;
+
+	famsa_params.indel_exp						= execution_params.indel_exp;
+
+	famsa_params.guide_tree						= execution_params.guide_tree;
+	famsa_params.guide_treee_file_name			= execution_params.guide_treee_file_name;
+	famsa_params.guide_tree_seed				= execution_params.guide_tree_seed;
+
+	famsa_params.test_ref_sequences				= execution_params.test_ref_sequenes;
+	famsa_params.ref_file_name					= execution_params.ref_file_name;
 }
 
 // ****************************************************************************
