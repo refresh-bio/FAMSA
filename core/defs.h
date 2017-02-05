@@ -14,8 +14,8 @@ Date   : 2016-06-29
 #include <cstdlib>
 #include <cstdint>
 
-#define FAMSA_VER		"1.1"
-#define FAMSA_DATE		"2016-06-29"
+#define FAMSA_VER		"1.2"
+#define FAMSA_DATE		"2017-02-05"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 // Uncomment for huge alignments (e.g., no of sequences > 10^6 and final alignemnt length > 10^5), when
