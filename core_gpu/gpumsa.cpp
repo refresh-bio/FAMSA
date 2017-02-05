@@ -21,6 +21,7 @@ Date   : 2016-06-29
 #include <set>
 #include <algorithm>
 #include <cassert>
+#include <atomic>
 
 #undef min
 #undef max
@@ -158,7 +159,9 @@ void CGpuFAMSA::SingleLinkage() {
 	
 	std::thread cpuTasksThread;
 	std::vector<int> cpuLcs(this->calculateRangeElements(cpuLo, cpuHi));
-	if (cpuHi < 0) {
+	if (cpuHi > 0) {
+		std::string s = "Max sequence length for GPU variant is " + std::to_string(maxGpuLength) + "!";
+		throw std::runtime_error(s);
 		cout << "CPU range: " << cpuLo << " to " << cpuHi << endl;
 		cpuTasksThread = std::thread([this, &cpuLcs, cpuLo, cpuHi, &pi, &lambda, &sim_vector]()->void {
 			calculateReferenceLCSs(cpuLo, cpuHi, cpuLcs);
@@ -509,13 +512,56 @@ void CGpuFAMSA::partialLinkage(
 }
 
 
+void CGpuFAMSA::calculateLCSs(
+	::size_t verticalRangeLo,
+	::size_t verticalRangeHi,
+	std::vector<int>& lcs)
+{
+	struct Task {
+		int id;
+		int i;
+		int j;
+		Task(int id, int i, int j) : id(id), i(i), j(j) {}
+	};
+
+	// generate tasks
+	std::vector<Task> tasks;
+	int tid = 0;
+	for (int i = verticalRangeLo; i < (int) verticalRangeHi; ++i) {
+		for (int j = 0; j < i; ++j) {
+			//int taskId = calculateRangeElements(verticalRangeLo, i) + j;
+			tasks.emplace_back(tid++, i, j);
+		}
+	}
+	
+	std::vector<thread> threads(n_threads);
+	std::atomic<int> currentTask(0);
+	
+	for (auto& t : threads) {
+		t = thread([&tasks, &lcs, &currentTask, this]()->void {
+			int taskId;
+			while ((taskId = currentTask.fetch_add(1)) < tasks.size()) {
+				const auto& task = tasks[taskId];
+				uint32_t res;
+				this->lcsbp_classic0.Calculate(&this->sequences[task.i], &this->sequences[task.j], res);
+				lcs[task.id] = res;
+			}
+		});
+	}
+
+	for (auto& t : threads) {
+		t.join();
+	}
+
+}
+
+
 void CGpuFAMSA::calculateReferenceLCSs(
 	::size_t verticalRangeLo,
 	::size_t verticalRangeHi,
 	std::vector<int>& lcs)
 {
-	for (int i = verticalRangeLo; i < (int) verticalRangeHi; ++i) {
-		#pragma omp parallel for schedule(static) num_threads(n_threads)
+	for (int i = verticalRangeLo; i < (int)verticalRangeHi; ++i) {
 		for (int j = 0; j < i; ++j) {
 			int taskId = calculateRangeElements(verticalRangeLo, i) + j;
 			uint32_t res;
@@ -524,6 +570,7 @@ void CGpuFAMSA::calculateReferenceLCSs(
 		}
 	}
 }
+
 
 ::size_t CGpuFAMSA::calculateRangeHi(::size_t rangeLo, ::size_t elements) const
 {

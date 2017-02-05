@@ -70,11 +70,16 @@ protected:
 		std::thread& postprocessingThread,
 		cl::Event& finishedEvent);
 
-	virtual void calculateReferenceLCSs(
+	void calculateLCSs(
 		::size_t verticalRangeLo,
 		::size_t verticalRangeHi,
 		std::vector<int>& lcs);
-	
+
+	void calculateReferenceLCSs(
+		::size_t verticalRangeLo,
+		::size_t verticalRangeHi,
+		std::vector<int>& lcs);
+
 	virtual void partialLinkage(
 		const std::vector<int> &lcs,
 		::size_t verticalRangeLo,

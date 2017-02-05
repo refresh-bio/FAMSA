@@ -42,19 +42,7 @@ typedef struct
 	ULARGE_INTEGER stop;
 } thread_watch_t;
 
-// **********************************************************
-class CThreadWatch
-{
-	thread_watch_t timer_kernel, timer_user;
-	LARGE_INTEGER frequency;
-	double LIToSecs( LARGE_INTEGER & L);
 
-public:
-	CThreadWatch();
-	void StartTimer( );
-	void StopTimer( );
-	double GetElapsedTime();
-};
 
 #else
 #include <sys/time.h>
@@ -80,18 +68,6 @@ public:
 
 typedef timeval thread_watch_t;
 
-// **********************************************************
-class CThreadWatch
-{
-	thread_watch_t start_kernel, start_user;
-	thread_watch_t stop_kernel , stop_user;
-
-public:
-	CThreadWatch();
-	void StartTimer( );
-	void StopTimer( );
-	double GetElapsedTime();
-};
 
 #endif
 

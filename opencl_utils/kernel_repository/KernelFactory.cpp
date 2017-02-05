@@ -12,7 +12,6 @@
 #include "../opencl_utils/common/Log.h"
 
 using namespace std;
-using namespace cl;
 
 /// <summary>
 /// See declaration for all the details.
@@ -135,7 +134,7 @@ std::unique_ptr<cl::Program> KernelFactory::loadProgram(
 	*position = 0;
 
 	int code;
-	Program::Sources sources;
+	cl::Program::Sources sources;
 	sources.push_back(std::make_pair(buffer, strlen(buffer) + 1));
 	auto program = std::unique_ptr<cl::Program>(new cl::Program(*openCl->context, sources, &code));
 	clCall(code);
@@ -154,7 +153,7 @@ std::unique_ptr<cl::Program> KernelFactory::loadProgram(
 	std::vector<std::string> defines,
 	int maxRegisters)
 {
-	Program::Sources sources;
+	cl::Program::Sources sources;
 
 	for (int i = 0; i < resourceIds.size(); i++)
 	{
@@ -183,7 +182,7 @@ std::unique_ptr<cl::Program> KernelFactory::loadProgram(
 	char* buffer = new char[MAX_SOURCE_SIZE];
 	char* position = buffer;
 	ifstream file(binaryFilename, ios::binary);
-	Program::Binaries binaries;
+	cl::Program::Binaries binaries;
 
 	while (!file.eof())
 	{

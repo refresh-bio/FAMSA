@@ -11,7 +11,6 @@
 #include "../opencl_utils/common/Timer.h"
 #include "../opencl_utils/common/MemoryTools.h"
 
-using namespace cl;
 
 cl_int clCall(cl_int code)
 {
@@ -28,12 +27,12 @@ cl_int clCall(cl_int code)
 std::string clex::OpenCL::listDevices(int deviceType)
 {
 	std::ostringstream oss;
-	std::vector<Platform> platforms;
-	Platform::get(&platforms);
+	std::vector<cl::Platform> platforms;
+	cl::Platform::get(&platforms);
 
 	for (int i = 0; i < platforms.size(); i++) {
 		oss << "Platform " << i << ": " << PlatformInfo(platforms[i]).getName() << std::endl;
-		std::vector<Device> devices;
+		std::vector<cl::Device> devices;
 		platforms[i].getDevices(deviceType, &devices);
 
 		for (int j = 0; j < devices.size(); j++) {
@@ -49,18 +48,18 @@ clex::OpenCL::OpenCL(int deviceType, int platformNum, int deviceNum, bool kernel
 {
 	LOG_MEM("Before OpenCL initialisation");
 	int code;
-	std::vector<Platform> platforms;
-	clCall(Platform::get(&platforms));
+	std::vector<cl::Platform> platforms;
+	clCall(cl::Platform::get(&platforms));
 	LOG_MEM("Platforms get");
 
-	std::vector<Device> tempDevices;
+	std::vector<cl::Device> tempDevices;
 	clCall(platforms[platformNum].getDevices(deviceType, &tempDevices));
 	LOG_MEM("Devices get");
 	
 	// fixme:
-	std::vector<Device> finalDevices(1, tempDevices[deviceNum]);
+	std::vector<cl::Device> finalDevices(1, tempDevices[deviceNum]);
 	
-	context = std::shared_ptr<Context>(new cl::Context(finalDevices, NULL, NULL, NULL, &code));
+	context = std::shared_ptr<cl::Context>(new cl::Context(finalDevices, NULL, NULL, NULL, &code));
 	clCall(code);
 	LOG_MEM("Context created");
 

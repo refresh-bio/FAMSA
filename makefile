@@ -2,19 +2,21 @@ all: famsa famsa-gpu
 
 LIBS_DIR = libs
 LIBS_LINUX_DIR = libs-linux
+ASM_LIB = libaelf64.a
+ABI_FLAG = -fabi-version=0 
 
-CFLAGS_OPENCL = 
-CLINK_OPENCL = -lOpenCL
+UNAME_S := $(shell uname -s)
+ifeq ($(UNAME_S),Darwin)
+	ASM_LIB = libamac64.a
+	ABI_FLAG = 
+endif
 
-#CFLAGS_OPENCL = -DNO_OPENCL
-#CLINK_OPENCL = 
-
+ 
 CC 	= g++
-CFLAGS	= -Wall -O3 -m64 -std=c++11 -pthread -I $(LIBS_DIR) -I $(LIBS_LINUX_DIR) $(CFLAGS_OPENCL) -fopenmp
-CFLAGS_AVX = $(CFLAGS) -mavx -fabi-version=0 -mpopcnt -funroll-loops
-CFLAGS_AVX2 = $(CFLAGS) -mavx2 -fabi-version=0 -mpopcnt -funroll-loops
-CLINK	= -lm -O3 -std=c++11 -fopenmp -lpthread $(CLINK_OPENCL)
-CLINK_NOOPENCL	= -lm -O3 -std=c++11 -fopenmp -lpthread 
+CFLAGS	= -Wall -O3 -m64 -std=c++11 -pthread -I $(LIBS_DIR) -I $(LIBS_LINUX_DIR) 
+CFLAGS_AVX = $(CFLAGS) -mavx ${ABI_FLAG} -mpopcnt -funroll-loops
+CFLAGS_AVX2 = $(CFLAGS) -mavx2 ${ABI_FLAG} -mpopcnt -funroll-loops
+CLINK	= -lm -O3 -std=c++11 -pthread 
 
 OPENCL_OBJS := 	opencl_utils/hardware/Buffer.o \
 	opencl_utils/hardware/DeviceInfo.o \
@@ -36,6 +38,7 @@ core/lcsbp_avx2.o : core/lcsbp_avx2.cpp
 .cpp.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
+ifeq ($(UNAME_S),Linux)
 famsa-gpu: famsa_gpu/famsa_gpu.o \
 	core/input_file.o \
 	core/msa.o \
@@ -74,7 +77,9 @@ famsa-gpu: famsa_gpu/famsa_gpu.o \
 	opencl_utils/common/mathex.o \
 	opencl_utils/common/StatisticsProvider.o \
 	$(OPENCL_OBJS) \
-	$(LIBS_LINUX_DIR)/libaelf64.a
+	$(LIBS_LINUX_DIR)/${ASM_LIB} \
+	$(LIBS_LINUX_DIR)/CL/libOpenCL.a
+endif
 
 famsa: famsa_cpu/famsa_cpu.o \
 	core/input_file.o \
@@ -90,7 +95,7 @@ famsa: famsa_cpu/famsa_cpu.o \
 	core/upgma.o \
 	core/NewickTree.o \
 	libs/instrset_detect.o
-	$(CC) $(CLINK_NOOPENCL) -o $@ famsa_cpu/famsa_cpu.o \
+	$(CC) $(CLINK) -o $@ famsa_cpu/famsa_cpu.o \
 	core/input_file.o \
 	core/msa.o \
 	core/output_file.o \
@@ -104,7 +109,7 @@ famsa: famsa_cpu/famsa_cpu.o \
 	core/upgma.o \
 	core/NewickTree.o \
 	libs/instrset_detect.o \
-	$(LIBS_LINUX_DIR)/libaelf64.a
+	$(LIBS_LINUX_DIR)/${ASM_LIB}
 
 clean:
 	-rm core/*.o

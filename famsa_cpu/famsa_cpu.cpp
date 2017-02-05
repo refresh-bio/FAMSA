@@ -291,6 +291,10 @@ int main(int argc, char *argv[])
 		show_usage();
 		return 0;
 	}
+	else {
+		cout << "FAMSA (Fast and Accurate Multiple Sequence Alignment) ver. " << FAMSA_VER << " CPU and GPU\n";
+		cout << "  by " << FAMSA_AUTHORS << " (" << FAMSA_DATE << ")\n\n";
+	}
 
 	CStopWatch timer;
 
