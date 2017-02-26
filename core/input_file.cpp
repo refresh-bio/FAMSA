@@ -54,7 +54,7 @@ bool CInputFile::ReadFile(string file_name)
 
 		if(s[0] == '>')
 		{
-			if(!id.empty())
+			if(!id.empty() && !seq.empty())
 			{
 				sequences.emplace_back(id, seq);
 			//	sequences.push_back(CSequence(id, seq));
@@ -66,7 +66,7 @@ bool CInputFile::ReadFile(string file_name)
 			seq += s;
 	}
 
-	if(!id.empty())
+	if(!id.empty() && !seq.empty())
 		sequences.push_back(CSequence(id, seq));
 
 	return true;

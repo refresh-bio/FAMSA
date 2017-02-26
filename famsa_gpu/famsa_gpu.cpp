@@ -301,8 +301,8 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	else {
-		cout << "FAMSA (Fast and Accurate Multiple Sequence Alignment) ver. " << FAMSA_VER << " CPU and GPU\n";
-		cout << "  by " << FAMSA_AUTHORS << " (" << FAMSA_DATE << ")\n\n";
+		cerr << "FAMSA (Fast and Accurate Multiple Sequence Alignment) ver. " << FAMSA_VER << " CPU and GPU\n";
+		cerr << "  by " << FAMSA_AUTHORS << " (" << FAMSA_DATE << ")\n\n";
 	}
 
 	CStopWatch timer;
@@ -364,6 +364,8 @@ int main(int argc, char *argv[])
 
 	if (execution_params.verbose_mode)
 		cerr << "Total computation time: " << timer.GetElapsedTime() << "s\n";
+	
+	cerr << "Done!\n";
 	
 	return 0;
 }
