@@ -27,23 +27,29 @@ COutputFile::~COutputFile()
 // ****************************************************************************
 bool COutputFile::SaveFile(string file_name)
 {
-	ofstream out;
+	ostream* out;
+	ofstream outfile;
+
+	if (file_name == "STDOUT") {
+		out = &cout;
+	}
+	else {
+		outfile.open(file_name.c_str(), ios_base::out);
+		out = &outfile;
+	}
+
 	string s;
 	bool is_id = false;
 
 	string id, seq;
 
-	out.open(file_name.c_str(), ios_base::out);
-
 	for(auto &p : sequences)
 	{
-		out << p->id << "\n";
+		*out << p->id << "\n";
 		string seq = p->Decode();
 		for(size_t pos = 0; pos < seq.size(); pos += 60)
-			out << seq.substr(pos, 60) << "\n";
+			*out << seq.substr(pos, 60) << "\n";
 	}
-
-	out.close();
 
 	return true;
 }

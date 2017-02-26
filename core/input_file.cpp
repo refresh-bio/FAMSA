@@ -26,20 +26,27 @@ CInputFile::~CInputFile()
 // *******************************************************************
 bool CInputFile::ReadFile(string file_name)
 {
-	ifstream in;
+	istream* in;
+
+	ifstream infile;
+
+	if (file_name == "STDIN") {
+		in = &cin;
+	}
+	else {
+		infile.open(file_name.c_str(), ios_base::in);
+		if (!infile.good())
+			return false;
+		in = &infile;
+	}
+
 	string s;
 	bool is_id = false;
-
 	string id, seq;
 
-	in.open(file_name.c_str(), ios_base::in);
-
-	if(!in.good())
-		return false;
-
-	while(in.good())
+	while(in->good())
 	{
-		getline(in, s);
+		getline(*in, s);
 		while(!s.empty() && (s[s.length()-1] == '\n' || s[s.length()-1] == '\r'))
 			s.pop_back();
 		if(s.empty())

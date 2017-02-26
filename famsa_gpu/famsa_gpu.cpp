@@ -73,10 +73,13 @@ void show_usage()
 {
 	init_params();		// To set default param values
 
-	cout << "FAMSA (Fast and Accurate Multiple Sequence Alignment) ver. " << FAMSA_VER << " CPU and GPU\n";
-	cout << "  by " << FAMSA_AUTHORS << " (" << FAMSA_DATE << ")\n";
-	cout << "Usage: famsa-gpu [parameters] <input_file_name> <output_file_name>\n";
-	cout << "where available parameters are:\n";
+	cout << "FAMSA (Fast and Accurate Multiple Sequence Alignment) ver. " << FAMSA_VER << " CPU\n";
+	cout << "  by " << FAMSA_AUTHORS << " (" << FAMSA_DATE << ")\n\n";
+	cout << "Usage:\n";
+	cout << "  famsa [parameters] <input_file_name> <output_file_name>\n\n";
+	cout << "Parameters:\n";
+	cout << "  input_file_name - input file in FASTA format or STDIN when reading from standard input\n";
+	cout << "  output_file_name - output file in FASTA format or STDOUT when writing to standard output\n";
 	cout << "  -go <value> - gap open cost (default: " << execution_params.gap_open << ")\n";
 	cout << "  -ge <value> - gap extension cost (default: " << execution_params.gap_ext << ")\n";
 	cout << "  -tgo <value> - terminal gap open cost (default: " << execution_params.gap_term_open << ")\n";
