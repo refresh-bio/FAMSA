@@ -9,6 +9,7 @@ Date   : 2016-06-29
 */
 
 #include "../core/lcsbp_avx.h"
+#include "../core/defs.h"
 
 #include "algorithm"
 #include <memory>
@@ -32,7 +33,7 @@ void CLCSBP_AVX::prepare_X(size_t bv_len)
 	raw_X = malloc(raw_X_size);
 	orig_X = raw_X;
 	
-	X = (Vec2uq*) align(64, X_size, raw_X, raw_X_size);
+	X = (Vec2uq*)my_align(64, X_size, raw_X, raw_X_size);
 }
 
 // *******************************************************************

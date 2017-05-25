@@ -41,7 +41,6 @@ bool CInputFile::ReadFile(string file_name)
 	}
 
 	string s;
-	bool is_id = false;
 	string id, seq;
 
 	while(in->good())

@@ -86,4 +86,16 @@ const UPGMA_dist_t BIG_DIST = (UPGMA_dist_t) 1e29;
 #define MAX3(x, y, z)		(max(x, max(y, z)))
 #define ABS(x)				((x) >= 0 ? (x) : -(x))
 
+
+inline void *my_align(std::size_t alignment, std::size_t size,
+	void *&ptr, std::size_t &space) {
+	std::uintptr_t pn = reinterpret_cast< std::uintptr_t >(ptr);
+	std::uintptr_t aligned = (pn + alignment - 1) & -alignment;
+	std::size_t padding = aligned - pn;
+	if (space < size + padding) return nullptr;
+	space -= padding;
+	return ptr = reinterpret_cast< void * >(aligned);
+}
+
+
 #endif

@@ -383,7 +383,6 @@ void CFAMSA::SingleLinkage()
 	CSingleLinkageQueue slq(&sequences, n_seq, n_threads * 8);
 	vector<thread *> workers(n_threads, nullptr);
 
-	uint32_t computed_prof = 0;
 	mutex mtx;
 
 	// Calculation of similarities is made in working threads
@@ -404,7 +403,7 @@ void CFAMSA::SingleLinkage()
 					for (int k = 0; k < 4; ++k)
 					{
 						double indel = (*sequences)[row_id].length + (*sequences)[j * 4 + k].length - 2 * lcs_lens[k];
-						double seq_lens = (*sequences)[row_id].length + (*sequences)[j * 4 + k].length;
+						//double seq_lens = (*sequences)[row_id].length + (*sequences)[j * 4 + k].length;
 						(*sim_vector)[j * 4 + k] = lcs_lens[k] / pow(indel, indel_exp);
 					}
 				}
@@ -420,7 +419,7 @@ void CFAMSA::SingleLinkage()
 					for (int k = 0; k < 4 && row_id / 4 * 4 + k < row_id; ++k)
 					{
 						double indel = (*sequences)[row_id].length + (*sequences)[row_id / 4 * 4 + k].length - 2 * lcs_lens[k];
-						double seq_lens = (*sequences)[row_id].length + (*sequences)[row_id / 4 * 4 + k].length;
+						//double seq_lens = (*sequences)[row_id].length + (*sequences)[row_id / 4 * 4 + k].length;
 						(*sim_vector)[row_id / 4 * 4 + k] = lcs_lens[k] / pow(indel, indel_exp);
 					}
 				}
@@ -742,14 +741,14 @@ bool CFAMSA::RefineAlignment(CProfile *&profile_to_refine)
 					profile2.AppendRawSequence(*profile_to_refine->data[i]);
 
 			// Condense the profiles (remove empty columns)
-			bool p1_cond = profile1.Condense(column_mapping1);
-			bool p2_cond = profile2.Condense(column_mapping2);
+			profile1.Condense(column_mapping1);
+			profile2.Condense(column_mapping2);
 
-			bool p1_og = profile1.OptimizeGaps();
-			bool p2_og = profile2.OptimizeGaps();
+			profile1.OptimizeGaps();
+			profile2.OptimizeGaps();
 
-			int p1_size = profile1.Size();
-			int p2_size = profile2.Size();
+			profile1.Size();
+			profile2.Size();
 
 #ifdef DEBUG_MODE
 			int size_min = min(p1_size, p2_size);
