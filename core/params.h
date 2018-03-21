@@ -4,8 +4,8 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
-Version: 1.1
-Date   : 2016-06-29
+Version: 1.2.2
+Date   : 2018-03-20
 */
 
 #ifndef _PARAMS_H
@@ -56,7 +56,7 @@ struct CParams
 		uint32_t _scaler_log = 49, uint32_t _scaler_div = 18, uint32_t _thr_refinement = 1000,
 		bool _enable_gap_rescaling = true, bool _enable_gap_optimization = true, bool _enable_total_score_calculation = true, bool _enable_auto_refinement = true,
 		bool _verbose_mode = false, bool _very_verbose_mode = false) : 
-		guided_alignment_radius(50), n_threads(1)
+		guided_alignment_radius(50), n_threads(0)
 	{
 #ifdef HUGE_ALIGNMENTS
 		gap_open      = _gap_open;

@@ -4,8 +4,8 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
-Version: 1.1
-Date   : 2016-06-29
+Version: 1.2.2
+Date   : 2018-03-20
 */
 
 #include "../core/msa.h"
@@ -162,6 +162,14 @@ bool CFAMSA::SetParams(CParams &_params)
 	params.score_vector = score_vector;
 
 	n_threads = params.n_threads;
+	// adjust automatically
+	if (n_threads == 0) {
+		n_threads = std::thread::hardware_concurrency();
+		// if hardware_concurrency fails
+		if (n_threads == 0) {
+			n_threads = 8;
+		}
+	}
 
 	return true;
 }

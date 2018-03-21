@@ -4,8 +4,8 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
-Version: 1.1
-Date   : 2016-06-29
+Version: 1.2.2
+Date   : 2018-03-20
 */
 
 #include <string>
@@ -73,7 +73,7 @@ void show_usage()
 {
 	init_params();		// To set default param values
 
-	cout << "FAMSA (Fast and Accurate Multiple Sequence Alignment) ver. " << FAMSA_VER << " CPU\n";
+	cout << "FAMSA (Fast and Accurate Multiple Sequence Alignment) ver. " << FAMSA_VER << " GPU\n";
 	cout << "  by " << FAMSA_AUTHORS << " (" << FAMSA_DATE << ")\n\n";
 	cout << "Usage:\n";
 	cout << "  famsa [parameters] <input_file_name> <output_file_name>\n\n";
@@ -145,7 +145,7 @@ void init_params()
 	execution_params.test_ref_sequenes = false;
 	execution_params.ref_file_name = "";
 
-	execution_params.n_threads = 1;
+	execution_params.n_threads = 0;
 	execution_params.input_file_name = "";
 	execution_params.output_file_name = "";
 	execution_params.verbose_mode = false;

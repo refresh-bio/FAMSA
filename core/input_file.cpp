@@ -4,8 +4,8 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
-Version: 1.1
-Date   : 2016-06-29
+Version: 1.2.2
+Date   : 2018-03-20
 */
 
 #include "../core/input_file.h"
@@ -68,7 +68,7 @@ bool CInputFile::ReadFile(string file_name)
 	if(!id.empty() && !seq.empty())
 		sequences.push_back(CSequence(id, seq));
 
-	return true;
+	return sequences.size() > 1;
 }
 
 // *******************************************************************
