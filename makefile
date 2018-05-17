@@ -1,5 +1,11 @@
 all: famsa famsa-gpu
 
+## USER'S OPTIONS
+STATIC_LINK = false
+COMPILE_GPU = true
+
+####################
+
 LIBS_DIR = libs
 LIBS_LINUX_DIR = libs-linux
 ASM_LIB = libaelf64.a
@@ -8,15 +14,23 @@ ABI_FLAG = -fabi-version=0
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
 	ASM_LIB = libamac64.a
-	ABI_FLAG = 
+	ABI_FLAG =
+	COMPILE_GPU = false 	
 endif
 
  
 CC 	= g++
-CFLAGS	= -Wall -O3 -m64 -std=c++11 -pthread -I $(LIBS_DIR) -I $(LIBS_LINUX_DIR) 
+
+ifeq ($(STATIC_LINK), true) 
+	CFLAGS	= -Wall -O3 -m64 -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=c++11 -I $(LIBS_DIR) -I $(LIBS_LINUX_DIR) 
+	CLINK	= -lm -static -O3 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=c++11 
+else
+	CFLAGS	= -Wall -O3 -m64 -std=c++11 -pthread -I $(LIBS_DIR) -I $(LIBS_LINUX_DIR)
+	CLINK	= -lm -O3 -std=c++11 -pthread 
+endif
+ 
 CFLAGS_AVX = $(CFLAGS) -mavx ${ABI_FLAG} -mpopcnt -funroll-loops
 CFLAGS_AVX2 = $(CFLAGS) -mavx2 ${ABI_FLAG} -mpopcnt -funroll-loops
-CLINK	= -lm -O3 -std=c++11 -pthread 
 
 OPENCL_OBJS := 	opencl_utils/hardware/Buffer.o \
 	opencl_utils/hardware/DeviceInfo.o \
@@ -38,7 +52,7 @@ core/lcsbp_avx2.o : core/lcsbp_avx2.cpp
 .cpp.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
-ifeq ($(UNAME_S),Linux)
+ifeq ($(COMPILE_GPU),true)
 famsa-gpu: famsa_gpu/famsa_gpu.o \
 	core/input_file.o \
 	core/msa.o \
