@@ -298,6 +298,10 @@ int main(int argc, char *argv[])
 	if(!parse_params(argc, argv))
 	{
 		show_usage();
+
+		cout << endl << "Available OpenCL devices:" << endl;
+		cout << clex::OpenCL::listDevices(clex::OpenCL::ANY_DEVICE) << endl;
+
 		return 0;
 	}
 	else {
@@ -311,6 +315,7 @@ int main(int argc, char *argv[])
 
 	std::shared_ptr<CFAMSA> ptr;
 	if (execution_params.use_gpu) {
+	
 		ptr = std::make_shared<CGpuFAMSA>(execution_params.gpu_platform, execution_params.gpu_device, 
 			execution_params.gpu_pairs_per_wave, execution_params.gpu_pairs_per_task, execution_params.gpu_threads_per_pair);
 	} else 
