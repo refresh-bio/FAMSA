@@ -32,13 +32,32 @@ endif
 CFLAGS_AVX = $(CFLAGS) -mavx ${ABI_FLAG} -mpopcnt -funroll-loops
 CFLAGS_AVX2 = $(CFLAGS) -mavx2 ${ABI_FLAG} -mpopcnt -funroll-loops
 
-OPENCL_OBJS := 	opencl_utils/hardware/Buffer.o \
+OPENCL_OBJS := 	 core_gpu/gpumsa.o \
+	opencl_utils/hardware/Buffer.o \
 	opencl_utils/hardware/DeviceInfo.o \
 	opencl_utils/hardware/DeviceWrapper.o \
 	opencl_utils/hardware/OpenCl.o \
 	opencl_utils/hardware/OwnProgram.o \
 	opencl_utils/kernel_repository/KernelFactory.o \
-	opencl_utils/kernel_repository/KernelRepository.o \
+	opencl_utils/kernel_repository/KernelRepository.o 
+
+
+COMMON_OBJS := core/input_file.o \
+	core/msa.o \
+	core/output_file.o \
+	core/profile.o \
+	core/sequence.o \
+	core/lcsbp_classic.o \
+	core/lcsbp_avx.o \
+	core/lcsbp_avx2.o \
+	core/queues.o \
+	core/timer.o \
+	core/upgma.o \
+	core/NewickTree.o \
+	libs/instrset_detect.o \
+	opencl_utils/common/Log.o \
+	opencl_utils/common/mathex.o \
+	opencl_utils/common/StatisticsProvider.o 
 
 core/lcsbp_classic.o : core/lcsbp_classic.cpp
 	$(CC) $(CFLAGS) -c core/lcsbp_classic.cpp -o $@
@@ -52,78 +71,14 @@ core/lcsbp_avx2.o : core/lcsbp_avx2.cpp
 .cpp.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
+
 ifeq ($(COMPILE_GPU),true)
-famsa-gpu: famsa_gpu/famsa_gpu.o \
-	core/input_file.o \
-	core/msa.o \
-	core/output_file.o \
-	core/profile.o \
-	core/sequence.o \
-	core_gpu/gpumsa.o	\
-	core/lcsbp_classic.o \
-	core/lcsbp_avx.o \
-	core/lcsbp_avx2.o \
-	core/queues.o \
-	core/timer.o \
-	core/upgma.o \
-	core/NewickTree.o \
-	libs/instrset_detect.o \
-	opencl_utils/common/Log.o \
-	opencl_utils/common/mathex.o \
-	opencl_utils/common/StatisticsProvider.o \
-	$(OPENCL_OBJS) 
-	$(CC) $(CLINK) -o $@ famsa_gpu/famsa_gpu.o \
-	core/input_file.o \
-	core/msa.o \
-	core/output_file.o \
-	core/profile.o \
-	core/sequence.o \
-	core_gpu/gpumsa.o	\
-	core/lcsbp_classic.o \
-	core/lcsbp_avx.o \
-	core/lcsbp_avx2.o \
-	core/queues.o \
-	core/timer.o \
-	core/upgma.o \
-	core/NewickTree.o \
-	libs/instrset_detect.o \
-	opencl_utils/common/Log.o \
-	opencl_utils/common/mathex.o \
-	opencl_utils/common/StatisticsProvider.o \
-	$(OPENCL_OBJS) \
-	$(LIBS_LINUX_DIR)/${ASM_LIB} \
-	$(LIBS_LINUX_DIR)/CL/libOpenCL.a
+famsa-gpu: famsa_gpu/famsa_gpu.o $(COMMON_OBJS) $(OPENCL_OBJS) 
+	$(CC) $(CLINK) -o $@ famsa_gpu/famsa_gpu.o $(COMMON_OBJS) $(OPENCL_OBJS) $(LIBS_LINUX_DIR)/${ASM_LIB} -lOpenCL
 endif
 
-famsa: famsa_cpu/famsa_cpu.o \
-	core/input_file.o \
-	core/msa.o \
-	core/output_file.o \
-	core/profile.o \
-	core/sequence.o \
-	core/lcsbp_classic.o \
-	core/lcsbp_avx.o \
-	core/lcsbp_avx2.o \
-	core/queues.o \
-	core/timer.o \
-	core/upgma.o \
-	core/NewickTree.o \
-	libs/instrset_detect.o
-	$(CC) $(CLINK) -o $@ famsa_cpu/famsa_cpu.o \
-	core/input_file.o \
-	core/msa.o \
-	core/output_file.o \
-	core/profile.o \
-	core/sequence.o \
-	core/lcsbp_classic.o \
-	core/lcsbp_avx.o \
-	core/lcsbp_avx2.o \
-	core/queues.o \
-	core/timer.o \
-	core/upgma.o \
-	core/NewickTree.o \
-	libs/instrset_detect.o \
-	$(LIBS_LINUX_DIR)/${ASM_LIB}
+famsa: famsa_cpu/famsa_cpu.o $(COMMON_OBJS)
+	$(CC) $(CLINK) -o $@ famsa_cpu/famsa_cpu.o $(COMMON_OBJS) $(LIBS_LINUX_DIR)/${ASM_LIB}
 
 clean:
 	-rm core/*.o
