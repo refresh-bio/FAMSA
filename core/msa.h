@@ -24,16 +24,25 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "../core/timer.h"
 
 #include "../core/lcsbp_classic.h"
+
+#ifndef NO_AVX
 #include "../core/lcsbp_avx.h"
+#ifndef NO_AVX2
 #include "../core/lcsbp_avx2.h"
+#endif
+#endif
 
 class CLCSBP
 {
 	instruction_set_t instruction_set;
 
 	CLCSBP_Classic lcsbp_classic;
+#ifndef NO_AVX
 	CLCSBP_AVX lcsbp_avx;
+#ifndef NO_AVX2
 	CLCSBP_AVX2 lcsbp_avx2;
+#endif
+#endif
 
 public:
 	CLCSBP(instruction_set_t _instruction_set = instruction_set_t::none)
@@ -55,22 +64,40 @@ public:
 			if (seq4 != nullptr)
 				lcsbp_classic.Calculate(seq0, seq4, dist4);
 		}
-		else if (instruction_set < instruction_set_t::avx)				// In theory SSE2 will suffice, but the SSE2-compiled code is too slow
-		{
-			lcsbp_classic.Calculate(seq0, seq1, dist1);
-			lcsbp_classic.Calculate(seq0, seq2, dist2);
-			lcsbp_classic.Calculate(seq0, seq3, dist3);
-			lcsbp_classic.Calculate(seq0, seq4, dist4);
-		}
-		else if (instruction_set < instruction_set_t::avx2)
-		{
-			lcsbp_avx.Calculate(seq0, seq1, seq2, dist1, dist2);
-			lcsbp_avx.Calculate(seq0, seq3, seq4, dist3, dist4);
-		}
-		else
-		{
-			lcsbp_avx2.Calculate(seq0, seq1, seq2, seq3, seq4, dist1, dist2, dist3, dist4);
-		}
+		else {
+
+			if (instruction_set < instruction_set_t::avx)				// In theory SSE2 will suffice, but the SSE2-compiled code is too slow
+			{
+				lcsbp_classic.Calculate(seq0, seq1, dist1);
+				lcsbp_classic.Calculate(seq0, seq2, dist2);
+				lcsbp_classic.Calculate(seq0, seq3, dist3);
+				lcsbp_classic.Calculate(seq0, seq4, dist4);
+			}
+			else {
+				#ifndef NO_AVX
+				if (instruction_set < instruction_set_t::avx2)
+				{
+					lcsbp_avx.Calculate(seq0, seq1, seq2, dist1, dist2);
+					lcsbp_avx.Calculate(seq0, seq3, seq4, dist3, dist4);
+				}
+				else
+				{
+					#ifndef NO_AVX2
+					lcsbp_avx2.Calculate(seq0, seq1, seq2, seq3, seq4, dist1, dist2, dist3, dist4);
+					#else
+					lcsbp_avx.Calculate(seq0, seq1, seq2, dist1, dist2);
+					lcsbp_avx.Calculate(seq0, seq3, seq4, dist3, dist4);
+					#endif
+				}
+			
+				#else
+				lcsbp_classic.Calculate(seq0, seq1, dist1);
+				lcsbp_classic.Calculate(seq0, seq2, dist2);
+				lcsbp_classic.Calculate(seq0, seq3, dist3);
+				lcsbp_classic.Calculate(seq0, seq4, dist4);
+				#endif
+			}
+		}	
 	};
 };
 
