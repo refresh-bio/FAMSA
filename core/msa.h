@@ -23,83 +23,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "../core/params.h"
 #include "../core/timer.h"
 
+#include "../core/lcsbp.h"
 #include "../core/lcsbp_classic.h"
-
-#ifndef NO_AVX
-#include "../core/lcsbp_avx.h"
-#ifndef NO_AVX2
-#include "../core/lcsbp_avx2.h"
-#endif
-#endif
-
-class CLCSBP
-{
-	instruction_set_t instruction_set;
-
-	CLCSBP_Classic lcsbp_classic;
-#ifndef NO_AVX
-	CLCSBP_AVX lcsbp_avx;
-#ifndef NO_AVX2
-	CLCSBP_AVX2 lcsbp_avx2;
-#endif
-#endif
-
-public:
-	CLCSBP(instruction_set_t _instruction_set = instruction_set_t::none)
-	{
-		instruction_set = _instruction_set;
-	}
-
-	void GetLCSBP(CSequence *seq0, CSequence *seq1, CSequence *seq2, CSequence *seq3, CSequence *seq4,
-		uint32_t &dist1, uint32_t &dist2, uint32_t &dist3, uint32_t &dist4)
-	{
-		if (seq4 == nullptr)
-		{
-			if (seq1 != nullptr)
-				lcsbp_classic.Calculate(seq0, seq1, dist1);
-			if (seq2 != nullptr)
-				lcsbp_classic.Calculate(seq0, seq2, dist2);
-			if (seq3 != nullptr)
-				lcsbp_classic.Calculate(seq0, seq3, dist3);
-			if (seq4 != nullptr)
-				lcsbp_classic.Calculate(seq0, seq4, dist4);
-		}
-		else {
-
-			if (instruction_set < instruction_set_t::avx)				// In theory SSE2 will suffice, but the SSE2-compiled code is too slow
-			{
-				lcsbp_classic.Calculate(seq0, seq1, dist1);
-				lcsbp_classic.Calculate(seq0, seq2, dist2);
-				lcsbp_classic.Calculate(seq0, seq3, dist3);
-				lcsbp_classic.Calculate(seq0, seq4, dist4);
-			}
-			else {
-				#ifndef NO_AVX
-				if (instruction_set < instruction_set_t::avx2)
-				{
-					lcsbp_avx.Calculate(seq0, seq1, seq2, dist1, dist2);
-					lcsbp_avx.Calculate(seq0, seq3, seq4, dist3, dist4);
-				}
-				else
-				{
-					#ifndef NO_AVX2
-					lcsbp_avx2.Calculate(seq0, seq1, seq2, seq3, seq4, dist1, dist2, dist3, dist4);
-					#else
-					lcsbp_avx.Calculate(seq0, seq1, seq2, dist1, dist2);
-					lcsbp_avx.Calculate(seq0, seq3, seq4, dist3, dist4);
-					#endif
-				}
-			
-				#else
-				lcsbp_classic.Calculate(seq0, seq1, dist1);
-				lcsbp_classic.Calculate(seq0, seq2, dist2);
-				lcsbp_classic.Calculate(seq0, seq3, dist3);
-				lcsbp_classic.Calculate(seq0, seq4, dist4);
-				#endif
-			}
-		}	
-	};
-};
 
 class CFAMSA 
 {
@@ -130,9 +55,6 @@ protected:
 	uint32_t n_threads;
 
 	CLCSBP_Classic lcsbp_classic0;
-	vector<CLCSBP_Classic> lcsbp_classic;
-	vector<CLCSBP_AVX> lcsbp_avx;
-	vector<CLCSBP_AVX2> lcsbp_avx2;
 
 	set<int> already_refined;
 
@@ -147,8 +69,6 @@ protected:
 	void DetermineInstructionSet();
 	void init_sm();
 
-	void GetLCSBP(int thread_id, CSequence *seq0, CSequence *seq1, CSequence *seq2, CSequence *seq3, CSequence *seq4, 
-		uint32_t &dist1, uint32_t &dist2, uint32_t &dist3, uint32_t &dist4);
 #ifdef DEVELOPER_MODE
 	double GetLCS(CSequence &seq1, CSequence &seq2);
 #endif

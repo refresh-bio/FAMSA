@@ -213,40 +213,6 @@ double CFAMSA::GetLCS(CSequence &seq1, CSequence &seq2)
 #endif
 
 // *******************************************************************
-// Compute LCS length for two sequences using bit-parallel algorithm based on Hyyro's code
-void CFAMSA::GetLCSBP(int thread_id, CSequence *seq0, CSequence *seq1, CSequence *seq2, CSequence *seq3, CSequence *seq4,
-	uint32_t &dist1, uint32_t &dist2, uint32_t &dist3, uint32_t &dist4)
-{
-	if(seq4 == nullptr)
-	{
-		if(seq1 != nullptr)
-			lcsbp_classic[thread_id].Calculate(seq0, seq1, dist1);
-		if(seq2 != nullptr)
-			lcsbp_classic[thread_id].Calculate(seq0, seq2, dist2);
-		if(seq3 != nullptr)
-			lcsbp_classic[thread_id].Calculate(seq0, seq3, dist3);
-		if(seq4 != nullptr)
-			lcsbp_classic[thread_id].Calculate(seq0, seq4, dist4);
-	}
-	else if (instruction_set < instruction_set_t::avx)				// In theory SSE2 will suffice, but the SSE2-compiled code is too slow
-	{
-		lcsbp_classic[thread_id].Calculate(seq0, seq1, dist1);
-		lcsbp_classic[thread_id].Calculate(seq0, seq2, dist2);
-		lcsbp_classic[thread_id].Calculate(seq0, seq3, dist3);
-		lcsbp_classic[thread_id].Calculate(seq0, seq4, dist4);
-	}
-	else if(instruction_set < instruction_set_t::avx2)
-	{
-		lcsbp_avx[thread_id].Calculate(seq0, seq1, seq2, dist1, dist2);
-		lcsbp_avx[thread_id].Calculate(seq0, seq3, seq4, dist3, dist4);
-	}
-	else
-	{
-		lcsbp_avx2[thread_id].Calculate(seq0, seq1, seq2, seq3, seq4, dist1, dist2, dist3, dist4);
-	}
-}
-
-// *******************************************************************
 // Compute Guide Tree
 bool CFAMSA::ComputeGuideTree()
 {

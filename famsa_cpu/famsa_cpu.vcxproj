@@ -156,6 +156,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\core\input_file.cpp" />
+    <ClCompile Include="..\core\lcsbp.cpp" />
     <ClCompile Include="..\core\lcsbp_avx2.cpp">
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
@@ -183,6 +184,7 @@
   <ItemGroup>
     <ClInclude Include="..\core\defs.h" />
     <ClInclude Include="..\core\input_file.h" />
+    <ClInclude Include="..\core\lcsbp.h" />
     <ClInclude Include="..\core\lcsbp_avx2.h" />
     <ClInclude Include="..\core\lcsbp_classic.h" />
     <ClInclude Include="..\core\lcsbp_avx.h" />
