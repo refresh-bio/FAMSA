@@ -38,7 +38,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="ReadMe.txt" />
     <Text Include="..\libs\license.txt">
       <Filter>libs</Filter>
     </Text>

@@ -4,8 +4,6 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
-Version: 1.2.2
-Date   : 2018-03-20
 */
 
 #ifndef _DEFS_H
@@ -14,8 +12,8 @@ Date   : 2018-03-20
 #include <cstdlib>
 #include <cstdint>
 
-#define FAMSA_VER		"1.2.2"
-#define FAMSA_DATE		"2018-03-20"
+#define FAMSA_VER		"1.2.4"
+#define FAMSA_DATE		"2018-07-16"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 // Uncomment for huge alignments (e.g., no of sequences > 10^6 and final alignemnt length > 10^5), when

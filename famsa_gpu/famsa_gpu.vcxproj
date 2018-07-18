@@ -151,7 +151,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="..\libs\license.txt" />
-    <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\core\input_file.cpp" />

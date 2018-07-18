@@ -4,8 +4,6 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
-
-Date   : 2018-03-20
 */
 
 #ifdef WIN32
