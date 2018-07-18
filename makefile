@@ -2,7 +2,9 @@ all: famsa famsa-gpu
 
 ## USER'S OPTIONS
 STATIC_LINK = false
-COMPILE_GPU = true
+NO_AVX = false
+NO_AVX2 = false
+NO_GPU = false
 
 ####################
 
@@ -15,7 +17,7 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
 	ASM_LIB = libamac64.a
 	ABI_FLAG =
-	COMPILE_GPU = false 	
+	NO_GPU = true 	
 endif
 
  
@@ -47,9 +49,6 @@ COMMON_OBJS := core/input_file.o \
 	core/output_file.o \
 	core/profile.o \
 	core/sequence.o \
-	core/lcsbp_classic.o \
-	core/lcsbp_avx.o \
-	core/lcsbp_avx2.o \
 	core/queues.o \
 	core/timer.o \
 	core/upgma.o \
@@ -62,23 +61,50 @@ COMMON_OBJS := core/input_file.o \
 core/lcsbp_classic.o : core/lcsbp_classic.cpp
 	$(CC) $(CFLAGS) -c core/lcsbp_classic.cpp -o $@
 
+ifeq ($(NO_AVX), true) 
+LCS_OBJS := core/lcsbp.o \
+	core/lcsbp_classic.o
+
+core/lcsbp.o : core/lcsbp.cpp
+	$(CC) $(CFLAGS) -DNO_AVX -c core/lcsbp.cpp -o $@
+
+else 
+ifeq ($(NO_AVX2), true)
+ 
+LCS_OBJS := core/lcsbp.o \
+	core/lcsbp_classic.o \
+	core/lcsbp_avx.o
+
+core/lcsbp.o : core/lcsbp.cpp
+	$(CC) $(CFLAGS) -DNO_AVX2 -c core/lcsbp.cpp -o $@
 core/lcsbp_avx.o : core/lcsbp_avx.cpp
 	$(CC) $(CFLAGS_AVX) -c core/lcsbp_avx.cpp -o $@
+else
+LCS_OBJS := core/lcsbp.o \
+	core/lcsbp_classic.o \
+	core/lcsbp_avx.o \
+	core/lcsbp_avx2.o
 
+core/lcsbp.o : core/lcsbp.cpp
+	$(CC) $(CFLAGS) -c core/lcsbp.cpp -o $@
+core/lcsbp_avx.o : core/lcsbp_avx.cpp
+	$(CC) $(CFLAGS_AVX) -c core/lcsbp_avx.cpp -o $@
 core/lcsbp_avx2.o : core/lcsbp_avx2.cpp
 	$(CC) $(CFLAGS_AVX2) -c core/lcsbp_avx2.cpp -o $@
+endif
+endif
 
 .cpp.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
 
-ifeq ($(COMPILE_GPU),true)
-famsa-gpu: famsa_gpu/famsa_gpu.o $(COMMON_OBJS) $(OPENCL_OBJS) 
-	$(CC) $(CLINK) -o $@ famsa_gpu/famsa_gpu.o $(COMMON_OBJS) $(OPENCL_OBJS) $(LIBS_LINUX_DIR)/${ASM_LIB} -lOpenCL
+ifeq ($(NO_GPU),false)
+famsa-gpu: famsa_gpu/famsa_gpu.o $(COMMON_OBJS) $(LCS_OBJS) $(OPENCL_OBJS) 
+	$(CC) $(CLINK) -o $@ famsa_gpu/famsa_gpu.o $(COMMON_OBJS) $(LCS_OBJS) $(OPENCL_OBJS) $(LIBS_LINUX_DIR)/${ASM_LIB} -lOpenCL
 endif
 
-famsa: famsa_cpu/famsa_cpu.o $(COMMON_OBJS)
-	$(CC) $(CLINK) -o $@ famsa_cpu/famsa_cpu.o $(COMMON_OBJS) $(LIBS_LINUX_DIR)/${ASM_LIB}
+famsa: famsa_cpu/famsa_cpu.o $(COMMON_OBJS) $(LCS_OBJS)
+	$(CC) $(CLINK) -o $@ famsa_cpu/famsa_cpu.o $(COMMON_OBJS) $(LCS_OBJS) $(LIBS_LINUX_DIR)/${ASM_LIB}
 
 clean:
 	-rm core/*.o
