@@ -15,7 +15,11 @@ The software can be also built from the sources distributed as:
 
 At the top of the makefile there are several switches controlling building process. These are:
 * STATIC_LINK - enable static linking (default: false); may be helpful when binary portability is desired,
-* COMPILE_GPU - build *famsa-gpu* binary (default: true); disable it when encounter OpenCL linking problems.
+* NO_AVX - prevent from using AVX and AVX2 extensions (default: false),
+* NO_AVX2 - prevent from using AVX2 extensions (default: false),
+* NO_GPU - prevent from building *famsa-gpu* binary (default: false); use it when OpenCL version is not needed.
+
+Note, that FAMSA by default takes advantage of AVX and AVX2 CPU extensions. Pre-built binary detetermines supported instructions at runtime, thus it is multiplatform. However, one may encounter a problem when building FAMSA version on a CPU without AVX and/or AVX2. For this purpose NO_AVX and NO_AVX2 switches are provided.
 
 ## Usage
 
