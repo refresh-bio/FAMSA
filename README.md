@@ -57,7 +57,10 @@ FAMSA has the ability to import/export alignment guide trees in Newick format. B
 ```
 (A:0.1,(B:0.2,C:0.3):0.4);
 ```
-Note, that when importing the tree, the branch lengths are not taken into account, though they have to be specified in a file for successful parsing. When exporting the tree, all the branches are assigned with length 1, thus only the structure of the tree can be restored (we plan to output real lengths in the future release).
+Note, that when importing the tree, the branch lengths are not taken into account, though they have to be specified in a file for successful parsing. When exporting the tree, all the branches are assigned with length 1, thus only the structure of the tree can be restored (we plan to output real lengths in the future release):
+```
+(A:1.0,(B:1.0,C:1.0):1.0);
+```
 
 
 ## Citing
