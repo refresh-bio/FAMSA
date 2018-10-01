@@ -45,10 +45,20 @@ Options:
 * `-v` - verbose mode, show timing information (default: disabled)
 * `-gt <sl, upgma, chained>` - choice of guide tree method: single linkage, UPGMA, chained (default: sl)
 * `-gt_import <file_name>` - import guide tree in Newick format
+* `-gt_export <file_name>` - export guide tree to Newick format
 
 When running *famsa-gpu* executable, two additional parameters must be specified:
 * `-gpu_p <value>` - gpu platform id
 * `-gpu_d <value>` - gpu device id
+
+### Guide tree import and export
+
+FAMSA has the ability to import/export alignment guide trees in Newick format. Below one can find example guide tree file for sequences A, B, and C:
+```
+(A:0.1,(B:0.2,C:0.3):0.4);
+```
+Note, that when importing the tree, the branch lengths are not taken into account, though they have to be specified in a file for successful parsing. When exporting the tree, all the branches are assigned with length 1, thus only the structure of the tree can be restored (we plan to output real lengths in the future release).
+
 
 ## Citing
 [Deorowicz, S., Debudaj-Grabysz, A., Gudyś, A. (2016) FAMSA: Fast and accurate multiple sequence alignment of huge protein families. 
