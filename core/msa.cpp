@@ -228,7 +228,7 @@ bool CFAMSA::ComputeGuideTree()
 		gt_stats.push_back(make_pair(1, 0));
 	}
 
-	// Construct guide tree using UPGMA algorithm
+	// Construct guide tree using selected algorithm
 	if (params.guide_tree == GT_method::single_linkage)
 		SingleLinkage();
 	else if (params.guide_tree == GT_method::UPGMA)
@@ -240,6 +240,11 @@ bool CFAMSA::ComputeGuideTree()
 	else if (params.guide_tree == GT_method::imported)
 		if (!ImportGuideTreeFromNewick())			// file can be unexisting, so need to terminate the code here
 			return false;
+
+	// store guide tree in Newick format
+	if (params.guide_tree_out_file.length() > 0) {
+		ExportGuideTreeToNewick();
+	}
 
 	// Convert sequences into gapped sequences
 	gapped_sequences.reserve(sequences.size());
@@ -549,7 +554,7 @@ bool CFAMSA::ImportGuideTreeFromNewick()
 {
 	// Load newick description
 	ifstream newickFile;
-	newickFile.open(params.guide_treee_file_name);
+	newickFile.open(params.guide_tree_in_file);
 	if (!newickFile.good()) {
 		return false;
 	}
@@ -562,10 +567,33 @@ bool CFAMSA::ImportGuideTreeFromNewick()
 	description.erase(newend, description.end());
 
 	// Load guide tree
-	parseNewickTree(sequences, description, guide_tree, params.verbose_mode);
+	NewickTree nw(params.verbose_mode);
+	nw.parse(sequences, description, guide_tree);
 
 	return true;
 }
+
+bool CFAMSA::ExportGuideTreeToNewick()
+{
+	// store guide tree
+	string description;
+	NewickTree nw(params.verbose_mode);
+	nw.store(sequences, guide_tree, description);
+
+	// Open file
+	ofstream newickFile;
+	newickFile.open(params.guide_tree_out_file);
+	if (!newickFile.good()) {
+		return false;
+	}
+
+	newickFile << description;
+
+	return true;
+}
+
+
+
 
 // *******************************************************************
 void CFAMSA::RefineRandom(CProfile* profile_to_refine, vector<size_t> &dest_prof_id)
@@ -921,7 +949,7 @@ bool CFAMSA::ComputeMSA()
 			break;
 		case GT_method::imported:
 			cerr << "imported\n";
-			cerr << "  guide tree file: " << params.guide_treee_file_name << "\n";
+			cerr << "  guide tree file: " << params.guide_tree_in_file << "\n";
 			break;
 		case GT_method::single_linkage:
 			cerr << "single linkage\n";

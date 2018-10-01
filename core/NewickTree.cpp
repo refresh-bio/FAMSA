@@ -8,6 +8,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 #include <stdexcept>
 #include <algorithm>
+#include <ostream>
+#include <sstream>
 #include <string.h>
 
 #include <boost/spirit/home/classic.hpp>
@@ -22,11 +24,10 @@ using namespace quickprobs;
 
 
 
-void parseNewickTree(
+void NewickTree::parse(
 	const std::vector<CSequence>& sequences,
 	const std::string& description,
-	std::vector<pair<int, int>>& guideTree,
-	bool verbose)
+	std::vector<pair<int, int>>& guideTree)
 {
 	if (description.length() == 0) {
 		throw std::runtime_error("Error while parsing Newick tree: empty description.");
@@ -66,3 +67,36 @@ void parseNewickTree(
 	}
 }
 
+void NewickTree::store(
+	const std::vector<CSequence>& sequences,
+	const std::vector<pair<int, int>>& guideTree,
+	std::string& description) {
+
+	ostringstream oss;
+	oss << "(";
+	storeBranch(sequences, guideTree, guideTree.back().first, oss);
+	oss << ",";
+	storeBranch(sequences, guideTree, guideTree.back().second, oss);
+	oss << ");";
+	description = std::move(oss.str());
+}
+
+std::ostream& NewickTree::storeBranch(const std::vector<CSequence>& sequences, const std::vector<pair<int, int>>& guideTree, int index, std::ostream& oss) {
+
+	if (index < sequences.size()) {
+
+		if (sequences[index].id[0] == '>') {
+			oss << sequences[index].id.substr(1) << ":1.0";
+		}
+		else {
+			oss << sequences[index].id << ":1.0";
+		}
+	}
+	else {
+		oss << "(";
+		storeBranch(sequences, guideTree, guideTree[index].first, oss) << ",";
+		storeBranch(sequences, guideTree, guideTree[index].second, oss) << "):1.0";
+	}
+	
+	return oss;
+}

@@ -10,13 +10,31 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #define _NEWICK_TREE_H
 #include <string>
 #include <vector>
+#include <ostream>
 
 class CSequence;
 
-void parseNewickTree(
-	const std::vector<CSequence>& sequences, 
-	const std::string& description,
-	std::vector<std::pair<int,int>>& guideTree,
-	bool verbose);
+class NewickTree {
+
+protected:
+	bool verbose;
+
+public:
+	NewickTree(bool verbose) : verbose(verbose) {}
+
+	void parse(
+		const std::vector<CSequence>& sequences,
+		const std::string& description,
+		std::vector<std::pair<int, int>>& guideTree);
+
+	void store(
+		const std::vector<CSequence>& sequences,
+		const std::vector<std::pair<int, int>>& guideTree,
+		std::string& description);
+
+private:
+	std::ostream&  storeBranch(const std::vector<CSequence>& sequences, const std::vector<std::pair<int, int>>& guideTree, int index, std::ostream& oss);
+};
+
 
 #endif

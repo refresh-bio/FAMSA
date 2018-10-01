@@ -82,6 +82,7 @@ protected:
 	void GuideTreeChained();
 #endif
 	bool ImportGuideTreeFromNewick();
+	bool ExportGuideTreeToNewick();
 
 #ifdef DEVELOPER_MODE
 	bool LoadRefSequences();

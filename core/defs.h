@@ -12,8 +12,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <cstdlib>
 #include <cstdint>
 
-#define FAMSA_VER		"1.2.4"
-#define FAMSA_DATE		"2018-07-16"
+#define FAMSA_VER		"1.2.5"
+#define FAMSA_DATE		"2018-10-01"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 // Uncomment for huge alignments (e.g., no of sequences > 10^6 and final alignemnt length > 10^5), when

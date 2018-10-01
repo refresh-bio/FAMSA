@@ -38,7 +38,8 @@ typedef struct {
 
 	GT_method guide_tree;
 	int guide_tree_seed;
-	string guide_treee_file_name;
+	string guide_tree_in_file;
+	string guide_tree_out_file;
 	double indel_exp;
 
 	bool test_ref_sequenes;
@@ -97,17 +98,17 @@ void show_usage()
 #endif
 
 #ifdef DEVELOPER_MODE
-	cout << "  -gt <sl, upgma, chained> - guide tree method (single linkage, UPGMA, chained)\n";
+	cout << "  -gt <sl, upgma, chained> - guide tree method (single linkage, UPGMA, chained)\n"
+		<< "       (default: sl)\n";
+	cout << "  -gt_chained <value> - seed for random number generator in chained method\n"
+		 << "      (defualt: " << execution_params.guide_tree_seed << ")\n";
 #else
-	cout << "  -gt <sl, upgma> - guide tree method (single linkage, UPGMA, chained)\n";
+	cout << "  -gt <sl, upgma> - guide tree method (single linkage, UPGMA)\n"
+		<< "       (default: sl)\n";
 #endif
-	cout << "  -gt <sl, upgma, chained> - choice of guide tree method (single linkage, UPGMA, chained)\n";
-	cout << "      (default: sl)\n";
-#ifdef DEVELOPER_MODE
-	cout << "  -gt_chained <value> - seed for random number generator in chained method\n";
-	cout << "      (defualt: " << execution_params.guide_tree_seed << ")\n";
-#endif
+
 	cout << "  -gt_import <file_name> - import guide tree in Newick format\n";
+	cout << "  -gt_export <file_name> - export guide tree to Newick format\n";
 
 #ifdef DEVELOPER_MODE
 	cout << "  -ref <file_name> - load referential sequences (for benchmarks) and calculate the minimal subtree size containing them\n";
@@ -141,7 +142,8 @@ void init_params()
 
 	execution_params.guide_tree						= GT_method::single_linkage;
 	execution_params.guide_tree_seed				= 0;
-	execution_params.guide_treee_file_name			= "guide_tree.txt";
+	execution_params.guide_tree_in_file				= "guide_tree.txt";
+	execution_params.guide_tree_out_file			= "";
 
 	execution_params.test_ref_sequenes				= false;
 	execution_params.ref_file_name					= "";
@@ -210,7 +212,10 @@ bool parse_params(int argc, char **argv)
 		}
 		else if (cur_par == "-gt_import") {
 			execution_params.guide_tree = GT_method::imported;
-			execution_params.guide_treee_file_name = argv[argno++];
+			execution_params.guide_tree_in_file = argv[argno++];
+		}
+		else if (cur_par == "-gt_export") {
+			execution_params.guide_tree_out_file = argv[argno++];
 		}
 #ifdef DEVELOPER_MODE
 		else if (cur_par == "-gt_chained")
@@ -276,7 +281,8 @@ void set_famsa_params(CParams &famsa_params)
 	famsa_params.indel_exp						= execution_params.indel_exp;
 
 	famsa_params.guide_tree						= execution_params.guide_tree;
-	famsa_params.guide_treee_file_name			= execution_params.guide_treee_file_name;
+	famsa_params.guide_tree_in_file				= execution_params.guide_tree_in_file;
+	famsa_params.guide_tree_out_file			= execution_params.guide_tree_out_file;
 	famsa_params.guide_tree_seed				= execution_params.guide_tree_seed;
 
 	famsa_params.test_ref_sequences				= execution_params.test_ref_sequenes;

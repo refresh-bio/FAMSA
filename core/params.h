@@ -39,7 +39,8 @@ struct CParams
 
 	GT_method guide_tree;
 	int guide_tree_seed;
-	string guide_treee_file_name;
+	string guide_tree_in_file;
+	string guide_tree_out_file;
 
 	bool test_ref_sequences;
 	string ref_file_name;
@@ -82,6 +83,7 @@ struct CParams
 		very_verbose_mode			   = _very_verbose_mode;
 
 		guide_tree = GT_method::single_linkage;
+		guide_tree_out_file = "";
 
 		sackin_index = 0;
 		ref_seq_subtree_size = 0;
