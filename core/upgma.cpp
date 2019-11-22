@@ -178,6 +178,10 @@ void CFAMSA::UPGMA()
 
 	// Calculate complete (triangular) matrix of distances for UPGMA algorithm
 	UPGMA_CalculateDistances(g_Dist);
+
+	if (params.distance_matrix_out_file.length() > 0) {
+		ExportDistanceMatrix(g_Dist, sequences.size(), params.distance_matrix_out_file);
+	}
 		
 	// Compute initial NxN triangular distance matrix.
 	// Store minimum distance for each full (not triangular) row.

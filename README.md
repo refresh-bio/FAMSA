@@ -40,12 +40,13 @@ Options:
 * `-dgo` - disable gap optimization (default: enabled)
 * `-dsp` - disable sum of pairs optimization during refinement (default: enabled)
 * `-r <value>` - no. of refinement iterations (default: 100)
-* `-fr` - disable auto refinement turning off (for sets larger than 1000 seq.)
+* `-fr` - force refinement (by default the refinement is disabled for sets larger than 1000 seq.)
 * `-t <value>` - no. of threads, 0 means all available (default: 0)
 * `-v` - verbose mode, show timing information (default: disabled)
 * `-gt <sl, upgma, chained>` - choice of guide tree method: single linkage, UPGMA, chained (default: sl)
 * `-gt_import <file_name>` - import guide tree in Newick format
 * `-gt_export <file_name>` - export guide tree to Newick format
+* `-dist_export <file_name>` - export distance matrix to CSV file; works only in UPGMA mode (`-gt upgma`)
 
 When running *famsa-gpu* executable, two additional parameters must be specified:
 * `-gpu_p <value>` - gpu platform id

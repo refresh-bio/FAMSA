@@ -40,6 +40,7 @@ typedef struct {
 	int guide_tree_seed;
 	string guide_tree_in_file;
 	string guide_tree_out_file;
+	string distance_matrix_out_file;
 	double indel_exp;
 
 	bool test_ref_sequenes;
@@ -217,6 +218,9 @@ bool parse_params(int argc, char **argv)
 		else if (cur_par == "-gt_export") {
 			execution_params.guide_tree_out_file = argv[argno++];
 		}
+		else if (cur_par == "-dist_export") {
+			execution_params.distance_matrix_out_file = argv[argno++];
+		}
 #ifdef DEVELOPER_MODE
 		else if (cur_par == "-gt_chained")
 			execution_params.guide_tree_seed = atoi(argv[argno++]);
@@ -284,6 +288,7 @@ void set_famsa_params(CParams &famsa_params)
 	famsa_params.guide_tree_in_file				= execution_params.guide_tree_in_file;
 	famsa_params.guide_tree_out_file			= execution_params.guide_tree_out_file;
 	famsa_params.guide_tree_seed				= execution_params.guide_tree_seed;
+	famsa_params.distance_matrix_out_file		= execution_params.distance_matrix_out_file;
 
 	famsa_params.test_ref_sequences				= execution_params.test_ref_sequenes;
 	famsa_params.ref_file_name					= execution_params.ref_file_name;

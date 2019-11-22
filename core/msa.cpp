@@ -592,7 +592,22 @@ bool CFAMSA::ExportGuideTreeToNewick()
 	return true;
 }
 
+// *******************************************************************
+bool CFAMSA::ExportDistanceMatrix(float*matrix, size_t size, const std::string& fname) {
+	ofstream file(fname);
+	if (!file) {
+		return false;
+	}
 
+	for (size_t i = 0; i < size; ++i) {
+		for (size_t j = 0; j < i; ++j) {
+			const size_t id = UPGMA_TriangleSubscript(i, j);
+			float d = matrix[id];
+			file << d << ", ";
+		}
+		file << std::endl;
+	}
+}
 
 
 // *******************************************************************

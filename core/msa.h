@@ -83,6 +83,7 @@ protected:
 #endif
 	bool ImportGuideTreeFromNewick();
 	bool ExportGuideTreeToNewick();
+	bool ExportDistanceMatrix(float*matrix, size_t size, const std::string& fname);
 
 #ifdef DEVELOPER_MODE
 	bool LoadRefSequences();
