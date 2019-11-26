@@ -19,14 +19,6 @@ using namespace std;
 
 #define	AVG(x, y)	(((x) + (y))/2)
 
-// *******************************************************************
-inline uint64_t CFAMSA::UPGMA_TriangleSubscript(uint64_t uIndex1, uint64_t uIndex2)
-{
-	if (uIndex1 >= uIndex2)
-		return uIndex2 + (uIndex1 * (uIndex1 - 1)) / 2;
-	else
-		return uIndex1 + (uIndex2 * (uIndex2 - 1)) / 2;
-}
 
 // *******************************************************************
 void CFAMSA::UPGMA_CalculateDistances(UPGMA_dist_t *dist_matrix)

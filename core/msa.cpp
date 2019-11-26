@@ -607,6 +607,8 @@ bool CFAMSA::ExportDistanceMatrix(float*matrix, size_t size, const std::string& 
 		}
 		file << std::endl;
 	}
+
+	return true;
 }
 
 
