@@ -22,7 +22,7 @@ CInputFile::~CInputFile()
 }
 
 // *******************************************************************
-int CInputFile::ReadFile(string file_name)
+size_t CInputFile::ReadFile(string file_name)
 {
 	istream* in;
 

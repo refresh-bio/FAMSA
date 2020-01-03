@@ -25,7 +25,7 @@ public:
 	CInputFile();
 	~CInputFile();
 
-	int ReadFile(string file_name);
+	size_t ReadFile(string file_name);
 
 	void GetSequences(vector<CSequence> &_sequences) const;
 	void StealSequences(vector<CSequence> &_sequences);
