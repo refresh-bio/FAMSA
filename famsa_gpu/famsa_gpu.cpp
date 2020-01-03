@@ -339,14 +339,23 @@ int main(int argc, char *argv[])
 
 	if (execution_params.verbose_mode)
 		cerr << "Processing: " << execution_params.input_file_name << "\n";
+	
+	vector<CGappedSequence*> result;
+	vector<CSequence> sequences;
 
-	if(!in_file.ReadFile(execution_params.input_file_name))
-	{
-		cout << "Error: no (or incorrect) input file\n";
+	size_t input_seq_cnt = in_file.ReadFile(execution_params.input_file_name);
+    if(input_seq_cnt == 0){			
+    	cout << "Error: no (or incorrect) input file\n";
 		return 0;
+	} else if (input_seq_cnt == 1){
+		in_file.StealSequences(sequences);
+        CGappedSequence resultSeq(sequences[0]);
+		result.push_back(&resultSeq);
+		out_file.PutSequences(std::move(result));
+	    out_file.SaveFile(execution_params.output_file_name);
+        return 0;
 	}
 
-	vector<CSequence> sequences;
 
 	in_file.StealSequences(sequences);
 
@@ -366,7 +375,6 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	vector<CGappedSequence*> result;
 	famsa.GetAlignment(result);
 
 	out_file.PutSequences(std::move(result));
