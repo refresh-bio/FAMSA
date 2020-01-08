@@ -66,7 +66,7 @@ const symbol_t GAP_OPEN       = 25;
 const symbol_t GAP_EXT        = 26;
 const symbol_t GAP_TERM_EXT   = 27;
 const symbol_t GAP_TERM_OPEN  = 28;
-const symbol_t UNKNOWN_SYMBOL = 23;
+const symbol_t UNKNOWN_SYMBOL = 22;
 
 const size_t   NO_SYMBOLS				= 32;			// alphabet of protein sequences (including gaps and special symbols)
 const symbol_t GUARD					= (symbol_t) (NO_SYMBOLS) - 1;
