@@ -12,9 +12,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <cstdlib>
 #include <cstdint>
 
-#define FAMSA_VER		"1.3.1"
-#define FAMSA_DATE		"2019-11-26"
-#define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
+#include "version.h"
 
 // Uncomment for huge alignments (e.g., no of sequences > 10^6 and final alignemnt length > 10^5), when
 // the default int64_t type for storing alignment scores could be too small

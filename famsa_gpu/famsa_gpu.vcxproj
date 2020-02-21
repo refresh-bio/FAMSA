@@ -203,6 +203,7 @@
     <ClInclude Include="..\core\sequence.h" />
     <ClInclude Include="..\core\timer.h" />
     <ClInclude Include="..\core\TreeGrammar.h" />
+    <ClInclude Include="..\core\version.h" />
     <ClInclude Include="..\core_gpu\gpumsa.h" />
     <ClInclude Include="..\libs-linux\CL\cl.h" />
     <ClInclude Include="..\libs-linux\CL\cl.hpp" />

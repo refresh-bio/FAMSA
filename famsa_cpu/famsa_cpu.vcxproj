@@ -198,6 +198,7 @@
     <ClInclude Include="..\core\sequence.h" />
     <ClInclude Include="..\core\timer.h" />
     <ClInclude Include="..\core\TreeGrammar.h" />
+    <ClInclude Include="..\core\version.h" />
     <ClInclude Include="..\libs-linux\CL\cl.h" />
     <ClInclude Include="..\libs-linux\CL\cl.hpp" />
     <ClInclude Include="..\libs-linux\CL\cl_d3d10.h" />

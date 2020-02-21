@@ -235,6 +235,9 @@
     <ClInclude Include="..\core\lcsbp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\core\version.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\libs\asmlib-instructions.pdf">
