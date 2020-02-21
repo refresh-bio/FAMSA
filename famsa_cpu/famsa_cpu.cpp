@@ -110,6 +110,7 @@ void show_usage()
 
 	cout << "  -gt_import <file_name> - import guide tree in Newick format\n";
 	cout << "  -gt_export <file_name> - export guide tree to Newick format\n";
+	cout << "  -dist_export <file_name> -export distance matrix to CSV file; works only in UPGMA mode(-gt upgma)\n";
 
 #ifdef DEVELOPER_MODE
 	cout << "  -ref <file_name> - load referential sequences (for benchmarks) and calculate the minimal subtree size containing them\n";
