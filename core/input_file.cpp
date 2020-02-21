@@ -22,7 +22,7 @@ CInputFile::~CInputFile()
 }
 
 // *******************************************************************
-bool CInputFile::ReadFile(string file_name)
+size_t CInputFile::ReadFile(string file_name)
 {
 	istream* in;
 
@@ -66,7 +66,7 @@ bool CInputFile::ReadFile(string file_name)
 	if(!id.empty() && !seq.empty())
 		sequences.push_back(CSequence(id, seq));
 
-	return sequences.size() > 1;
+	return sequences.size();
 }
 
 // *******************************************************************

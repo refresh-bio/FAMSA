@@ -847,7 +847,7 @@ bool CFAMSA::LoadRefSequences()
 	if (params.verbose_mode)
 		cerr << "Processing reference sequence set: " << params.ref_file_name << "\n";
 
-	if (!ref_file.ReadFile(params.ref_file_name))
+	if (ref_file.ReadFile(params.ref_file_name) < 2)
 	{
 		cout << "Error: no (or incorrect) input file\n";
 		return false;
