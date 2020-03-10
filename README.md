@@ -1,5 +1,10 @@
 # FAMSA
-Algorithm for large-scale multiple sequence alignments (400k proteins in 2 hours and 8BG of RAM)
+Algorithm for large-scale multiple sequence alignments (400k proteins in 2 hours and 8BG of RAM).
+
+NOTE: In `experimental` branch one can find the latest FAMSA version with multiple changes:
+- PartTree algorithm for fast tree generation added,
+- improved interface for tree import/export (e.g., possibility to export a tree without doing an alignment),
+- GPU mode no longer supported.
 
 ## Installation and configuration
 
