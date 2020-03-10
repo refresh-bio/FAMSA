@@ -75,3 +75,32 @@ void CLCSBP::GetLCSBP(CSequence *seq0, CSequence *seq1, CSequence *seq2, CSequen
 	}
 
 }
+
+
+
+#ifdef DEVELOPER_MODE
+// *******************************************************************
+// Compute LCS length for two sequences in the classical way - just for development
+double CLCSBP::GetLCS(CSequence &seq1, CSequence &seq2)
+{
+	int **dp_row = new int*[2];
+
+	for (int i = 0; i < 2; ++i)
+		dp_row[i] = new int[seq2.length + 1];
+
+	fill(dp_row[0], dp_row[0] + seq2.length + 1, 0);
+
+	for (int i = 1; i <= (int)seq1.length; ++i)
+	{
+		int ii = i % 2;
+		dp_row[ii][0] = 0;
+		for (int j = 1; j <= (int)seq2.length; ++j)
+			if (seq1.data[i - 1] == seq2.data[j - 1])
+				dp_row[ii][j] = dp_row[!ii][j - 1] + 1;
+			else
+				dp_row[ii][j] = max(dp_row[ii][j - 1], dp_row[!ii][j]);
+	}
+
+	return dp_row[seq1.length % 2][seq2.length];
+}
+#endif

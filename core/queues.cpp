@@ -254,18 +254,6 @@ CUPGMAQueue::~CUPGMAQueue()
 {
 }
 
-inline long long CUPGMAQueue::TriangleSubscript(long long uIndex1, long long uIndex2)
-{
-	long long v;
-
-	if (uIndex1 >= uIndex2)
-		v = uIndex2 + (uIndex1*(uIndex1 - 1)) / 2;
-	else
-		v = uIndex1 + (uIndex2*(uIndex2 - 1)) / 2;
-
-	return v;
-}
-
 bool CUPGMAQueue::GetTask(int &row_id, vector<CSequence> *&_sequences, UPGMA_dist_t *&dist_row)
 {
 	unique_lock<mutex> lck(mtx);
@@ -280,7 +268,7 @@ bool CUPGMAQueue::GetTask(int &row_id, vector<CSequence> *&_sequences, UPGMA_dis
 
 	_sequences = sequences;
 
-	dist_row = dist_matrix + TriangleSubscript(row_id, 0);
+	dist_row = dist_matrix + TriangleMatrix::access(row_id, 0);
 
 	return true;
 }

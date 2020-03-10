@@ -13,6 +13,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <math.h>
 #include <string>
 #include "../core/defs.h"
+#include "../core/guide_tree_defs.h"
 
 using namespace std;
 
@@ -37,17 +38,21 @@ struct CParams
 	uint64_t ref_seq_subtree_size;
 	double indel_exp;
 
-	GT_method guide_tree;
+	GT_method::Value guide_tree;
 	int guide_tree_seed;
+	int parttree_size;
 	string guide_tree_in_file;
-	string guide_tree_out_file;
-	string distance_matrix_out_file;
-
+	bool export_distances;
+	bool export_tree;
+	
 	bool test_ref_sequences;
 	string ref_file_name;
+	string output_file_name;
 
 	int guided_alignment_radius;
 	uint32_t n_threads;
+
+	int64_t shuffle;
 
 	vector<vector<score_t>> score_matrix;
 	vector<score_t> score_vector;
@@ -83,15 +88,17 @@ struct CParams
 		verbose_mode				   = _verbose_mode;
 		very_verbose_mode			   = _very_verbose_mode;
 
-		guide_tree = GT_method::single_linkage;
-		guide_tree_out_file = "";
-		distance_matrix_out_file = "";
+		guide_tree = GT_method::SLINK;
+		export_tree = false;
+		export_distances = false;
+		parttree_size = 50;
 
 		sackin_index = 0;
 		ref_seq_subtree_size = 0;
 		test_ref_sequences = false;
 
 		indel_exp = 1.0;
+		shuffle = -1;
 	};
 };
 

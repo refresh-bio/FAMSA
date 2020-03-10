@@ -28,11 +28,13 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 class CFAMSA 
 {
-#ifdef DEVELOPER_MODE
-	const int monte_carlo_trials = 1000;
-#endif
-
 protected:
+	static const int TIMER_SORTING = 0;
+	static const int TIMER_TREE_BUILD = 1;
+	static const int TIMER_ALIGNMENT = 2;
+	static const int TIMER_REFINMENT = 3;
+	static const int TIMER_TREE_STORE = 4;
+
 	CParams params;
 	static double SM_MIQS[24][24];
 	vector<vector<score_t>> score_matrix;
@@ -40,12 +42,8 @@ protected:
 
 	instruction_set_t instruction_set;
 	vector<CSequence> sequences;
-
 	vector<CGappedSequence> gapped_sequences;
 
-	vector<pair<int, int>> guide_tree;
-	vector<pair<int, score_t>> gt_stats;
-	vector<size_t> prof_cardinalities;
 	score_t avg_sim;
 
 	map<size_t, CProfile*> profiles;
@@ -53,8 +51,6 @@ protected:
 
 	mt19937 rnd_rfn;
 	uint32_t n_threads;
-
-	CLCSBP_Classic lcsbp_classic0;
 
 	set<int> already_refined;
 
@@ -70,25 +66,7 @@ protected:
 	void init_sm();
 
 #ifdef DEVELOPER_MODE
-	double GetLCS(CSequence &seq1, CSequence &seq2);
-#endif
-
-	// Guide tree construction method
-	virtual void UPGMA();
-	inline uint64_t UPGMA_TriangleSubscript(uint64_t uIndex1, uint64_t uIndex2);
-	virtual void UPGMA_CalculateDistances(UPGMA_dist_t *dist_matrix);
-	virtual void SingleLinkage();
-#ifdef DEVELOPER_MODE
-	void GuideTreeChained();
-#endif
-	bool ImportGuideTreeFromNewick();
-	bool ExportGuideTreeToNewick();
-	bool ExportDistanceMatrix(float*matrix, size_t size, const std::string& fname);
-
-#ifdef DEVELOPER_MODE
 	bool LoadRefSequences();
-	uint64_t CalculateRefSequencesSubTreeSize(double *monte_carlo_subtree_size);
-	int SubTreeSize(set<int> &seq_ids);
 #endif
 
 	void RefineRandom(CProfile* profile_to_refine, vector<size_t> &dest_prof_id);
@@ -102,8 +80,7 @@ public:
 	bool SetSequences(vector<CSequence> &&_sequences);
 	bool SetParams(CParams &_params);
 
-	bool ComputeGuideTree();
-	bool ComputeAlignment();
+	bool ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree);
 #ifdef DEBUG_MODE
 	bool RefineAlignment(string output_file_name = "");
 #else
@@ -129,15 +106,6 @@ public:
 
 	bool ComputeMSA();
 };
-
-// *******************************************************************
-inline uint64_t CFAMSA::UPGMA_TriangleSubscript(uint64_t uIndex1, uint64_t uIndex2)
-{
-	if (uIndex1 >= uIndex2)
-		return uIndex2 + (uIndex1 * (uIndex1 - 1)) / 2;
-	else
-		return uIndex1 + (uIndex2 * (uIndex2 - 1)) / 2;
-}
 
 
 #endif

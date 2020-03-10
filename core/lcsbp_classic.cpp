@@ -31,8 +31,10 @@ void CLCSBP_Classic::prefetch_bitmasks(CSequence *seq0)
 
 	pf_seq0 = seq0;
 
-	for (int i = 0; i < NO_SYMBOLS; ++i)
-		s0bm[i] = seq0->bit_masks[i].begin();
+	for (int i = 0; i < NO_SYMBOLS; ++i) {
+		//s0bm[i] = seq0->bit_masks[i].begin();
+		s0bm[i] = seq0->bit_masks[i];
+	}
 }
 
 // *******************************************************************

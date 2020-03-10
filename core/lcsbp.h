@@ -25,6 +25,10 @@ public:
 	
 	void GetLCSBP(CSequence *seq0, CSequence *seq1, CSequence *seq2, CSequence *seq3, CSequence *seq4,
 		uint32_t &dist1, uint32_t &dist2, uint32_t &dist3, uint32_t &dist4);
+
+#ifdef DEVELOPER_MODE
+	double GetLCS(CSequence &seq1, CSequence &seq2);
+#endif
 };
 
 

@@ -49,6 +49,7 @@ CSequence::CSequence(const string& _id, const string& seq)
 #endif
 }
 
+/*
 // *******************************************************************
 CSequence::CSequence(string _id, vector<symbol_t> &symbol_seq)
 {
@@ -60,6 +61,7 @@ CSequence::CSequence(string _id, vector<symbol_t> &symbol_seq)
 	ComputeBitMasks();
 #endif
 }
+
 
 // *******************************************************************
 CSequence::CSequence(const CSequence &_sequence)
@@ -75,6 +77,7 @@ CSequence::CSequence(const CSequence &_sequence)
 #endif
 }
 
+
 // *******************************************************************
 CSequence::CSequence(CSequence&& rhs) 
 {
@@ -84,9 +87,10 @@ CSequence::CSequence(CSequence&& rhs)
 	this->length = rhs.length;
 	
 	this->bit_masks.resize(rhs.bit_masks.size()); 
-	for (int i = 0; i < bit_masks.size(); ++i) {
+	for (size_t i = 0; i < bit_masks.size(); ++i) {
 		this->bit_masks[i] = std::move(rhs.bit_masks[i]);
 	}
+
 }
 
 // *******************************************************************
@@ -98,7 +102,7 @@ CSequence& CSequence::operator=(CSequence&& rhs)
 	this->length = rhs.length;
 	
 	this->bit_masks.resize(rhs.bit_masks.size());
-	for (int i = 0; i < bit_masks.size(); ++i) {
+	for (size_t i = 0; i < bit_masks.size(); ++i) {
 		this->bit_masks[i] = std::move(rhs.bit_masks[i]);
 	}
 
@@ -114,7 +118,7 @@ CSequence& CSequence::operator=(const CSequence& rhs)
 	this->length = rhs.length;
 
 	this->bit_masks.resize(rhs.bit_masks.size());
-	for (int i = 0; i < bit_masks.size(); ++i) {
+	for (size_t i = 0; i < bit_masks.size(); ++i) {
 		this->bit_masks[i] = rhs.bit_masks[i];
 	}
 
@@ -125,6 +129,7 @@ CSequence& CSequence::operator=(const CSequence& rhs)
 CSequence::~CSequence()
 {
 }
+*/
 
 // *******************************************************************
 string CSequence::DecodeSequence()
@@ -140,7 +145,7 @@ string CSequence::DecodeSequence()
 		else
 			s += mapping_table[p];
 
-	return std::move(s);
+	return s;
 }
 
 // *******************************************************************
@@ -153,13 +158,17 @@ void CSequence::ComputeBitMasks()
 // Compute Bit-mask Vectors for bit-parallel computation of LCS for the sequences
 void CSequence::ComputeBitMasks64()
 {
+	size_t bv_len = (data.size() + bv_size - 1) / bv_size;
+	
+	/*
 	bit_masks.clear();
 	bit_masks.resize(NO_SYMBOLS);
 
-	size_t bv_len = (data.size() + bv_size - 1) / bv_size;
-
 	for (size_t i = 0; i < NO_SYMBOLS; ++i)
 		bit_masks[i].resize(bv_len, (bit_vec_t) 0);
+	*/
+
+	bit_masks.resize(bv_len, NO_SYMBOLS, (bit_vec_t)0);
 
 	for(size_t i = 0; i < data.size(); ++i)
 		if(data[i] >= 0 && data[i] < NO_VALID_AMINOACIDS)
@@ -398,7 +407,6 @@ symbol_t CGappedSequence::GetSymbol(size_t pos)
 {
  	// Look for the place to remove the gap
 	size_t x = 1;
-	size_t orig_pos = pos;
 
 	while(x < dps_size)
 	{

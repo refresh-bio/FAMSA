@@ -103,8 +103,6 @@ class CUPGMAQueue
 	mutex mtx;
 	condition_variable cv_tasks, cv_rows;
 
-	inline long long TriangleSubscript(long long uIndex1, long long uIndex2);
-
 public:
 	CUPGMAQueue(vector<CSequence> *_sequences, uint32_t _n_rows, UPGMA_dist_t *_dist_matrix);
 	~CUPGMAQueue();

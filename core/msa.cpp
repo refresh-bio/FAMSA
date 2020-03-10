@@ -7,7 +7,9 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 */
 
 #include "../core/msa.h"
-#include "../core/input_file.h"
+#include "../core/guide_tree.h"
+#include "../core/io_service.h"
+#include "../core/log.h"
 
 #include <algorithm>
 #include <set>
@@ -22,9 +24,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <numeric>
 #include <fstream>
 #include <sstream>
-
-#include "../core/output_file.h"
-#include "../core/NewickTree.h"
 
 #include "../libs/vectorclass.h"
 
@@ -103,36 +102,16 @@ void CFAMSA::init_sm()
 // *******************************************************************
 bool CFAMSA::SetSequences(vector<CSequence> &_sequences)
 {
-	timers[3].StartTimer();
-
 	sequences = _sequences;
-
-	std::stable_sort(sequences.begin(), sequences.end(), [](const CSequence& a, const CSequence& b)->bool {
-		return a.length > b.length || (a.length == b.length && a.data < b.data);
-	});
-	
-	timers[3].StopTimer();
-
 	return true;
 }
-
 
 // *******************************************************************
 bool CFAMSA::SetSequences(vector<CSequence> &&_sequences)
 {
-	timers[3].StartTimer();
-
 	sequences = std::move(_sequences);
-
-	std::stable_sort(sequences.begin(), sequences.end(), [](const CSequence& a, const CSequence& b)->bool {
-				return a.length > b.length || (a.length == b.length && a.data < b.data);
-	});
-
-	timers[3].StopTimer();
-
 	return true;
 }
-
 
 // *******************************************************************
 bool CFAMSA::SetParams(CParams &_params)
@@ -185,79 +164,9 @@ void CFAMSA::DetermineInstructionSet()
 		instruction_set = instruction_set_t::avx2;
 }
 
-#ifdef DEVELOPER_MODE
-// *******************************************************************
-// Compute LCS length for two sequences in the classical way - just for development
-double CFAMSA::GetLCS(CSequence &seq1, CSequence &seq2)
-{
-	int **dp_row = new int*[2];
-
-	for(int i = 0; i < 2; ++i)
-		dp_row[i] = new int[seq2.length+1];
-
-	fill(dp_row[0], dp_row[0]+seq2.length+1, 0);
-
-	for(int i = 1; i <= (int) seq1.length; ++i)
-	{
-		int ii = i % 2;
-		dp_row[ii][0] = 0;
-		for(int j = 1; j <= (int) seq2.length; ++j)
-			if(seq1.data[i-1] == seq2.data[j-1])
-				dp_row[ii][j] = dp_row[!ii][j-1]+1;
-			else
-				dp_row[ii][j] = max(dp_row[ii][j-1], dp_row[!ii][j]);
-	}
-
-	return dp_row[seq1.length % 2][seq2.length];
-}
-#endif
-
-// *******************************************************************
-// Compute Guide Tree
-bool CFAMSA::ComputeGuideTree()
-{
-	guide_tree.clear();
-	gt_stats.clear();
-
-	// Insert leaves (sequences)
-	for(size_t i = 0; i < sequences.size(); ++i)
-	{
-		guide_tree.push_back(make_pair(-1, -1));
-		prof_cardinalities.push_back(1);
-
-		gt_stats.push_back(make_pair(1, 0));
-	}
-
-	// Construct guide tree using selected algorithm
-	if (params.guide_tree == GT_method::single_linkage)
-		SingleLinkage();
-	else if (params.guide_tree == GT_method::UPGMA)
-		UPGMA();
-#ifdef DEVELOPER_MODE
-	else if (params.guide_tree == GT_method::chained)
-		GuideTreeChained();
-#endif
-	else if (params.guide_tree == GT_method::imported)
-		if (!ImportGuideTreeFromNewick())			// file can be unexisting, so need to terminate the code here
-			return false;
-
-	// store guide tree in Newick format
-	if (params.guide_tree_out_file.length() > 0) {
-		ExportGuideTreeToNewick();
-	}
-
-	// Convert sequences into gapped sequences
-	gapped_sequences.reserve(sequences.size());
-
-	for(auto &p: sequences)
-		gapped_sequences.push_back(CGappedSequence(p));
-
-	return true;
-}
-
 // *******************************************************************
 // Compute Alignment according to guide tree
-bool CFAMSA::ComputeAlignment()
+bool CFAMSA::ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree)
 {
 	final_profile = new CProfile(&params);
 
@@ -334,283 +243,6 @@ bool CFAMSA::ComputeAlignment()
 
 	return true;
 }
-
-// *******************************************************************
-// Single linkage guide tree construction (SLINK algorithm) - uses native threads rather than OpenMP
-void CFAMSA::SingleLinkage()
-{
-	int next;
-	int n_seq = sequences.size();
-
-	int prefetch_offset = 64*2;
-	int prefetch_offset_2nd = 128*2;
-
-	double indel_exp = params.indel_exp;
-
-	vector<int> pi(n_seq + max(prefetch_offset, prefetch_offset_2nd), 0);
-	vector<double> lambda(n_seq);
-	vector<double> *sim_vector;
-
-	// Temporarily resize the sequences by adding unknown symbols (just to simplify the pairwise comparison)
-	size_t max_seq_len = max_element(sequences.begin(), sequences.end(), [](const CSequence &x, CSequence &y){return x.length < y.length; })->length;
-
-	for (int i = 1; i < n_seq; ++i)
-		sequences[i].data.resize(max_seq_len, UNKNOWN_SYMBOL);
-
-	CSingleLinkageQueue slq(&sequences, n_seq, n_threads * 8);
-	vector<thread *> workers(n_threads, nullptr);
-
-	mutex mtx;
-
-	// Calculation of similarities is made in working threads
-	for (uint32_t i = 0; i < n_threads; ++i)
-		workers[i] = new thread([&]{
-			CLCSBP lcsbp(instruction_set);
-			int row_id;
-			vector<CSequence> *sequences;
-			vector<double> *sim_vector;
-			uint32_t lcs_lens[4];
-
-			while (slq.GetTask(row_id, sequences, sim_vector))
-			{
-				for (int j = 0; j < row_id / 4; ++j)
-				{
-					lcsbp.GetLCSBP(&(*sequences)[row_id], &(*sequences)[j * 4 + 0], &(*sequences)[j * 4 + 1], &(*sequences)[j * 4 + 2], &(*sequences)[j * 4 + 3],
-						lcs_lens[0], lcs_lens[1], lcs_lens[2], lcs_lens[3]);
-					for (int k = 0; k < 4; ++k)
-					{
-						double indel = (*sequences)[row_id].length + (*sequences)[j * 4 + k].length - 2 * lcs_lens[k];
-						//double seq_lens = (*sequences)[row_id].length + (*sequences)[j * 4 + k].length;
-						(*sim_vector)[j * 4 + k] = lcs_lens[k] / pow(indel, indel_exp);
-					}
-				}
-
-				if (row_id / 4 * 4 < row_id)
-				{
-					lcsbp.GetLCSBP(&(*sequences)[row_id],
-						(row_id / 4 * 4 + 0 < row_id) ? &(*sequences)[row_id / 4 * 4 + 0] : nullptr,
-						(row_id / 4 * 4 + 1 < row_id) ? &(*sequences)[row_id / 4 * 4 + 1] : nullptr,
-						(row_id / 4 * 4 + 2 < row_id) ? &(*sequences)[row_id / 4 * 4 + 2] : nullptr,
-						(row_id / 4 * 4 + 3 < row_id) ? &(*sequences)[row_id / 4 * 4 + 3] : nullptr,
-						lcs_lens[0], lcs_lens[1], lcs_lens[2], lcs_lens[3]);
-					for (int k = 0; k < 4 && row_id / 4 * 4 + k < row_id; ++k)
-					{
-						double indel = (*sequences)[row_id].length + (*sequences)[row_id / 4 * 4 + k].length - 2 * lcs_lens[k];
-						//double seq_lens = (*sequences)[row_id].length + (*sequences)[row_id / 4 * 4 + k].length;
-						(*sim_vector)[row_id / 4 * 4 + k] = lcs_lens[k] / pow(indel, indel_exp);
-					}
-				}
-
-				slq.RegisterSolution(row_id);
-			}
-		});
-
-	// Single linkage algorithm is here
-	for (int i = 0; i < n_seq; ++i)
-	{
-		pi[i] = i;
-		lambda[i] = -infty_double;
-
-		if (params.very_verbose_mode && i % (100) == 0)
-		{
-			cout << "Computing guide tree - " << fixed << setprecision(1) << 100.0 * ((double)i * (i + 1) / 2) / ((double)n_seq * (n_seq + 1) / 2) << "\%    (" << i << " of " << n_seq << ")  \r";
-			fflush(stdout);
-		}
-
-		slq.GetSolution(i, sim_vector);
-
-		auto p_lambda = lambda.begin();
-		auto p_sim_vector = (*sim_vector).begin();
-		auto p_pi = pi.begin();
-
-		for (int j = 0; j < i; ++j)
-		{
-			next = pi[j];
-
-#ifdef _MSC_VER					// Visual C++
-			_mm_prefetch((const char*)&(*sim_vector)[*(p_pi+prefetch_offset)], 2);
-#endif
-#ifdef __GNUC__
-//			__builtin_prefetch((&(*sim_vector)[pi[j + prefetch_offset]]), 1, 2);
-			__builtin_prefetch((&(*sim_vector)[*(p_pi+prefetch_offset)]), 1, 2);
-#endif
-
-			auto &x = (*sim_vector)[next];
-
-			if (isgreater(*p_lambda, *p_sim_vector))
-			{
-				x = max(x, *p_sim_vector);
-			}
-			else
-			{
-				x = max(x, *p_lambda);
-				*p_pi = i;
-				*p_lambda = *p_sim_vector;
-			}
-
-			++p_pi;
-			++p_lambda;
-			++p_sim_vector;
-		}
-		
-		slq.ReleaseSolution(i);
-
-		p_pi = pi.begin();
-		p_lambda = lambda.begin();
-		for (int j = 0; j < i; ++j)
-		{
-#ifdef _MSC_VER					// Visual C++
-			_mm_prefetch((const char*)&lambda[*(p_pi + prefetch_offset_2nd)], 0);
-#endif
-#ifdef __GNUC__
-			__builtin_prefetch((&lambda[*(p_pi + prefetch_offset_2nd)]), 1, 0);
-#endif
-
-			next = *p_pi;
-			if(isgreaterequal(lambda[next], *p_lambda))
-				*p_pi = i;
-
-			++p_pi;
-			++p_lambda;
-		}
-	}
-
-	for (auto p : workers)
-	{
-		p->join();
-		delete p;
-	}
-	workers.clear();
-
-	if (params.very_verbose_mode)
-	{
-		cout << "Computing guide tree - 100.0\%                                        \r";
-		fflush(stdout);
-	}
-
-	vector<int> elements(n_seq - 1);
-	for (int i = 0; i < n_seq - 1; ++i)
-		elements[i] = i;
-
-#ifdef DEBUG_MODE
-	identity /= n_seq * (n_seq - 1) / 2.0;
-#endif
-
-	stable_sort(elements.begin(), elements.end(), [&](int x, int y){
-		return lambda[x] > lambda[y];
-	});
-
-	vector<int> index(n_seq);
-	for (int i = 0; i < n_seq; ++i)
-		index[i] = i;
-
-	for (int i = 0; i < n_seq - 1; ++i)
-	{
-		int j = elements[i];
-		next = pi[j];
-		guide_tree.push_back(make_pair(index[j], index[next]));
-		index[next] = n_seq + i;
-	}
-
-	// Bring the sequences to the valid length
-	for (int i = 1; i < n_seq; ++i)
-		sequences[i].data.resize(sequences[i].length, UNKNOWN_SYMBOL);
-}
-
-
-// *******************************************************************
-#ifdef DEVELOPER_MODE
-void CFAMSA::GuideTreeChained()
-{
-	mt19937 rnd;
-
-	if (sequences.size() < 2)
-		return;
-
-	vector<int> idx(sequences.size());
-
-	for (int i = 0; i < sequences.size(); ++i)
-		idx[i] = i;
-
-	random_device rd;
-	
-	// Skip some number of initial values
-	for (int i = 0; i < params.guide_tree_seed; ++i)
-		rd();
-
-	mt19937 g(rd());
-
-	shuffle(idx.begin(), idx.end(), g);
-
-	guide_tree.push_back(make_pair(idx[0], idx[1]));
-
-	for (int i = 2; i < sequences.size(); ++i)
-		guide_tree.push_back(make_pair(idx[i], guide_tree.size() - 1));
-}
-#endif
-
-// *******************************************************************
-bool CFAMSA::ImportGuideTreeFromNewick()
-{
-	// Load newick description
-	ifstream newickFile;
-	newickFile.open(params.guide_tree_in_file);
-	if (!newickFile.good()) {
-		return false;
-	}
-
-	std::stringstream ss;
-	ss << newickFile.rdbuf();
-	std::string description(ss.str());
-	auto newend = std::remove_if(description.begin(), description.end(),
-		[](char c)->bool { return c == '\r' || c == '\n';  });
-	description.erase(newend, description.end());
-
-	// Load guide tree
-	NewickTree nw(params.verbose_mode);
-	nw.parse(sequences, description, guide_tree);
-
-	return true;
-}
-
-bool CFAMSA::ExportGuideTreeToNewick()
-{
-	// store guide tree
-	string description;
-	NewickTree nw(params.verbose_mode);
-	nw.store(sequences, guide_tree, description);
-
-	// Open file
-	ofstream newickFile;
-	newickFile.open(params.guide_tree_out_file);
-	if (!newickFile.good()) {
-		return false;
-	}
-
-	newickFile << description;
-
-	return true;
-}
-
-// *******************************************************************
-bool CFAMSA::ExportDistanceMatrix(float*matrix, size_t size, const std::string& fname) {
-	ofstream file(fname);
-	if (!file) {
-		return false;
-	}
-
-	for (size_t i = 0; i < size; ++i) {
-		for (size_t j = 0; j < i; ++j) {
-			const size_t id = UPGMA_TriangleSubscript(i, j);
-			float d = matrix[id];
-			file << d << ", ";
-		}
-		file << std::endl;
-	}
-
-	return true;
-}
-
 
 // *******************************************************************
 void CFAMSA::RefineRandom(CProfile* profile_to_refine, vector<size_t> &dest_prof_id)
@@ -737,12 +369,8 @@ bool CFAMSA::RefineAlignment(CProfile *&profile_to_refine)
 
 	for(i_ref = i_succ_ref = 0; i_succ_ref < n_ref && i_ref < 20*n_ref; ++i_ref)
 	{
-		if (params.very_verbose_mode)
-		{
-			cout << "Computing refinement - " << fixed << setprecision(1) << 100.0 * (double) i_succ_ref / (double) n_ref << "\%    (" << i_succ_ref << " of " << n_ref << ")  \r";
-			fflush(stdout);
-		}
-
+		LOG_DEBUG << "Computing refinement - " << fixed << setprecision(1) << 100.0 * (double) i_succ_ref / (double) n_ref << "\%    (" << i_succ_ref << " of " << n_ref << ")  \r";
+			
 		CProfile profile1(&params), profile2(&params);
 
 		RefineMostEmptyAndFullColumn(profile_to_refine, dest_prof_id, gap_stats, valid_gap_stats);
@@ -841,100 +469,16 @@ bool CFAMSA::GetAlignment(vector<CGappedSequence*> &result)
 // *******************************************************************
 bool CFAMSA::LoadRefSequences()
 {
-	// ***** Read input file
-	CInputFile ref_file;
+	// ***** Read input file	
+	LOG_DEBUG << "Processing reference sequence set: " << params.ref_file_name << "\n";
 
-	if (params.verbose_mode)
-		cerr << "Processing reference sequence set: " << params.ref_file_name << "\n";
-
-	if (ref_file.ReadFile(params.ref_file_name) < 2)
+	if (IOService::loadFasta(params.ref_file_name, ref_sequences) < 2)
 	{
-		cout << "Error: no (or incorrect) input file\n";
+		LOG_NORMAL << "Error: no (or incorrect) input file\n";
 		return false;
 	}
 
-	ref_file.StealSequences(ref_sequences);
-
 	return true;
-}
-
-// *******************************************************************
-int CFAMSA::SubTreeSize(set<int> &seq_ids)
-{
-	vector<pair<int, set<int>>> node_stats;
-	set<int> tmp_set;
-	int n_seq = sequences.size();
-
-	// Calculate stats for single sequence nodes
-	for (int i = 0; i < n_seq; ++i)
-	{
-		tmp_set.clear();
-		if (seq_ids.count(i) > 0)
-			tmp_set.insert(i);
-
-		node_stats.push_back(make_pair(1, tmp_set));
-	}
-
-	// Calculate stats for internal nodes
-	for (int i = n_seq; i < 2 * n_seq - 1; ++i)
-	{
-		tmp_set.clear();
-		auto &x = node_stats[guide_tree[i].first];
-		auto &y = node_stats[guide_tree[i].second];
-		tmp_set.insert(x.second.begin(), x.second.end());
-		tmp_set.insert(y.second.begin(), y.second.end());
-
-		node_stats.push_back(make_pair(x.first + y.first, tmp_set));
-
-		if (tmp_set.size() == ref_sequences.size())
-			return node_stats.back().first;
-	}
-
-	return 0;
-}
-
-// *******************************************************************
-uint64_t CFAMSA::CalculateRefSequencesSubTreeSize(double *monte_carlo_subtree_size)
-{
-	set<int> ref_seq_ids;
-	int n_seq = sequences.size();
-	int r = 0;
-
-	if (ref_sequences.size() == 1)
-		return 1;
-
-	// Find the ids of the referential sequences in the input file
-	for (int i = 0; i < n_seq; ++i)
-	{
-		bool is_ref = false;
-		for (auto &y : ref_sequences)
-			if (sequences[i].id == y.id)
-				is_ref = true;
-
-		if (is_ref)
-			ref_seq_ids.insert(i);
-	}
-
-	r = SubTreeSize(ref_seq_ids);
-
-	if (monte_carlo_subtree_size)
-	{
-		mt19937 mt;
-		double mc_r = 0;
-
-		for (int i = 0; i < monte_carlo_trials; ++i)
-		{
-			set<int> mc_seq_ids;
-
-			while (mc_seq_ids.size() < ref_seq_ids.size())
-				mc_seq_ids.insert(mt() % n_seq);
-			mc_r += SubTreeSize(mc_seq_ids);
-		}
-
-		*monte_carlo_subtree_size = mc_r / (double) monte_carlo_trials;
-	}
-
-	return r;
 }
 #endif
 
@@ -958,23 +502,11 @@ bool CFAMSA::ComputeMSA()
 		cerr << "  enable auto refinement: " << params.enable_auto_refinement << "\n";
 		cerr << "  guided alignment radius: " << params.guided_alignment_radius << "\n";
 		cerr << "  no. of threads: " << params.n_threads << "\n";
-		cerr << "  guide tree method: ";
-		switch (params.guide_tree)
-		{
-		case GT_method::chained:
-			cerr << "chained\n";
-			break;
-		case GT_method::imported:
-			cerr << "imported\n";
+		cerr << "  guide tree method: " << GT_method::toString(params.guide_tree) << "\n";
+		if (params.guide_tree == GT_method::imported) {
 			cerr << "  guide tree file: " << params.guide_tree_in_file << "\n";
-			break;
-		case GT_method::single_linkage:
-			cerr << "single linkage\n";
-			break;
-		case GT_method::UPGMA:
-			cerr << "UPGMA\n";
-			break;
 		}
+		cerr << endl;
 	}
 		
 #ifdef DEVELOPER_MODE
@@ -982,94 +514,129 @@ bool CFAMSA::ComputeMSA()
 		LoadRefSequences();
 #endif
 
-	if (params.very_verbose_mode)
-	{
-		string instr_names[] = { "None", "SSE", "SSE2", "SSE3", "SSE3S", "SSE41", "SSE42", "AVX", "AVX2" };
-		cout << "Instruction set determined: " << instr_names[(int)instruction_set] << "\n";
-	}
+	string instr_names[] = { "None", "SSE", "SSE2", "SSE3", "SSE3S", "SSE41", "SSE42", "AVX", "AVX2" };
+	LOG_VERBOSE << "Hardware configuration: " << endl 
+		<< " Number of threads: " << n_threads << endl
+		<< " Instruction set: " << instr_names[(int)instruction_set] << endl << endl;
+	
 
-	timers[0].StartTimer();
-	if (params.very_verbose_mode)
-	{
-		cout << "Computing guide tree...\r";
-		fflush(stdout);
+	timers[TIMER_SORTING].StartTimer();
+	if (params.shuffle == -1) {
+		LOG_VERBOSE << "Sorting sequences...";
+		std::stable_sort(sequences.begin(), sequences.end(), [](const CSequence& a, const CSequence& b)->bool {
+			return a.length > b.length || (a.length == b.length && a.data < b.data);
+		});
+		LOG_VERBOSE << " [OK]" << endl;
 	}
-	if(!ComputeGuideTree())
-		return false;
-	timers[0].StopTimer();
-	if (params.very_verbose_mode)
-	{
-		cout << "Computing guide tree - complete                                          \n";
-		fflush(stdout);
+	else {
+		LOG_VERBOSE << "Shuffling sequences...";
+		std::mt19937 mt(params.shuffle);
+		std::shuffle(sequences.begin(), sequences.end(), mt);
+		LOG_VERBOSE << " [OK]" << endl;
 	}
+	for (size_t i = 0; i < sequences.size(); ++i) {
+		sequences[i].sequence_no = i;
+	}
+	timers[TIMER_SORTING].StopTimer();
 
+
+	GuideTree tree(params.indel_exp, this->n_threads, params.guide_tree_seed, params.parttree_size, params.shuffle == -1);
+
+ 	bool goOn = true;
+
+	// store distance matrix
+	if (params.export_distances) {
+		LOG_VERBOSE << "Calculating distances and storing in: " << params.output_file_name;
+		tree.saveDistances(params.output_file_name, sequences);
+		LOG_VERBOSE << " [OK]" << endl;
+		goOn = false; // break processing at this point
+	} 
+
+	if (goOn) {
+		timers[TIMER_TREE_BUILD].StartTimer();
+		if (params.guide_tree == GT_method::imported) {
+			LOG_VERBOSE << "Importing guide tree from: " << params.guide_tree_in_file;
+			tree.loadNewick(params.guide_tree_in_file, sequences);
+		}
+		else {
+			LOG_VERBOSE << "Computing guide tree...";
+			tree.compute(this->sequences, params.guide_tree);
+		}
+		LOG_VERBOSE << " [OK]" << endl;
+		timers[TIMER_TREE_BUILD].StopTimer();
+	} 
+
+	// store guide tree in Newick format 
+	if (params.export_tree) {
+		timers[TIMER_TREE_STORE].StartTimer();
+		LOG_VERBOSE << "Storing guide tree in: " << params.output_file_name;
+		tree.saveNewick(params.output_file_name, sequences);
+		LOG_VERBOSE << " [OK]" << endl;
+		timers[TIMER_TREE_STORE].StopTimer();
+		goOn = false; // break processing at this point
+	}
+	
+	
 #ifdef DEVELOPER_MODE
 	double monte_carlo_subtree_size;
 	if(params.test_ref_sequences)
-		params.ref_seq_subtree_size = CalculateRefSequencesSubTreeSize(&monte_carlo_subtree_size);
+		params.ref_seq_subtree_size = tree.refSequencesSubTreeSize(
+			sequences, 
+			ref_sequences,
+			&monte_carlo_subtree_size);
 #endif
 
-	timers[1].StartTimer();
-	if (params.very_verbose_mode)
-	{
-		cout << "Computing alignment...\r";
-		fflush(stdout);
-	}
-	if (!ComputeAlignment())
-		return false;
-	if (params.very_verbose_mode)
-	{
-		cout << "Computing alignment - complete                                           \n";
-		fflush(stdout);
-	}
-	timers[1].StopTimer();
+	if (goOn) {
+		// Convert sequences into gapped sequences
+		gapped_sequences.reserve(sequences.size());
+		for (auto &p : sequences)
+			gapped_sequences.push_back(CGappedSequence(p));
 
-	timers[2].StartTimer();
-	if (params.very_verbose_mode)
-	{
-		cout << "Computing refinement...\r";
-		fflush(stdout);
-	}
-	if (!RefineAlignment(final_profile))
-		return false;
-	if (params.very_verbose_mode)
-	{
-		cout << "Computing refinement - complete                                         \n";
-		fflush(stdout);
+		timers[TIMER_ALIGNMENT].StartTimer();
+		LOG_VERBOSE << "Computing alignment...";
+		if (!ComputeAlignment(tree.getRaw()))
+			return false;
+		LOG_VERBOSE << "[OK]" << endl;
+		timers[TIMER_ALIGNMENT].StopTimer();
+
+		timers[TIMER_REFINMENT].StartTimer();
+		LOG_VERBOSE << "Computing refinement...";
+		if (!RefineAlignment(final_profile))
+			return false;
+		LOG_VERBOSE << "[OK]" << endl;
+		timers[TIMER_REFINMENT].StopTimer();
 	}
 
-	timers[2].StopTimer();
-
-	if (params.verbose_mode)
-	{
-		cerr << "Sequence sorting                                : " << timers[3].GetElapsedTime() << "s\n";
-		cerr << "Guide tree construction (incl. similatiry calc.): " << timers[0].GetElapsedTime() << "s\n";
-		cerr << "Alignment construction                          : " << timers[1].GetElapsedTime() << "s\n";
-		cerr << "Iterative refinement                            : " << timers[2].GetElapsedTime() << "s\n";
-
-		cerr << "No. of sequences : " << sequences.size() << "\n";
-		cerr << "Sackin index for guide tree: " << params.sackin_index << "\n";
-		cerr << "Sackin index for guide tree (normalized): " << params.sackin_index / (double)sequences.size() << "\n";
+	LOG_VERBOSE
+		<< endl << "Statistics:" << endl
+		<< " Sequence sorting                                 : " << timers[TIMER_SORTING].GetElapsedTime() << "s\n"
+		<< " Tree construction/import (incl. similatiry calc.): " << timers[TIMER_TREE_BUILD].GetElapsedTime() << "s\n"
+		<< " Tree store                                       : " << timers[TIMER_TREE_STORE].GetElapsedTime() << "s\n"
+		<< " Alignment construction                           : " << timers[TIMER_ALIGNMENT].GetElapsedTime() << "s\n"
+		<< " Iterative refinement                             : " << timers[TIMER_REFINMENT].GetElapsedTime() << "s\n"
+		<< " No. of sequences : " << sequences.size() << "\n"
+		<< " Sackin index for guide tree: " << params.sackin_index << "\n"
+		<< " Sackin index for guide tree (normalized): " << params.sackin_index / (double)sequences.size() << "\n";
 
 #ifdef DEVELOPER_MODE
-		if (params.test_ref_sequences)
-		{
-			cerr << "Ref. seq. subtree size: " << params.ref_seq_subtree_size << "\n";
-			cerr << "Monte Carlo subtree size: " << monte_carlo_subtree_size << "\n";
-		}
-
-#ifdef LOG_STATS
-		FILE *out = fopen("execution.stats", "wt");
-		fprintf(out, "[stats]\n");
-		fprintf(out, "No_sequences=%d\n", sequences.size());
-		fprintf(out, "Sackin_idx=%lld\n", params.sackin_index);
-		fprintf(out, "Sackin_idx_norm=%.3f\n", params.sackin_index / (double) sequences.size());
-		fprintf(out, "Ref_seq_subtree_size=%lld\n", params.ref_seq_subtree_size);
-		fprintf(out, "Monte_carlo_subtree_size=%.1f", monte_carlo_subtree_size);
-		fclose(out);
-#endif
-#endif
+	if (params.test_ref_sequences)
+	{
+		LOG_VERBOSE 
+			<< "Ref. seq. subtree size: " << params.ref_seq_subtree_size << "\n"
+			<< "Monte Carlo subtree size: " << monte_carlo_subtree_size << "\n";
 	}
 
+#ifdef LOG_STATS
+	FILE *out = fopen("execution.stats", "wt");
+	fprintf(out, "[stats]\n");
+	fprintf(out, "No_sequences=%d\n", sequences.size());
+	fprintf(out, "Sackin_idx=%lld\n", params.sackin_index);
+	fprintf(out, "Sackin_idx_norm=%.3f\n", params.sackin_index / (double) sequences.size());
+	fprintf(out, "Ref_seq_subtree_size=%lld\n", params.ref_seq_subtree_size);
+	fprintf(out, "Monte_carlo_subtree_size=%.1f", monte_carlo_subtree_size);
+	fclose(out);
+#endif
+#endif
+	
 	return true;
 }

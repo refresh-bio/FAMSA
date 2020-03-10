@@ -11,6 +11,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 #include "../core/defs.h"
 #include "../core/params.h"
+#include "../core/array.h"
 #include <string>
 #include <vector>
 
@@ -21,19 +22,25 @@ class CSequence
 	static char mapping_table[25];
 
 public:
+	int sequence_no = -1;
+
 	string id;
 	vector<symbol_t> data;
 	vector<bool> uppercase;
 	size_t length;
 
-	vector<vector<bit_vec_t>> bit_masks;
+	Array<bit_vec_t> bit_masks;
+
+	//vector<vector<bit_vec_t>> bit_masks;
 
 	void ComputeBitMasks();
 	void ComputeBitMasks64();
 
 public:
 	CSequence(const string& _id, const string& seq);
-	CSequence(string _id, vector<symbol_t> &symbol_seq);
+	//CSequence(string _id, vector<symbol_t> &symbol_seq);
+	
+	/*
 	CSequence(const CSequence &_sequence);
 
 	CSequence(CSequence&& rhs);
@@ -41,6 +48,7 @@ public:
 	CSequence& operator=(const CSequence& rhs);
 
 	~CSequence();
+*/
 
 	string DecodeSequence();
 };

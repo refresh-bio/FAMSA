@@ -62,8 +62,11 @@ public:
 			symbol_t c2 = seq2->data[i];
 
 			auto pX = X;
-			auto pbm1 = seq0->bit_masks[c1].begin();
-			auto pbm2 = seq0->bit_masks[c2].begin();
+			//auto pbm1 = seq0->bit_masks[c1].begin();
+			//auto pbm2 = seq0->bit_masks[c2].begin();
+
+			auto pbm1 = seq0->bit_masks[c1];
+			auto pbm2 = seq0->bit_masks[c2];
 
 			for (int j = 0; j < BV_LEN; ++j)
 			{
@@ -162,8 +165,11 @@ public:
 			symbol_t c2 = seq2->data[i];
 
 			auto pX = X;
-			auto pbm1 = seq0->bit_masks[c1].begin();
-			auto pbm2 = seq0->bit_masks[c2].begin();
+			//auto pbm1 = seq0->bit_masks[c1].begin();
+			//auto pbm2 = seq0->bit_masks[c2].begin();
+
+			auto pbm1 = seq0->bit_masks[c1];
+			auto pbm2 = seq0->bit_masks[c2];
 
 			if (BV_LEN > 0)			AVX_LCS_INNER_LOOP;
 			if (BV_LEN > 1)			AVX_LCS_INNER_LOOP;

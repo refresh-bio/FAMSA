@@ -1,10 +1,9 @@
-all: famsa famsa-gpu
+all: famsa
 
 ## USER'S OPTIONS
 STATIC_LINK = false
 NO_AVX = false
 NO_AVX2 = false
-NO_GPU = false
 
 ####################
 
@@ -17,7 +16,6 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
 	ASM_LIB = libamac64.a
 	ABI_FLAG =
-	NO_GPU = true 	
 endif
 
  
@@ -34,30 +32,18 @@ endif
 CFLAGS_AVX = $(CFLAGS) -mavx ${ABI_FLAG} -mpopcnt -funroll-loops
 CFLAGS_AVX2 = $(CFLAGS) -mavx2 ${ABI_FLAG} -mpopcnt -funroll-loops
 
-OPENCL_OBJS := 	 core_gpu/gpumsa.o \
-	opencl_utils/hardware/Buffer.o \
-	opencl_utils/hardware/DeviceInfo.o \
-	opencl_utils/hardware/DeviceWrapper.o \
-	opencl_utils/hardware/OpenCl.o \
-	opencl_utils/hardware/OwnProgram.o \
-	opencl_utils/kernel_repository/KernelFactory.o \
-	opencl_utils/kernel_repository/KernelRepository.o 
 
-
-COMMON_OBJS := core/input_file.o \
+COMMON_OBJS := core/io_service.o \
+	core/guide_tree.o \
+	core/log.o \
 	core/msa.o \
-	core/output_file.o \
 	core/profile.o \
 	core/sequence.o \
 	core/queues.o \
 	core/timer.o \
-	core/upgma.o \
 	core/NewickTree.o \
 	libs/instrset_detect.o \
-	opencl_utils/common/Log.o \
-	opencl_utils/common/mathex.o \
-	opencl_utils/common/StatisticsProvider.o 
-
+	
 core/lcsbp_classic.o : core/lcsbp_classic.cpp
 	$(CC) $(CFLAGS) -c core/lcsbp_classic.cpp -o $@
 
@@ -97,21 +83,12 @@ endif
 .cpp.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
-
-ifeq ($(NO_GPU),false)
-famsa-gpu: famsa_gpu/famsa_gpu.o $(COMMON_OBJS) $(LCS_OBJS) $(OPENCL_OBJS) 
-	$(CC) $(CLINK) -o $@ famsa_gpu/famsa_gpu.o $(COMMON_OBJS) $(LCS_OBJS) $(OPENCL_OBJS) $(LIBS_LINUX_DIR)/${ASM_LIB} -lOpenCL
-endif
-
 famsa: famsa_cpu/famsa_cpu.o $(COMMON_OBJS) $(LCS_OBJS)
 	$(CC) $(CLINK) -o $@ famsa_cpu/famsa_cpu.o $(COMMON_OBJS) $(LCS_OBJS) $(LIBS_LINUX_DIR)/${ASM_LIB}
 
 clean:
 	-rm core/*.o
 	-rm libs/*.o
-	-rm core_gpu/*.o
-	-rm opencl_utils/kernel_repository/*.o
-	-rm opencl_utils/hardware/*.o
-	-rm opencl_utils/common/*.o
+	-rm famsa_cpu/*.o
 	-rm famsa
-	-rm famsa-gpu
+

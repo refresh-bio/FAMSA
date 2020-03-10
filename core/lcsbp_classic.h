@@ -14,14 +14,17 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 template <unsigned BV_LEN> class CLCSBP_Classic_Impl;
 
+//using bit_vec_iterator_t = vector<bit_vec_t>::const_iterator;
+using bit_vec_iterator_t = bit_vec_t*;
+
 class CLCSBP_Classic
 {
 	bit_vec_t *X;
 	uint32_t X_size;
 
 	CSequence *pf_seq0;
-	vector<bit_vec_t>::const_iterator s0bm[NO_SYMBOLS];
-
+	bit_vec_iterator_t s0bm[NO_SYMBOLS];
+	
 	inline void prepare_X(size_t bv_len);
 	void calculate(CSequence *seq0, CSequence *seq1, uint32_t *res, uint32_t bv_len);
 	void prefetch_bitmasks(CSequence *seq0);
@@ -45,7 +48,7 @@ public:
 
 template <unsigned BV_LEN> class CLCSBP_Classic_Impl {
 public:
-	static void CalculateOld(CSequence *seq0, CSequence *seq1, uint32_t *res, bit_vec_t *X, vector<bit_vec_t>::const_iterator *s0bm)
+	static void CalculateOld(CSequence *seq0, CSequence *seq1, uint32_t *res, bit_vec_t *X, bit_vec_iterator_t *s0bm)
 	{
 		bit_vec_t V, tB, V2, sB;
 
@@ -97,7 +100,7 @@ public:
 		pX++;									\
 	}
 
-	static void Calculate(CSequence *seq0, CSequence *seq1, uint32_t *res, bit_vec_t *X, vector<bit_vec_t>::const_iterator *s0bm)
+	static void Calculate(CSequence *seq0, CSequence *seq1, uint32_t *res, bit_vec_t *X, bit_vec_iterator_t *s0bm)
 	{
 		bit_vec_t V, tB, V2, sB;
 

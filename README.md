@@ -4,9 +4,7 @@ Algorithm for large-scale multiple sequence alignments (400k proteins in 2 hours
 ## Installation and configuration
 
 FAMSA comes with a set of precompiled binaries for Windows, Linux, and OS X. They can be found under Releases tab. 
-The basic variant of the algorithm which executes entirely on CPU is contained in a file named *famsa*. 
-For Windows and Linux systems there is an additional executable *famsa-gpu* which employs massively parallel processing (GPGPU)
-with a use of OpenCL.
+Starting from 1.5.0 version there is no support of GPU in FAMSA. Use one of the previous releases if you need that feature.
 
 The software can be also built from the sources distributed as:
 
@@ -17,7 +15,6 @@ At the top of the makefile there are several switches controlling building proce
 * STATIC_LINK - enable static linking (default: false); may be helpful when binary portability is desired,
 * NO_AVX - prevent from using AVX and AVX2 extensions (default: false),
 * NO_AVX2 - prevent from using AVX2 extensions (default: false),
-* NO_GPU - prevent from building *famsa-gpu* binary (default: false); use it when OpenCL version is not needed.
 
 Note, that FAMSA by default takes advantage of AVX and AVX2 CPU extensions. Pre-built binary detetermines supported instructions at runtime, thus it is multiplatform. However, one may encounter a problem when building FAMSA version on a CPU without AVX and/or AVX2. For this purpose NO_AVX and NO_AVX2 switches are provided.
 
@@ -26,8 +23,11 @@ Note, that FAMSA by default takes advantage of AVX and AVX2 CPU extensions. Pre-
 `famsa [options] <input_file_name> <output_file_name>`
 
 Positional parameters:
-* `input_file_name` - input file in FASTA format or STDIN when reading from standard input
-* `output_file_name` - output file in FASTA format or STDOUT when writing to standard output
+* `input_file_name` - input file in FASTA format (pass STDIN when reading from standard input)
+* `output_file_name` - output file (pass STDOUT when writing to standard output); available outputs:
+    * alignment in FASTA format,
+    * guide tree in Newick format (`-gt_export` option specified),
+	* distance matrix in CSV format (`-dist_export` option specified).
 
 Options:
 * `-go <value>` - gap open cost (default: 14.85)
@@ -43,18 +43,32 @@ Options:
 * `-fr` - force refinement (by default the refinement is disabled for sets larger than 1000 seq.)
 * `-t <value>` - no. of threads, 0 means all available (default: 0)
 * `-v` - verbose mode, show timing information (default: disabled)
-* `-gt <sl, upgma, chained>` - choice of guide tree method: single linkage, UPGMA, chained (default: sl)
-* `-gt_import <file_name>` - import guide tree in Newick format
-* `-gt_export <file_name>` - export guide tree to Newick format
-* `-dist_export <file_name>` - export distance matrix to CSV file; works only in UPGMA mode (`-gt upgma`)
+* `-gt <sl | upgma | parttree_sl | parttree_upgma | import <file>>` - the guide tree method (default: sl):
+    * `sl` - single linkage,
+    * `upgma` - UPGMA,
+    * `parttree_sl` - PartTree with single linkage for partial trees,
+    * `parttree_upgma` - PartTree with UPGMA for partial trees,
+    * `import <file>` - import from a Newick file.
 
-When running *famsa-gpu* executable, two additional parameters must be specified:
-* `-gpu_p <value>` - gpu platform id
-* `-gpu_d <value>` - gpu device id
+* `-gt_export` - export a guide tree to output file in the Newick format
+* `-dist_export` - export a distance matrix to output file in CSV format
 
 ### Guide tree import and export
 
-FAMSA has the ability to import/export alignment guide trees in Newick format. Below one can find example guide tree file for sequences A, B, and C:
+FAMSA has the ability to import/export alignment guide trees in Newick format. From version 1.5.0, the interface for tree management has changed:
+* `-gt_export` option does not require an additional parameter with file name. Instead, the name of the output file (`<output_file_name>`) is used. Note, that the output alignment is not produced.
+* `-gt_import` option is deprecated. Instead, use a syntax for specifying a tree type `-gt import <file>` where `file` is a Newick file name.
+
+E.g., in order to generate a UPGMA tree from the *input.fasta* file and store it in the *tree.dnd* file, run:
+```
+famsa -gt upgma -gt_export input.fasta tree.dnd
+``` 
+To align the sequences from *input.fasta* using the tree from *tree.dnd* and store the result in *out.fasta*, run:
+```
+famsa -gt import tree.dnd input.fasta out.fasta
+```  
+
+Below one can find example guide tree file for sequences A, B, and C:
 ```
 (A:0.1,(B:0.2,C:0.3):0.4);
 ```

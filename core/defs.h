@@ -72,13 +72,6 @@ const symbol_t NO_AMINOACIDS			= 24;
 const symbol_t NO_VALID_AMINOACIDS		= 20;
 const symbol_t NO_AMINOACIDS_AND_GAPS	= 30;
 
-enum class GT_method { single_linkage, UPGMA, chained, imported } ;
-
-// UPGMA defines and consts
-typedef float UPGMA_dist_t;
-const UPGMA_dist_t BIG_DIST = (UPGMA_dist_t) 1e29;
-
-
 #define MAX3(x, y, z)		(max(x, max(y, z)))
 #define ABS(x)				((x) >= 0 ? (x) : -(x))
 

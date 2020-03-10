@@ -23,6 +23,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>famsa_cpu</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectName>famsa_cpu</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -152,10 +153,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="..\libs\license.txt" />
-    <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\core\input_file.cpp" />
+    <ClCompile Include="..\core\guide_tree.cpp" />
+    <ClCompile Include="..\core\io_service.cpp" />
     <ClCompile Include="..\core\lcsbp.cpp" />
     <ClCompile Include="..\core\lcsbp_avx2.cpp">
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
@@ -170,28 +171,31 @@
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AdvancedVectorExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
+    <ClCompile Include="..\core\log.cpp" />
     <ClCompile Include="..\core\msa.cpp" />
     <ClCompile Include="..\core\NewickTree.cpp" />
-    <ClCompile Include="..\core\output_file.cpp" />
     <ClCompile Include="..\core\profile.cpp" />
     <ClCompile Include="..\core\queues.cpp" />
     <ClCompile Include="..\core\sequence.cpp" />
     <ClCompile Include="..\core\timer.cpp" />
-    <ClCompile Include="..\core\upgma.cpp" />
     <ClCompile Include="..\libs\instrset_detect.cpp" />
     <ClCompile Include="famsa_cpu.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\core\array.h" />
     <ClInclude Include="..\core\defs.h" />
-    <ClInclude Include="..\core\input_file.h" />
+    <ClInclude Include="..\core\guide_tree.h" />
+    <ClInclude Include="..\core\guide_tree.hpp" />
+    <ClInclude Include="..\core\guide_tree_defs.h" />
+    <ClInclude Include="..\core\io_service.h" />
     <ClInclude Include="..\core\lcsbp.h" />
     <ClInclude Include="..\core\lcsbp_avx2.h" />
     <ClInclude Include="..\core\lcsbp_classic.h" />
     <ClInclude Include="..\core\lcsbp_avx.h" />
+    <ClInclude Include="..\core\log.h" />
     <ClInclude Include="..\core\meta_oper.h" />
     <ClInclude Include="..\core\msa.h" />
     <ClInclude Include="..\core\NewickTree.h" />
-    <ClInclude Include="..\core\output_file.h" />
     <ClInclude Include="..\core\params.h" />
     <ClInclude Include="..\core\profile.h" />
     <ClInclude Include="..\core\queues.h" />
@@ -199,24 +203,6 @@
     <ClInclude Include="..\core\timer.h" />
     <ClInclude Include="..\core\TreeGrammar.h" />
     <ClInclude Include="..\core\version.h" />
-    <ClInclude Include="..\libs-linux\CL\cl.h" />
-    <ClInclude Include="..\libs-linux\CL\cl.hpp" />
-    <ClInclude Include="..\libs-linux\CL\cl_d3d10.h" />
-    <ClInclude Include="..\libs-linux\CL\cl_ext.h" />
-    <ClInclude Include="..\libs-linux\CL\cl_gl.h" />
-    <ClInclude Include="..\libs-linux\CL\cl_gl_ext.h" />
-    <ClInclude Include="..\libs-linux\CL\cl_platform.h" />
-    <ClInclude Include="..\libs-linux\CL\opencl.h" />
-    <ClInclude Include="..\libs-win\CL\cl.h" />
-    <ClInclude Include="..\libs-win\CL\cl.hpp" />
-    <ClInclude Include="..\libs-win\CL\cl_d3d10.h" />
-    <ClInclude Include="..\libs-win\CL\cl_d3d11.h" />
-    <ClInclude Include="..\libs-win\CL\cl_dx9_media_sharing.h" />
-    <ClInclude Include="..\libs-win\CL\cl_ext.h" />
-    <ClInclude Include="..\libs-win\CL\cl_gl.h" />
-    <ClInclude Include="..\libs-win\CL\cl_gl_ext.h" />
-    <ClInclude Include="..\libs-win\CL\cl_platform.h" />
-    <ClInclude Include="..\libs-win\CL\opencl.h" />
     <ClInclude Include="..\libs\asmlib.h" />
     <ClInclude Include="..\libs\instrset.h" />
     <ClInclude Include="..\libs\vectorclass.h" />
@@ -237,19 +223,13 @@
     <ClInclude Include="..\libs\vectormath_trig.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="..\libs-linux\libaelf64.a" />
     <None Include="..\libs\asmlib-instructions.pdf" />
     <None Include="..\libs\vectorclass.pdf" />
-    <None Include="..\makefile" />
   </ItemGroup>
   <ItemGroup>
     <Object Include="..\libs-win\dispatchpatch64.obj" />
   </ItemGroup>
   <ItemGroup>
-    <Library Include="..\libs-win\CL\GlAux.Lib" />
-    <Library Include="..\libs-win\CL\glew64.lib" />
-    <Library Include="..\libs-win\CL\glut64.lib" />
-    <Library Include="..\libs-win\CL\OpenCL.lib" />
     <Library Include="..\libs-win\libacof32.lib" />
     <Library Include="..\libs-win\libacof64.lib" />
   </ItemGroup>

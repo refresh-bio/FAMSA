@@ -9,10 +9,10 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <string>
 #include <iostream>
 
-#include "../core/input_file.h"
-#include "../core/output_file.h"
+#include "../core/io_service.h"
 #include "../core/msa.h"
 #include "../core/timer.h"
+#include "../core/log.h"
 
 #undef min
 #undef max
@@ -36,25 +36,23 @@ typedef struct {
 	bool verbose_mode;
 	bool very_verbose_mode;
 
-	GT_method guide_tree;
+	GT_method::Value guide_tree;
 	int guide_tree_seed;
+	int parttree_size;
 	string guide_tree_in_file;
-	string guide_tree_out_file;
-	string distance_matrix_out_file;
+	bool export_distances;
+	bool export_tree;
 	double indel_exp;
 
 	bool test_ref_sequenes;
 	string ref_file_name;
 
-/*	bool use_gpu;					// internal param
-	int gpu_platform;
-	int gpu_device;
-	int gpu_pairs_per_wave;			// internal param
-	int gpu_pairs_per_task;			// internal param
-	int gpu_threads_per_pair;		// internal param*/
 	int n_threads;
 	string input_file_name;
 	string output_file_name;
+
+	int64_t shuffle;
+
 } execution_params_t;
 
 using namespace std;
@@ -72,53 +70,57 @@ void show_usage()
 {
 	init_params();		// To set default param values
 
-	cout << "FAMSA (Fast and Accurate Multiple Sequence Alignment) ver. " << FAMSA_VER << " CPU\n";
-	cout << "  by " << FAMSA_AUTHORS << " (" << FAMSA_DATE << ")\n\n";
-	cout << "Usage:\n";
-	cout << "  famsa [parameters] <input_file_name> <output_file_name>\n\n";
-	cout << "Parameters:\n";
-	cout << "  input_file_name - input file in FASTA format or STDIN when reading from standard input\n";
-	cout << "  output_file_name - output file in FASTA format or STDOUT when writing to standard output\n";
-	cout << "  -go <value> - gap open cost (default: " << execution_params.gap_open << ")\n";
-	cout << "  -ge <value> - gap extension cost (default: " << execution_params.gap_ext << ")\n";
-	cout << "  -tgo <value> - terminal gap open cost (default: " << execution_params.gap_term_open << ")\n";
-	cout << "  -tge <value> - terminal gap extenstion cost (default: " << execution_params.gap_term_ext << ")\n";
-	cout << "  -gsd <value> - gap cost scaller div-term (default: " << execution_params.gap_scaler_div << ")\n";
-	cout << "  -gsl <value> - gap cost scaller log-term (default: " << execution_params.gap_scaler_log << ")\n";
+	cerr 
+		<< "FAMSA (Fast and Accurate Multiple Sequence Alignment) ver. " << FAMSA_VER << " CPU\n"
+		<< "  by " << FAMSA_AUTHORS << " (" << FAMSA_DATE << ")\n\n"
+		<< "Usage:\n"
+		<< "  famsa [parameters] <input_file_name> <output_file_name>\n\n"
+		<< "Parameters:\n"
+		<< "  input_file_name - input file in FASTA format (pass STDIN when reading from standard input)\n"
+		<< "  output_file_name - output file (pass STDOUT when writing to standard output); available outputs:\n"
+		<< "      * alignment in FASTA format,\n"
+		<< "      * guide tree in Newick format (-gt_export option specified),\n" 
+		<< "      * distance matrix in CSV format (-dist_export option specified),\n"
+		<< "  -go <value> - gap open cost (default: " << execution_params.gap_open << ")\n"
+		<< "  -ge <value> - gap extension cost (default: " << execution_params.gap_ext << ")\n"
+		<< "  -tgo <value> - terminal gap open cost (default: " << execution_params.gap_term_open << ")\n"
+		<< "  -tge <value> - terminal gap extenstion cost (default: " << execution_params.gap_term_ext << ")\n"
+		<< "  -gsd <value> - gap cost scaller div-term (default: " << execution_params.gap_scaler_div << ")\n"
+		<< "  -gsl <value> - gap cost scaller log-term (default: " << execution_params.gap_scaler_log << ")\n"
 
-	cout << "  -dgr - disable gap cost rescaling (default: enabled)\n";
-	cout << "  -dgo - disable gap optimization (default: enabled)\n";
-	cout << "  -dsp - disable sum of pairs optimization during refinement (default: enabled)\n";
+		<< "  -dgr - disable gap cost rescaling (default: enabled)\n"
+		<< "  -dgo - disable gap optimization (default: enabled)\n"
+		<< "  -dsp - disable sum of pairs optimization during refinement (default: enabled)\n"
 
-	cout << "  -r <value> - no. of refinement iterations (default: " << execution_params.n_refinements << ")\n";
-	cout << "  -fr - disable auto refinement turning off (for sets larger than " << execution_params.thr_refinement << " seq.)\n";
-	cout << "  -t <value> - no. of threads, 0 means all available (default: " << execution_params.n_threads << ")\n";
-	cout << "  -v - verbose mode, show timing information (default: disabled)\n";
+		<< "  -r <value> - no. of refinement iterations (default: " << execution_params.n_refinements << ")\n"
+		<< "  -fr - force refinement (by default the refinement is disabled for sets larger than " << execution_params.thr_refinement << " seq.)\n"
+		<< "  -t <value> - no. of threads, 0 means all available (default: " << execution_params.n_threads << ")\n"
+		<< "  -v - verbose mode, show timing information (default: disabled)\n"
 #ifdef DEVELOPER_MODE
-	cout << "  -vv - very verbose mode, show timing information (default: disabled)\n";
+		<< "  -vv - very verbose mode, show timing information (default: disabled)\n"
 #endif
 
-#ifdef DEVELOPER_MODE
-	cout << "  -gt <sl, upgma, chained> - guide tree method (single linkage, UPGMA, chained)\n"
-		<< "       (default: sl)\n";
-	cout << "  -gt_chained <value> - seed for random number generator in chained method\n"
-		 << "      (defualt: " << execution_params.guide_tree_seed << ")\n";
+#ifdef DEVELOPER_MODE		
+		<< "  -gt <sl | upgma | parttree_sl | parttree_upgma | import <file> | chained <seed>> - guide tree method (default: sl):\n"
 #else
-	cout << "  -gt <sl, upgma> - guide tree method (single linkage, UPGMA)\n"
-		<< "       (default: sl)\n";
+		<< "  -gt <sl | upgma | parttree_sl | parttree_upgma | import <file>> - guide tree method (default: sl):\n"
 #endif
-
-	cout << "  -gt_import <file_name> - import guide tree in Newick format\n";
-	cout << "  -gt_export <file_name> - export guide tree to Newick format\n";
-	cout << "  -dist_export <file_name> -export distance matrix to CSV file; works only in UPGMA mode(-gt upgma)\n";
+		<< "      * sl - single linkage,\n"
+		<< "      * upgma - UPGMA,\n"
+		<< "      * parttree_sl - PartTree with single linkage for partial trees,\n"
+		<< "      * parttree_upgma - PartTree with UPGMA for partial trees,\n"
+		<< "      * import <file> - imported from a Newick file,\n"
+#ifdef DEVELOPER_MODE
+		<< "      * chained <seed> - chained with given seed,\n"
+#endif
+		<< "  -gt_export - export a guide tree to output file in Newick format\n"
+		<< "  -dist_export - export a distance matrix to output file in CSV format\n"
 
 #ifdef DEVELOPER_MODE
-	cout << "  -ref <file_name> - load referential sequences (for benchmarks) and calculate the minimal subtree size containing them\n";
+		<< "  -ref <file_name> - load referential sequences (for benchmarks) and calculate the minimal subtree size containing them\n"
 #endif
 
-/*	cout << "  -gpu_p <value> - gpu platform id \n";
-	cout << "  -gpu_d <value> - gpu device id \n";
-	cout << "     Hint: both -gpu_p and -gpu_d must be specified to enable gpu support\n";*/
+		<< endl;
 }
 
 // ****************************************************************************
@@ -142,10 +144,12 @@ void init_params()
 	execution_params.thr_refinement					= 1000;
 	execution_params.thr_internal_refinement		= 0;
 
-	execution_params.guide_tree						= GT_method::single_linkage;
+	execution_params.guide_tree						= GT_method::SLINK;
 	execution_params.guide_tree_seed				= 0;
-	execution_params.guide_tree_in_file				= "guide_tree.txt";
-	execution_params.guide_tree_out_file			= "";
+	execution_params.parttree_size					= 50;
+	execution_params.guide_tree_in_file				= "";
+	execution_params.export_tree					= false;
+	execution_params.export_distances				= false;
 
 	execution_params.test_ref_sequenes				= false;
 	execution_params.ref_file_name					= "";
@@ -157,6 +161,7 @@ void init_params()
 	execution_params.very_verbose_mode				= false;
 
 	execution_params.indel_exp						= 1.0;
+	execution_params.shuffle						= -1;
 }
 
 // ****************************************************************************
@@ -202,29 +207,28 @@ bool parse_params(int argc, char **argv)
 			execution_params.thr_internal_refinement = atoi(argv[argno++]);
 		else if (cur_par == "-gt")
 		{
-			if (string(argv[argno]) == "sl")
-				execution_params.guide_tree = GT_method::single_linkage;
-			else if (string(argv[argno]) == "upgma")
-				execution_params.guide_tree = GT_method::UPGMA;
-#ifdef DEVELOPER_MODE
-			else if (string(argv[argno]) == "chained")
-				execution_params.guide_tree = GT_method::chained;
-#endif			
-			argno++;
+			string name(argv[argno++]);
+			execution_params.guide_tree = GT_method::fromString(name);	
+			if (execution_params.guide_tree == GT_method::imported) {
+				execution_params.guide_tree_in_file = argv[argno++];
+			}
+			else if (execution_params.guide_tree == GT_method::chained) {
+				execution_params.guide_tree_seed = atoi(argv[argno++]);
+			}
 		}
-		else if (cur_par == "-gt_import") {
-			execution_params.guide_tree = GT_method::imported;
-			execution_params.guide_tree_in_file = argv[argno++];
+		else if (cur_par == "-parttree_size") {
+			execution_params.parttree_size = atof(argv[argno++]);
 		}
 		else if (cur_par == "-gt_export") {
-			execution_params.guide_tree_out_file = argv[argno++];
+			execution_params.export_tree = true;
 		}
 		else if (cur_par == "-dist_export") {
-			execution_params.distance_matrix_out_file = argv[argno++];
+			execution_params.export_distances = true;
 		}
 #ifdef DEVELOPER_MODE
-		else if (cur_par == "-gt_chained")
-			execution_params.guide_tree_seed = atoi(argv[argno++]);
+		else if (cur_par == "-shuffle") {
+			execution_params.shuffle = atoi(argv[argno++]);
+		}
 		else if (cur_par == "-ref") {
 			execution_params.test_ref_sequenes = true;
 			execution_params.ref_file_name = argv[argno++];
@@ -236,19 +240,12 @@ bool parse_params(int argc, char **argv)
 		else if (cur_par == "-vv")
 			execution_params.very_verbose_mode = true;
 #endif
-		/*		else if(cur_par == "-gpu_p")
-			execution_params.gpu_platform = atoi(argv[argno++]);
-		else if(cur_par == "-gpu_d")
-			execution_params.gpu_device = atoi(argv[argno++]);*/
 		else
 		{
 			cout << "Unknown parameter: " << cur_par << "\n";
 			return false;
 		}
 	}
-
-/*	if(execution_params.gpu_platform >= 0 && execution_params.gpu_device >= 0)
-		execution_params.use_gpu = true;*/
 
 	if(argno + 2 > argc)
 	{
@@ -286,13 +283,16 @@ void set_famsa_params(CParams &famsa_params)
 	famsa_params.indel_exp						= execution_params.indel_exp;
 
 	famsa_params.guide_tree						= execution_params.guide_tree;
+	famsa_params.parttree_size					= execution_params.parttree_size;
 	famsa_params.guide_tree_in_file				= execution_params.guide_tree_in_file;
-	famsa_params.guide_tree_out_file			= execution_params.guide_tree_out_file;
-	famsa_params.guide_tree_seed				= execution_params.guide_tree_seed;
-	famsa_params.distance_matrix_out_file		= execution_params.distance_matrix_out_file;
+	famsa_params.export_tree					= execution_params.export_tree;
+	famsa_params.export_distances				= execution_params.export_distances;
+	famsa_params.output_file_name				= execution_params.output_file_name;
 
 	famsa_params.test_ref_sequences				= execution_params.test_ref_sequenes;
 	famsa_params.ref_file_name					= execution_params.ref_file_name;
+
+	famsa_params.shuffle						= execution_params.shuffle;
 }
 
 // ****************************************************************************
@@ -305,7 +305,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	else {
-		cerr << "FAMSA (Fast and Accurate Multiple Sequence Alignment) ver. " << FAMSA_VER << " CPU and GPU\n";
+		cerr << "FAMSA (Fast and Accurate Multiple Sequence Alignment) ver. " << FAMSA_VER << " CPU\n";
 		cerr << "  by " << FAMSA_AUTHORS << " (" << FAMSA_DATE << ")\n\n";
 	}
 
@@ -318,31 +318,29 @@ int main(int argc, char *argv[])
 
 	set_famsa_params(params);
 
-	// ***** Read input file
-	CInputFile in_file;
-	COutputFile out_file;
+	Log::getInstance(Log::LEVEL_NORMAL).enable();
+	if (params.verbose_mode) {
+		Log::getInstance(Log::LEVEL_VERBOSE).enable();
+	}
+	if (params.very_verbose_mode) {
+		Log::getInstance(Log::LEVEL_DEBUG).enable();
+	}
 
-	if (execution_params.verbose_mode)
-		cerr << "Processing: " << execution_params.input_file_name << "\n";
+	// ***** Read input file
+	LOG_VERBOSE << "Processing: " << execution_params.input_file_name << "\n";
 
 	vector<CGappedSequence*> result;
 	vector<CSequence> sequences;
 
-	size_t input_seq_cnt = in_file.ReadFile(execution_params.input_file_name);
+	size_t input_seq_cnt = IOService::loadFasta(execution_params.input_file_name, sequences);
     if(input_seq_cnt == 0){			
-    	cout << "Error: no (or incorrect) input file\n";
+    	LOG_NORMAL << "Error: no (or incorrect) input file\n";
 		return 0;
 	} else if (input_seq_cnt == 1){
-		in_file.StealSequences(sequences);
         CGappedSequence resultSeq(sequences[0]);
 		result.push_back(&resultSeq);
-		out_file.PutSequences(std::move(result));
-	    out_file.SaveFile(execution_params.output_file_name);
-        return 0;
+		return IOService::saveAlignment(execution_params.output_file_name, result);
 	}
-
-
-	in_file.StealSequences(sequences);
 
 	// ***** Load sequences to FAMSA
 	if(!famsa.SetSequences(std::move(sequences)))
@@ -350,27 +348,24 @@ int main(int argc, char *argv[])
 
 	if(!famsa.SetParams(params))
 	{
-		cout << "Error: No input sequences\n";
+		LOG_NORMAL << "Error: No input sequences\n";
 		return 0;
 	}
 
 	if(!famsa.ComputeMSA())
 	{
-		cout << "Some interal error occured!\n";
+		LOG_NORMAL << "Some interal error occured!\n";
 		return 0;
 	}
 
 	famsa.GetAlignment(result);
 
-	out_file.PutSequences(std::move(result));
-	out_file.SaveFile(execution_params.output_file_name);
+	IOService::saveAlignment(execution_params.output_file_name, result);
 
 	timer.StopTimer();
 
-	if (execution_params.verbose_mode)
-		cerr << "Total computation time: " << timer.GetElapsedTime() << "s\n";
-
-	cerr << "Done!\n";
+	LOG_VERBOSE << "Total computation time: " << timer.GetElapsedTime() << "s\n";
+	LOG_NORMAL << "Done!\n";
 
 	return 0;
 }
