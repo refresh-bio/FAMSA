@@ -358,9 +358,11 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	famsa.GetAlignment(result);
-
-	IOService::saveAlignment(execution_params.output_file_name, result);
+	if (famsa.GetAlignment(result)) {
+		LOG_VERBOSE << "Saving alignment in " << execution_params.output_file_name;		
+		IOService::saveAlignment(execution_params.output_file_name, result);
+		LOG_VERBOSE << " [OK]" << endl;		
+	}
 
 	timer.StopTimer();
 

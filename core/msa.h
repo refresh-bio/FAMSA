@@ -54,7 +54,7 @@ protected:
 
 	set<int> already_refined;
 
-	CStopWatch timers[4];
+	CStopWatch timers[5];
 
 	vector<CSequence> ref_sequences;
 

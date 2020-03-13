@@ -458,6 +458,10 @@ bool CFAMSA::RefineAlignment(CProfile *&profile_to_refine)
 // *******************************************************************
 bool CFAMSA::GetAlignment(vector<CGappedSequence*> &result)
 {
+	if (!final_profile) {
+		return false;
+	}		
+
 	result = final_profile->data;
 
 	sort(result.begin(), result.end(), [](CGappedSequence *p, CGappedSequence *q){return p->id < q->id;});
