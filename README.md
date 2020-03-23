@@ -43,13 +43,12 @@ Options:
 * `-fr` - force refinement (by default the refinement is disabled for sets larger than 1000 seq.)
 * `-t <value>` - no. of threads, 0 means all available (default: 0)
 * `-v` - verbose mode, show timing information (default: disabled)
-* `-gt <sl | upgma | parttree_sl | parttree_upgma | import <file>>` - the guide tree method (default: sl):
+* `-gt <sl | upgma | import <file>>` - the guide tree method (default: sl):
     * `sl` - single linkage,
     * `upgma` - UPGMA,
-    * `parttree_sl` - PartTree with single linkage for partial trees,
-    * `parttree_upgma` - PartTree with UPGMA for partial trees,
     * `import <file>` - import from a Newick file.
-
+* `-medoidtree` - use MedoidTree heuristic for speeding up tree construction (default: disabled)
+* `-parttree` - use PartTree heuristic for speeding up tree construction (default: disabled)
 * `-gt_export` - export a guide tree to output file in the Newick format
 * `-dist_export` - export a distance matrix to output file in CSV format
 

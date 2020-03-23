@@ -33,62 +33,70 @@ CFLAGS_AVX = $(CFLAGS) -mavx ${ABI_FLAG} -mpopcnt -funroll-loops
 CFLAGS_AVX2 = $(CFLAGS) -mavx2 ${ABI_FLAG} -mpopcnt -funroll-loops
 
 
-COMMON_OBJS := core/io_service.o \
-	core/guide_tree.o \
-	core/log.o \
-	core/msa.o \
-	core/profile.o \
-	core/sequence.o \
-	core/queues.o \
-	core/timer.o \
-	core/NewickTree.o \
+COMMON_OBJS := src/msa.o \
+	src/tree/AbstractTreeGenerator.o \
+	src/tree/Clustering.o \
+	src/tree/GuideTree.o \
+	src/tree/NewickParser.o \
+	src/tree/PartTree.o \
+	src/tree/SingleLinkage.o \
+	src/tree/UPGMA.o \
+	src/utils/timer.o \
+	src/utils/log.o \
+	src/core/io_service.o \
+	src/core/profile.o \
+	src/core/sequence.o \
+	src/core/queues.o \
 	libs/instrset_detect.o \
 	
-core/lcsbp_classic.o : core/lcsbp_classic.cpp
-	$(CC) $(CFLAGS) -c core/lcsbp_classic.cpp -o $@
+src/lcs/lcsbp_classic.o : src/lcs/lcsbp_classic.cpp
+	$(CC) $(CFLAGS) -c src/lcs/lcsbp_classic.cpp -o $@
 
 ifeq ($(NO_AVX), true) 
-LCS_OBJS := core/lcsbp.o \
-	core/lcsbp_classic.o
+LCS_OBJS := src/lcs/lcsbp.o \
+	src/lcs/lcsbp_classic.o
 
-core/lcsbp.o : core/lcsbp.cpp
-	$(CC) $(CFLAGS) -DNO_AVX -c core/lcsbp.cpp -o $@
+src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
+	$(CC) $(CFLAGS) -DNO_AVX -c src/lcs/lcsbp.cpp -o $@
 
 else 
 ifeq ($(NO_AVX2), true)
  
-LCS_OBJS := core/lcsbp.o \
-	core/lcsbp_classic.o \
-	core/lcsbp_avx.o
+LCS_OBJS := src/lcs/lcsbp.o \
+	src/lcs/lcsbp_classic.o \
+	src/lcs/lcsbp_avx.o
 
-core/lcsbp.o : core/lcsbp.cpp
-	$(CC) $(CFLAGS) -DNO_AVX2 -c core/lcsbp.cpp -o $@
-core/lcsbp_avx.o : core/lcsbp_avx.cpp
-	$(CC) $(CFLAGS_AVX) -c core/lcsbp_avx.cpp -o $@
+src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
+	$(CC) $(CFLAGS) -DNO_AVX2 -c src/lcs/lcsbp.cpp -o $@
+src/lcs/lcsbp_avx.o : src/lcs/lcsbp_avx.cpp
+	$(CC) $(CFLAGS_AVX) -c src/lcs/lcsbp_avx.cpp -o $@
 else
-LCS_OBJS := core/lcsbp.o \
-	core/lcsbp_classic.o \
-	core/lcsbp_avx.o \
-	core/lcsbp_avx2.o
+LCS_OBJS := src/lcs/lcsbp.o \
+	src/lcs/lcsbp_classic.o \
+	src/lcs/lcsbp_avx.o \
+	src/lcs/lcsbp_avx2.o
 
-core/lcsbp.o : core/lcsbp.cpp
-	$(CC) $(CFLAGS) -c core/lcsbp.cpp -o $@
-core/lcsbp_avx.o : core/lcsbp_avx.cpp
-	$(CC) $(CFLAGS_AVX) -c core/lcsbp_avx.cpp -o $@
-core/lcsbp_avx2.o : core/lcsbp_avx2.cpp
-	$(CC) $(CFLAGS_AVX2) -c core/lcsbp_avx2.cpp -o $@
+src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
+	$(CC) $(CFLAGS) -c src/lcs/lcsbp.cpp -o $@
+src/lcs/lcsbp_avx.o : src/lcs/lcsbp_avx.cpp
+	$(CC) $(CFLAGS_AVX) -c src/lcs/lcsbp_avx.cpp -o $@
+src/lcs/lcsbp_avx2.o : src/lcs/lcsbp_avx2.cpp
+	$(CC) $(CFLAGS_AVX2) -c src/lcs/lcsbp_avx2.cpp -o $@
 endif
 endif
 
 .cpp.o:
 	$(CC) $(CFLAGS) -c $< -o $@
 
-famsa: famsa_cpu/famsa_cpu.o $(COMMON_OBJS) $(LCS_OBJS)
-	$(CC) $(CLINK) -o $@ famsa_cpu/famsa_cpu.o $(COMMON_OBJS) $(LCS_OBJS) $(LIBS_LINUX_DIR)/${ASM_LIB}
+famsa: src/famsa.o $(COMMON_OBJS) $(LCS_OBJS)
+	$(CC) $(CLINK) -o $@ src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(LIBS_LINUX_DIR)/${ASM_LIB}
 
 clean:
-	-rm core/*.o
+	-rm src/core/*.o
+	-rm src/lcs/*.o
+	-rm src/tree/*.o
+	-rm src/utils/*.o
+	-rm src/*.o
 	-rm libs/*.o
-	-rm famsa_cpu/*.o
 	-rm famsa
 
