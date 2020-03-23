@@ -2,9 +2,11 @@
 Algorithm for large-scale multiple sequence alignments (400k proteins in 2 hours and 8BG of RAM).
 
 NOTE: In `experimental` branch one can find the latest FAMSA version with multiple changes:
-- PartTree algorithm for fast tree generation,
+- heuristics for fast guide tree generation,
 - improved interface for tree import/export (e.g., possibility to export a tree without doing an alignment),
 - GPU mode no longer supported.
+
+IMPORTANT NOTE: `-dist_export` produces distance matrix with different sequence ordering than in FASTA file. Please do not use it until fixed! The bug is present in both `master` and `experimental` branches.
 
 ## Installation and configuration
 
@@ -51,7 +53,6 @@ Options:
 * `-gt <sl, upgma, chained>` - choice of guide tree method: single linkage, UPGMA, chained (default: sl)
 * `-gt_import <file_name>` - import guide tree in Newick format
 * `-gt_export <file_name>` - export guide tree to Newick format
-* `-dist_export <file_name>` - export distance matrix to CSV file; works only in UPGMA mode (`-gt upgma`)
 
 When running *famsa-gpu* executable, two additional parameters must be specified:
 * `-gpu_p <value>` - gpu platform id
