@@ -6,7 +6,7 @@ NOTE: In `experimental` branch one can find the latest FAMSA version with multip
 - improved interface for tree import/export (e.g., possibility to export a tree without doing an alignment),
 - GPU mode no longer supported.
 
-IMPORTANT NOTE: `-dist_export` produces distance matrix with different sequence ordering than in FASTA file. Please do not use it until fixed! The bug is present in both `master` and `experimental` branches.
+IMPORTANT NOTE: `-dist_export` produces distance matrix with different sequence ordering than in FASTA file. The bug has been fixed in the `experimental` branch(release 1.5.12).
 
 ## Installation and configuration
 
