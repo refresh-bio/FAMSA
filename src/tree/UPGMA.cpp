@@ -11,6 +11,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "../lcs/lcsbp.h"
 
 #include <thread>
+#include <algorithm>
+#include <fstream>
 
 using namespace std;
 
@@ -259,6 +261,48 @@ void UPGMA::computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_structure& t
 }
 
 
+
+// *******************************************************************
+bool UPGMA::saveDistances(const std::string& file_name, std::vector<CSequence>& sequences) {
+
+	// open output file
+	ofstream file(file_name);
+	if (!file) {
+		return false;
+	}
+
+	// calculate distances first
+	size_t g_uLeafCount = sequences.size();
+	size_t g_uTriangleSize = (g_uLeafCount*(g_uLeafCount - 1)) / 2;
+	UPGMA_dist_t *g_Dist = new UPGMA_dist_t[g_uTriangleSize];
+
+	// Temporarily resize the sequences by adding unknown symbols (just to simplify the pairwise comparison)
+	size_t max_seq_len =
+		std::max_element(sequences.begin(), sequences.end(), [](const CSequence &x, CSequence &y) {return x.length < y.length; })->length;
+
+	for (int i = 0; i < sequences.size(); ++i) {
+		sequences[i].data.resize(max_seq_len, UNKNOWN_SYMBOL);
+	}
+
+	computeDistances(sequences, g_Dist);
+
+	for (int i = 0; i < sequences.size(); ++i) {
+		// Bring the sequences to the valid length
+		sequences[i].data.resize(sequences[i].length, UNKNOWN_SYMBOL);
+	
+		// store distance in a file
+		file << sequences[i].id << ", ";
+			for (size_t j = 0; j < i; ++j) {
+				const size_t id = TriangleMatrix::access(i, j);
+				UPGMA_dist_t d = g_Dist[id];
+				file << d << ", ";
+			}
+		file << std::endl;
+	}
+
+	delete[] g_Dist;
+	return true;
+}
 
 
 // *******************************************************************

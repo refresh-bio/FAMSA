@@ -53,4 +53,6 @@ public:
 	void computeDistances(std::vector<CSequence>& sequences, UPGMA_dist_t *dist_matrix);
 
 	void computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_structure& tree);
+
+	bool saveDistances(const std::string& file_name, std::vector<CSequence>& sequences);
 };

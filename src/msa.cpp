@@ -528,39 +528,41 @@ bool CFAMSA::ComputeMSA()
 		<< " Instruction set: " << instr_names[(int)instruction_set] << endl << endl;
 	
 
-	timers[TIMER_SORTING].StartTimer();
-	if (params.shuffle == -1) {
-		LOG_VERBOSE << "Sorting sequences...";
-		std::stable_sort(sequences.begin(), sequences.end(), [](const CSequence& a, const CSequence& b)->bool {
-			return a.length > b.length || (a.length == b.length && a.data < b.data);
-		});
-		LOG_VERBOSE << " [OK]" << endl;
-	}
-	else {
-		LOG_VERBOSE << "Shuffling sequences...";
-		std::mt19937 mt(params.shuffle);
-		std::shuffle(sequences.begin(), sequences.end(), mt);
-		LOG_VERBOSE << " [OK]" << endl;
-	}
-	for (size_t i = 0; i < sequences.size(); ++i) {
-		sequences[i].sequence_no = i;
-	}
-	timers[TIMER_SORTING].StopTimer();
-
-
 	GuideTree tree;
 
- 	bool goOn = true;
+	bool goOn = true;
 
 	// store distance matrix
 	if (params.export_distances) {
 		LOG_VERBOSE << "Calculating distances and storing in: " << params.output_file_name;
-		tree.saveDistances(params.output_file_name, sequences);
+		UPGMA upgma(params.indel_exp, this->n_threads);
+		upgma.saveDistances(params.output_file_name, sequences);
 		LOG_VERBOSE << " [OK]" << endl;
 		goOn = false; // break processing at this point
-	} 
+	}
 
+	
 	if (goOn) {
+		timers[TIMER_SORTING].StartTimer();
+		if (params.shuffle == -1) {
+			LOG_VERBOSE << "Sorting sequences...";
+			std::stable_sort(sequences.begin(), sequences.end(), [](const CSequence& a, const CSequence& b)->bool {
+				return a.length > b.length || (a.length == b.length && a.data < b.data);
+			});
+			LOG_VERBOSE << " [OK]" << endl;
+		}
+		else {
+			LOG_VERBOSE << "Shuffling sequences...";
+			std::mt19937 mt(params.shuffle);
+			std::shuffle(sequences.begin(), sequences.end(), mt);
+			LOG_VERBOSE << " [OK]" << endl;
+		}
+		for (size_t i = 0; i < sequences.size(); ++i) {
+			sequences[i].sequence_no = i;
+		}
+		timers[TIMER_SORTING].StopTimer();
+		
+		
 		timers[TIMER_TREE_BUILD].StartTimer();
 		if (params.gt_method == GT::imported) {
 			LOG_VERBOSE << "Importing guide tree from: " << params.guide_tree_in_file;

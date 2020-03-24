@@ -44,7 +44,7 @@ void AbstractTreeGeneator::operator()(std::vector<CSequence>& sequences, tree_st
 	run(sequences, tree);
 
 	// Bring the sequences to the valid length
-	for (int i = 1; i < sequences.size(); ++i)
+	for (int i = 0; i < sequences.size(); ++i)
 		sequences[i].data.resize(sequences[i].length, UNKNOWN_SYMBOL);
 
 }

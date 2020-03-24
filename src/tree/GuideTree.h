@@ -28,11 +28,6 @@ public:
 		const std::string& file_name,
 		const std::vector<CSequence>& sequences) const;
 
-	bool saveDistances(
-		const std::string& file_name,
-		std::vector<CSequence>& sequences);
-
-	
 protected:
 
 	tree_structure guide_tree;

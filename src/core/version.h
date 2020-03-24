@@ -9,14 +9,17 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"1.5.11"
-#define FAMSA_DATE		"2020-03-23"
+#define FAMSA_VER		"1.5.12"
+#define FAMSA_DATE		"2020-03-24"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+1.5.12 (2020-03-24)
+- Fixed bug with -dist_export mode (sequences not ordered as in input FASTA file)
 
 1.5.11 (2020-03-23)
 - Possiblity to choose between PartTree and MedoidTree heuristic.
