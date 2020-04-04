@@ -1,6 +1,8 @@
 # FAMSA
 Algorithm for large-scale multiple sequence alignments (400k proteins in 2 hours and 8BG of RAM)
 
+NOTE: In experimental branch one can find the latest FAMSA version with updates and experimental features.
+
 ## Installation and configuration
 
 FAMSA comes with a set of precompiled binaries for Windows, Linux, and OS X. They can be found under Releases tab. 
@@ -38,8 +40,6 @@ Options:
     * `sl` - single linkage,
     * `upgma` - UPGMA,
     * `import <file>` - import from a Newick file.
-* `-medoidtree` - use MedoidTree heuristic for speeding up tree construction (default: disabled)
-* `-parttree` - use PartTree heuristic for speeding up tree construction (default: disabled)
 * `-gt_export` - export a guide tree to output file in the Newick format
 * `-dist_export` - export a distance matrix to output file in CSV format
 

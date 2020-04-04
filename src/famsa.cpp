@@ -96,8 +96,8 @@ void show_usage(bool expert)
 		<< "      * sl - single linkage\n"
 		<< "      * upgma - UPGMA\n"
 		<< "      * import <file> - imported from a Newick file\n"
-		<< "  -medoidtree - use MedoidTree heuristic for speeding up tree construction (default: disabled)\n"
-		<< "  -parttree - use PartTree heuristic for speeding up tree construction (default: disabled)\n"
+		//<< "  -medoidtree - use MedoidTree heuristic for speeding up tree construction (default: disabled)\n"
+		//<< "  -parttree - use PartTree heuristic for speeding up tree construction (default: disabled)\n"
 		<< "  -gt_export - export a guide tree to output file in Newick format\n"
 		<< "  -dist_export - export a distance matrix to output file in CSV format\n\n";
 
