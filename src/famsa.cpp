@@ -66,67 +66,61 @@ using namespace std;
 execution_params_t execution_params;
 
 void init_params();
-bool parse_params(int argc, char **argv);
-void show_usage();
+bool parse_params(int argc, char **argv, bool& showExpert);
+void show_usage(bool expert);
 void set_famsa_params(CParams &famsa_params);
 
 // ****************************************************************************
 // Show command-line parameters
-void show_usage()
+void show_usage(bool expert)
 {
 	init_params();		// To set default param values
 
-	cerr 
-		<< "FAMSA (Fast and Accurate Multiple Sequence Alignment) ver. " << FAMSA_VER << " CPU\n"
-		<< "  by " << FAMSA_AUTHORS << " (" << FAMSA_DATE << ")\n\n"
+	cerr
 		<< "Usage:\n"
-		<< "  famsa [parameters] <input_file_name> <output_file_name>\n\n"
-		<< "Parameters:\n"
-		<< "  input_file_name - input file in FASTA format (pass STDIN when reading from standard input)\n"
-		<< "  output_file_name - output file (pass STDOUT when writing to standard output); available outputs:\n"
+		<< "  famsa [options] <input_file> <output_file>\n\n"
+
+		<< "Positional parameters:\n"
+		<< "  input_file - input file in FASTA format (pass STDIN when reading from standard input)\n"
+		<< "  output_file - output file (pass STDOUT when writing to standard output); available outputs:\n"
 		<< "      * alignment in FASTA format,\n"
-		<< "      * guide tree in Newick format (-gt_export option specified),\n" 
-		<< "      * distance matrix in CSV format (-dist_export option specified),\n"
-		<< "  -go <value> - gap open cost (default: " << execution_params.gap_open << ")\n"
-		<< "  -ge <value> - gap extension cost (default: " << execution_params.gap_ext << ")\n"
-		<< "  -tgo <value> - terminal gap open cost (default: " << execution_params.gap_term_open << ")\n"
-		<< "  -tge <value> - terminal gap extenstion cost (default: " << execution_params.gap_term_ext << ")\n"
-		<< "  -gsd <value> - gap cost scaller div-term (default: " << execution_params.gap_scaler_div << ")\n"
-		<< "  -gsl <value> - gap cost scaller log-term (default: " << execution_params.gap_scaler_log << ")\n"
+		<< "      * guide tree in Newick format (-gt_export option specified),\n"
+		<< "      * distance matrix in CSV format (-dist_export option specified),\n\n"
 
-		<< "  -dgr - disable gap cost rescaling (default: enabled)\n"
-		<< "  -dgo - disable gap optimization (default: enabled)\n"
-		<< "  -dsp - disable sum of pairs optimization during refinement (default: enabled)\n"
-
-		<< "  -r <value> - no. of refinement iterations (default: " << execution_params.n_refinements << ")\n"
-		<< "  -fr - force refinement (by default the refinement is disabled for sets larger than " << execution_params.thr_refinement << " seq.)\n"
+		<< "Options:\n"
+		<< "  -help - show advanced options\n"
 		<< "  -t <value> - no. of threads, 0 means all available (default: " << execution_params.n_threads << ")\n"
-		<< "  -v - verbose mode, show timing information (default: disabled)\n"
-#ifdef DEVELOPER_MODE
-		<< "  -vv - very verbose mode, show timing information (default: disabled)\n"
-#endif
+		<< "  -v - verbose mode, show timing information (default: disabled)\n\n"
 
-#ifdef DEVELOPER_MODE		
-		<< "  -gt <sl | upgma | parttree_sl | parttree_upgma | import <file> | chained <seed>> - guide tree method (default: sl):\n"
-#else
 		<< "  -gt <sl | upgma | import <file>> - guide tree method (default: sl):\n"
-#endif
 		<< "      * sl - single linkage\n"
 		<< "      * upgma - UPGMA\n"
 		<< "      * import <file> - imported from a Newick file\n"
 		<< "  -medoidtree - use MedoidTree heuristic for speeding up tree construction (default: disabled)\n"
-		<< "  -parttree - use PartTree heuristic for speeding up tree construction (default: disabled)\n"		
-#ifdef DEVELOPER_MODE
-		<< "      * chained <seed> - chained with given seed,\n"
-#endif
+		<< "  -parttree - use PartTree heuristic for speeding up tree construction (default: disabled)\n"
 		<< "  -gt_export - export a guide tree to output file in Newick format\n"
-		<< "  -dist_export - export a distance matrix to output file in CSV format\n"
+		<< "  -dist_export - export a distance matrix to output file in CSV format\n\n";
 
+	if (expert) {
+		cerr << "Advanced options:\n"
+			<< "  -r <value> - no. of refinement iterations (default: " << execution_params.n_refinements << ")\n"
+			<< "  -fr - force refinement (by default the refinement is disabled for sets larger than " << execution_params.thr_refinement << " seq.)\n"
+			<< "  -go <value> - gap open cost (default: " << execution_params.gap_open << ")\n"
+			<< "  -ge <value> - gap extension cost (default: " << execution_params.gap_ext << ")\n"
+			<< "  -tgo <value> - terminal gap open cost (default: " << execution_params.gap_term_open << ")\n"
+			<< "  -tge <value> - terminal gap extenstion cost (default: " << execution_params.gap_term_ext << ")\n"
+
+			<< "  -gsd <value> - gap cost scaller div-term (default: " << execution_params.gap_scaler_div << ")\n"
+			<< "  -gsl <value> - gap cost scaller log-term (default: " << execution_params.gap_scaler_log << ")\n"
+			<< "  -dgr - disable gap cost rescaling (default: enabled)\n"
+			<< "  -dgo - disable gap optimization (default: enabled)\n"
+			<< "  -dsp - disable sum of pairs optimization during refinement (default: enabled)\n";
 #ifdef DEVELOPER_MODE
-		<< "  -ref <file_name> - load referential sequences (for benchmarks) and calculate the minimal subtree size containing them\n"
+		cerr << "  -ref <file_name> - load referential sequences (for benchmarks) and calculate the minimal subtree size containing them\n"
+			<< "  -vv - very verbose mode, show timing information (default: disabled)\n";
 #endif
-
-		<< endl;
+		cerr << endl;
+	}
 }
 
 // ****************************************************************************
@@ -178,8 +172,14 @@ void init_params()
 
 // ****************************************************************************
 // **** Parses parameters
-bool parse_params(int argc, char **argv)
+bool parse_params(int argc, char **argv, bool& showExpert)
 {
+	// ugly workaround
+	if (argc == 2 && string(argv[1]) == "-help") {
+		showExpert = true;
+		return false;
+	}
+
 	if(argc < 3)	 
 		return false;
 
@@ -189,7 +189,11 @@ bool parse_params(int argc, char **argv)
 	{
 		string cur_par = argv[argno++];
 
-		if(cur_par == "-go")
+		if (cur_par == "-help") {
+			showExpert = true;
+			return false;
+		}
+		else if	(cur_par == "-go")
 			execution_params.gap_open = atof(argv[argno++]);
 		else if(cur_par == "-ge")
 			execution_params.gap_ext = atof(argv[argno++]);
@@ -328,17 +332,17 @@ void set_famsa_params(CParams &famsa_params)
 // ****************************************************************************
 int main(int argc, char *argv[])
 {
+	cerr << "FAMSA (Fast and Accurate Multiple Sequence Alignment) ver. " << FAMSA_VER << " CPU\n"
+		<< "  by " << FAMSA_AUTHORS << " (" << FAMSA_DATE << ")\n\n";
+	
+	bool showExpert = 0;
 	init_params();
-	if(!parse_params(argc, argv))
+	if(!parse_params(argc, argv, showExpert))
 	{
-		show_usage();
+		show_usage(showExpert);
 		return 0;
 	}
-	else {
-		cerr << "FAMSA (Fast and Accurate Multiple Sequence Alignment) ver. " << FAMSA_VER << " CPU\n";
-		cerr << "  by " << FAMSA_AUTHORS << " (" << FAMSA_DATE << ")\n\n";
-	}
-
+	
 	CStopWatch timer;
 
 	timer.StartTimer();

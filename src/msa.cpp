@@ -495,26 +495,28 @@ bool CFAMSA::ComputeMSA()
 	if (params.verbose_mode)
 	{
 		cerr << "Params:\n";
-		cerr << "  gap open cost (rescalled): " << params.gap_open << "\n";
-		cerr << "  gap extension cost (rescalled): " << params.gap_ext << "\n";
-		cerr << "  gap terminal open cost (rescalled): " << params.gap_term_open << "\n";
-		cerr << "  gap terminal extension cost (rescalled): " << params.gap_term_ext << "\n";
-		cerr << "  no. of refinements: " << params.n_refinements << "\n";
-		cerr << "  gap cost scaller log-term: " << params.scaler_log << "\n";
-		cerr << "  gap cost scaller div-term: " << params.scaler_div << "\n";
-		cerr << "  refinement threshold: " << params.thr_refinement << "\n";
-		cerr << "  enable gap rescaling: " << params.enable_gap_rescaling << "\n";
-		cerr << "  enable gap optimization: " << params.enable_gap_optimization << "\n";
-		cerr << "  enable total score calculation: " << params.enable_total_score_calculation << "\n";
-		cerr << "  enable auto refinement: " << params.enable_auto_refinement << "\n";
-		cerr << "  guided alignment radius: " << params.guided_alignment_radius << "\n";
 		cerr << "  no. of threads: " << params.n_threads << "\n";
 		cerr << "  guide tree method: " << GT::toString(params.gt_method) << "\n";
 		cerr << "  guide tree speeding up heuristic: " << GT::toString(params.gt_heuristic) << "\n";
 		if (params.gt_heuristic == GT::imported) {
 			cerr << "  guide tree file: " << params.guide_tree_in_file << "\n";
 		}
-		cerr << endl;
+
+		cerr << "Advanced params:\n";
+		cerr << "  no. of refinements: " << params.n_refinements << "\n";
+		cerr << "  refinement threshold: " << params.thr_refinement << "\n";
+		cerr << "  gap open cost (rescalled): " << params.gap_open << "\n";
+		cerr << "  gap extension cost (rescalled): " << params.gap_ext << "\n";
+		cerr << "  gap terminal open cost (rescalled): " << params.gap_term_open << "\n";
+		cerr << "  gap terminal extension cost (rescalled): " << params.gap_term_ext << "\n";
+		cerr << "  gap cost scaller log-term: " << params.scaler_log << "\n";
+		cerr << "  gap cost scaller div-term: " << params.scaler_div << "\n";	
+		cerr << "  enable gap rescaling: " << params.enable_gap_rescaling << "\n";
+		cerr << "  enable gap optimization: " << params.enable_gap_optimization << "\n";
+		cerr << "  enable total score calculation: " << params.enable_total_score_calculation << "\n";
+		cerr << "  enable auto refinement: " << params.enable_auto_refinement << "\n";
+		cerr << "  guided alignment radius: " << params.guided_alignment_radius << "\n\n";
+
 	}
 		
 #ifdef DEVELOPER_MODE

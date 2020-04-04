@@ -20,29 +20,20 @@ Note, that FAMSA by default takes advantage of AVX and AVX2 CPU extensions. Pre-
 
 ## Usage
 
-`famsa [options] <input_file_name> <output_file_name>`
+`famsa [options] <input_file> <output_file>`
 
 Positional parameters:
-* `input_file_name` - input file in FASTA format (pass STDIN when reading from standard input)
-* `output_file_name` - output file (pass STDOUT when writing to standard output); available outputs:
+* `input_file` - input file in FASTA format (pass STDIN when reading from standard input)
+* `output_file` - output file (pass STDOUT when writing to standard output); available outputs:
     * alignment in FASTA format,
     * guide tree in Newick format (`-gt_export` option specified),
 	* distance matrix in CSV format (`-dist_export` option specified).
 
 Options:
-* `-go <value>` - gap open cost (default: 14.85)
-* `-ge <value>` - gap extension cost (default: 1.25)
-* `-tgo <value>` - terminal gap open cost (default: 0.66)
-* `-tge <value>` - terminal gap extenstion cost (default: 0.66)
-* `-gsd <value>` - gap cost scaller div-term (default: 7)
-* `-gsl <value>` - gap cost scaller log-term (default: 45)
-* `-dgr` - disable gap cost rescaling (default: enabled)
-* `-dgo` - disable gap optimization (default: enabled)
-* `-dsp` - disable sum of pairs optimization during refinement (default: enabled)
-* `-r <value>` - no. of refinement iterations (default: 100)
-* `-fr` - force refinement (by default the refinement is disabled for sets larger than 1000 seq.)
+*  -help - show advanced options
 * `-t <value>` - no. of threads, 0 means all available (default: 0)
 * `-v` - verbose mode, show timing information (default: disabled)
+
 * `-gt <sl | upgma | import <file>>` - the guide tree method (default: sl):
     * `sl` - single linkage,
     * `upgma` - UPGMA,
@@ -51,6 +42,19 @@ Options:
 * `-parttree` - use PartTree heuristic for speeding up tree construction (default: disabled)
 * `-gt_export` - export a guide tree to output file in the Newick format
 * `-dist_export` - export a distance matrix to output file in CSV format
+
+Advanced options:
+* `-r <value>` - no. of refinement iterations (default: 100)
+* `-fr` - force refinement (by default the refinement is disabled for sets larger than 1000 seq.)
+* `-go <value>` - gap open cost (default: 14.85)
+* `-ge <value>` - gap extension cost (default: 1.25)
+* `-tgo <value>` - terminal gap open cost (default: 0.66)
+* `-tge <value>` - terminal gap extenstion cost (default: 0.66)
+* `-gsd <value>` - gap cost scaller div-term (default: 7)
+* `-gsl <value>` - gap cost scaller log-term (default: 45)
+* `-dgr` - disable gap cost rescaling (default: enabled)
+* `-dgo` - disable gap optimization (default: enabled)
+* `-dsp` - disable sum of pairs optimization during refinement (default: enabled)	
 
 ### Guide tree import and export
 
