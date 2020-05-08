@@ -4,6 +4,10 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
+Note: The file contains code for the UPGMA method (of high memory consumption)
+These functions was borrowed and adpoted from MUSCLE 3.8.1551 by Robert Edgar
+The time and memory consumption is O(k^2)
+
 */
 #include "UPGMA.h"
 #include "AbstractTreeGenerator.hpp"
