@@ -13,7 +13,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 #include <memory>
 
-class PartTree : public AbstractTreeGeneator {
+class PartTree : public AbstractTreeGenerator {
 public:
 
 	PartTree(
@@ -32,6 +32,8 @@ protected:
 	int subtreeSize;
 	int sampleSize;
 	int clusteringThreshold;
+
+	std::vector<int> randomIds;
 
 	void doStep(std::vector<CSequence*>& sequences, tree_structure& tree);
 

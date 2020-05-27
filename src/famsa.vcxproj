@@ -173,6 +173,7 @@
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AdvancedVectorExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
+    <ClCompile Include="tree\NeighborJoining.cpp" />
     <ClCompile Include="tree\PartTree.cpp" />
     <ClCompile Include="tree\SingleLinkage.cpp" />
     <ClCompile Include="tree\UPGMA.cpp" />
@@ -191,6 +192,7 @@
     <ClInclude Include="tree\Chained.h" />
     <ClInclude Include="tree\Clustering.h" />
     <ClInclude Include="tree\IPartialGenerator.h" />
+    <ClInclude Include="tree\NeighborJoining.h" />
     <ClInclude Include="tree\PartTree.h" />
     <ClInclude Include="tree\SingleLinkage.h" />
     <ClInclude Include="tree\UPGMA.h" />

@@ -37,6 +37,7 @@ COMMON_OBJS := src/msa.o \
 	src/tree/AbstractTreeGenerator.o \
 	src/tree/Clustering.o \
 	src/tree/GuideTree.o \
+	src/tree/NeighborJoining.o \
 	src/tree/NewickParser.o \
 	src/tree/PartTree.o \
 	src/tree/SingleLinkage.o \

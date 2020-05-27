@@ -15,7 +15,7 @@ using namespace std;
 
 
 // *******************************************************************
-AbstractTreeGeneator::AbstractTreeGeneator(double indel_exp, size_t n_threads) : indel_exp(indel_exp), n_threads(n_threads) {
+AbstractTreeGenerator::AbstractTreeGenerator(double indel_exp, size_t n_threads) : indel_exp(indel_exp), n_threads(n_threads) {
 	int x = instrset_detect();
 
 	if (x >= 0 && x <= 8)
@@ -27,7 +27,7 @@ AbstractTreeGeneator::AbstractTreeGeneator(double indel_exp, size_t n_threads) :
 }
 
 // *******************************************************************
-void AbstractTreeGeneator::operator()(std::vector<CSequence>& sequences, tree_structure& tree)
+void AbstractTreeGenerator::operator()(std::vector<CSequence>& sequences, tree_structure& tree)
 {
 	tree.clear();
 	tree.resize(sequences.size(), std::make_pair<int, int>(-1, -1));

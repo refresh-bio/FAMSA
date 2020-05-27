@@ -20,6 +20,8 @@ public:
 
 	GuideTree() {}
 
+	size_t getSequenceCount() const { return (guide_tree.size() + 1) / 2; }
+
 	bool loadNewick(
 		const std::string& file_name,
 		std::vector<CSequence>& sequences);
@@ -28,10 +30,12 @@ public:
 		const std::string& file_name,
 		const std::vector<CSequence>& sequences) const;
 
+	uint64_t calculateSackinIndex();
+
 protected:
 
 	tree_structure guide_tree;
-	
+
 };
 
 

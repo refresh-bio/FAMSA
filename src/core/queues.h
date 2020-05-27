@@ -44,16 +44,12 @@ class CProfileQueue
 
 	size_t counter;
 
-	uint64_t sackin_index;
-
 public:
 	CProfileQueue(vector<CGappedSequence> *_gapped_sequences, map<size_t, CProfile*> *_profiles, vector<pair<int, int>> *_guide_tree);
 	~CProfileQueue();
 
 	bool GetTask(size_t &prof_id, CGappedSequence *&gs, CProfile *&prof1, CProfile *&prof2);
 	void AddSolution(size_t prof_id, CProfile *prof);
-
-	uint64_t GetSackinIndex();
 };
 
 

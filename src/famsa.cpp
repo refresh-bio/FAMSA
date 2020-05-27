@@ -8,6 +8,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 #include <string>
 #include <iostream>
+#include <numeric>
 
 #include "./core/io_service.h"
 #include "./msa.h"
@@ -357,6 +358,7 @@ int main(int argc, char *argv[])
 		Log::getInstance(Log::LEVEL_VERBOSE).enable();
 	}
 	if (params.very_verbose_mode) {
+		Log::getInstance(Log::LEVEL_VERBOSE).enable();
 		Log::getInstance(Log::LEVEL_DEBUG).enable();
 	}
 

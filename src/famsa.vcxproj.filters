@@ -79,6 +79,9 @@
     <ClCompile Include="tree\GuideTree.cpp">
       <Filter>tree</Filter>
     </ClCompile>
+    <ClCompile Include="tree\NeighborJoining.cpp">
+      <Filter>tree</Filter>
+    </ClCompile>
     <ClCompile Include="tree\Clustering.cpp">
       <Filter>tree</Filter>
     </ClCompile>
@@ -221,6 +224,9 @@
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="tree\Clustering.h">
+      <Filter>tree</Filter>
+    </ClInclude>
+    <ClInclude Include="tree\NeighborJoining.h">
       <Filter>tree</Filter>
     </ClInclude>
   </ItemGroup>

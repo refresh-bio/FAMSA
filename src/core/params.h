@@ -34,7 +34,6 @@ struct CParams
 	bool enable_auto_refinement;
 	bool verbose_mode;
 	bool very_verbose_mode;
-	uint64_t sackin_index;
 	uint64_t ref_seq_subtree_size;
 	double indel_exp;
 
@@ -104,7 +103,6 @@ struct CParams
 		cluster_fraction = 0.2;
 		cluster_iters = 2;
 
-		sackin_index = 0;
 		ref_seq_subtree_size = 0;
 		test_ref_sequences = false;
 

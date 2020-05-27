@@ -16,30 +16,32 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 class CLCSBP;
 
-enum class Transformation {
-	None,
-	Reciprocal,
-	Inverse,
+enum class Measure {
+	SimilarityDefault,
+	DistanceReciprocal,
+	DistanceInverse,
+	DistanceLCSByLength,
+	DistanceLCSByLengthCorrected
 };
 
 
-class AbstractTreeGeneator {
+class AbstractTreeGenerator {
 public:
 
-	AbstractTreeGeneator(double indel_exp, size_t n_threads);
+	AbstractTreeGenerator(double indel_exp, size_t n_threads);
 	
 	void operator()(std::vector<CSequence>& sequences, tree_structure& tree);
 
 	
-	template <class seq_type, class similarity_type, Transformation transformation = Transformation::None>
+	template <class seq_type, class similarity_type, Measure measure>
 	void calculateSimilarityVector(
-		CSequence* ref,
+		seq_type& ref,
 		seq_type* sequences,
 		size_t n_seqs,
 		similarity_type* out_vector,
 		CLCSBP& lcsbp);
 
-	template <class seq_type, class similarity_type, Transformation transformation = Transformation::None>
+	template <class seq_type, class similarity_type, Measure measure>
 	void calculateSimilarityMatrix(
 		seq_type* sequences,
 		size_t n_seq,

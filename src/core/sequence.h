@@ -26,7 +26,7 @@ public:
 	string id;
 	vector<symbol_t> data;
 	vector<bool> uppercase;
-	size_t length;
+	uint32_t length;
 
 	Array<bit_vec_t>* bit_masks;
 	

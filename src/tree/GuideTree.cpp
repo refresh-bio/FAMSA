@@ -4,10 +4,6 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
-Note: The file contains code for the UPGMA method (of high memory consumption)
-These functions was borrowed and adpoted from MUSCLE 3.8.1551 by Robert Edgar
-The time and memory consumption is O(k^2)
-
 */
 #include "GuideTree.h"
 #include "NewickParser.h"
@@ -63,6 +59,30 @@ bool GuideTree::saveNewick(
 	newickFile << description;
 
 	return true;
+}
+
+
+// *******************************************************************
+uint64_t GuideTree::calculateSackinIndex() {
+	
+	uint64_t idx = 0;
+	size_t n_sequences = getSequenceCount();
+	
+	if (n_sequences) {
+		std::vector<size_t> depths(this->guide_tree.size());
+		for (size_t i = guide_tree.size() - 1; i >= n_sequences; --i)
+		{
+			depths[guide_tree[i].first] = depths[i] + 1;
+			depths[guide_tree[i].second] = depths[i] + 1;
+		}
+
+
+		for (int i = 0; i < n_sequences; ++i) {
+			idx += depths[i] + 1;
+		}
+	}
+
+	return idx;
 }
 
 

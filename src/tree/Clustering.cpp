@@ -14,7 +14,7 @@ struct solution_t {
 	int* candidate;
 };
 
-void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_medoids, int* medoids) {
+void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_medoids, size_t n_fixed_medoids, int* medoids) {
 
 	// CLARANS paper formula
 	int n_swaps = (n_elems - n_medoids) * n_medoids;
@@ -45,7 +45,9 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 	float *dists_second		= raw_distances + 1 * n_elems;
 	float *deltas = raw_distances + 2 * n_elems;
 	
-	int * assignments = new int[n_elems];
+	int * raw_assign = new int[n_elems * 2];
+	int * assign_nearest = raw_assign + 0 * n_elems;
+	int * assign_second = raw_assign + 1 * n_elems;
 
 	// select centers randomly
 	std::mt19937 gen_nodes;
@@ -55,9 +57,9 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 
 	// test NUM_LOCAL starting nodes
 	for (int iter = 0; iter < numLocal; ++iter) {
-		LOG_DEBUG << std::endl << "=====================================================" << std::endl;
+	//	LOG_DEBUG << std::endl << "=====================================================" << std::endl;
 		// select starting node randomly
-		std::shuffle(candidate, candidate + n_elems, gen_nodes);
+		std::shuffle(candidate + n_fixed_medoids, candidate + n_elems, gen_nodes);
 		
 		std::copy_n(candidate, n_elems, current.candidate);
 		current.cost = std::numeric_limits<float>::max();
@@ -67,58 +69,42 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 			int m = candidate[mm];
 			dists_nearest[m] = 0;	// medoid is at 0 distance from itself
 			dists_second[m] = -1;	// dummy value
-			assignments[m] = -1;	// dummy value
+			assign_nearest[m] = -1;	// dummy value
+			assign_second[m] = -1;	// dummy value
 		}
 
 		// initialize info for non-medoids
 		current.cost = 0;
 		for (size_t xx = n_medoids; xx < n_elems; ++xx) {
-			int x = candidate[xx];
-
-			float dn = INF;
-			float ds = INF;
-			int assign = -1;
 			
-			// find two closest medoids
-			for (size_t mm = 0; mm < n_medoids; ++mm) {
-				int m = candidate[mm];
-				float d = D[TriangleMatrix::access(m, x)];
-				if (d < dn) {
-					ds = dn;
-					dn = d;
-					assign = mm;
-				}
-				else if (d < ds) {
-					ds = d;
-				}
-			}
-			current.cost += dn;
-
-			dists_nearest[x] = dn;
-			dists_second[x] = ds;
-			assignments[x] = assign;
+			int x = candidate[xx];
+			updateAssignment(x, candidate, n_medoids, D, dists_nearest[x], dists_second[x], assign_nearest[x], assign_second[x]);
+			current.cost += dists_nearest[x];
 		}
+		LOG_DEBUG << "Attempt " << iter << "[" << candidate[1] << "]: " << current.cost;
 
 		// search partition graph
 		for (int step = 0; step < correctedMaxNeighbour; ++step) {
 			
-			if (Log::getInstance(Log::LEVEL_DEBUG).isEnabled()) {
+	/*		if (Log::getInstance(Log::LEVEL_DEBUG).isEnabled()) {
 				std::copy_n(candidate, n_medoids, std::ostream_iterator<int>(std::cerr, ","));
 				float realCost = calculateCost(D, candidate, n_elems, n_medoids);
-				LOG_DEBUG << " (" << current.cost  << ", " << realCost << ", delta = " << realCost - current.cost << ")" << std::endl;
+				LOG_DEBUG << " (cuur = " << current.cost  << ", real = " << realCost << ", delta = " << realCost - current.cost << ")" << std::endl;
+				getchar();
 			}
-
+*/
 			// select non-medoid randomly as a candidate for swap
 			int xx = non_medoid_sampling(gen_positions);
 			int x = candidate[xx];
 			float dx = dists_nearest[x];
 	//		int assign_x = assignments[x];
 
-	//		std::fill_n(deltas, n_medoids, -dx); // gain for making x a new medoid (same for all current medoids)
+		//	std::fill_n(deltas, n_medoids, -dx); // gain for making x a new medoid (same for all current medoids)
 			// bug in the psuedocode?
 			std::fill_n(deltas, n_medoids, 0); // gain for making x a new medoid (same for all current medoids)
 			
-			// iterate over other non-medoids y to establish which medoid should be swapped with x
+			// establish which medoid should be swapped with x
+			// iterate over other non-medoids y
 			for (int yy = n_medoids; yy < n_elems; ++yy) {
 				if (yy == xx) {
 					continue;
@@ -127,14 +113,16 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 				float dxy = D[TriangleMatrix::access(x, y)];
 
 				// cache y info
-				int nn = assignments[y];
+				int nn = assign_nearest[y];
 				float dn = dists_nearest[y];
 				float ds = dists_second[y];
  				int n = candidate[nn];
 				
-				deltas[nn] += std::min(dxy, ds) - dn; // cost/gain of reassigning y to x or to its second best
+				// nn is removed so y will be reassigned
+				deltas[nn] += std::min(dxy, ds) - dn;
+				
+				// if y is reassigned to x
 				float change = dxy - dn;
-				// if y will be reassigned to x (dxy < dn < ds)
 				if (change < 0) { 
 					// iterate over other medoids
 					for (int kk = 0; kk < nn; ++kk) {
@@ -146,7 +134,7 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 				}
 			}
 			// get id of best medoid to swap (with smallest delta)
-			auto mm_new = std::min_element(deltas, deltas + n_medoids) - deltas;
+			auto mm_new = std::min_element(deltas + n_fixed_medoids, deltas + n_medoids) - deltas;
 			float delta = deltas[mm_new];
 
 			// if there is an improvement over current medoid
@@ -156,79 +144,159 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 				int m_new = candidate[mm_new];
 				int x_new = candidate[xx];
 
+				// new medoid no longer contributes to cost
+				current.cost -= dists_nearest[m_new];
+
 				// update stats for new medoid
 				dists_nearest[m_new] = 0;
 				dists_second[m_new] = -1;
-				assignments[m_new] = -1;
+				assign_nearest[m_new] = -1;
+				assign_second[m_new] = -1;
 
-				// update stats for former medoid
-				// (find nearest and second nearest)
-				float dn_new = INF;
-				float ds_new = INF;
-				int assign_new = -1;
-
-				for (size_t kk = 0; kk < n_medoids; ++kk) {
-					int k = candidate[kk];
-					float d = D[TriangleMatrix::access(k, x_new)];
-					if (d < dn_new) {
-						ds_new = dn_new;
-						dn_new = d;
-						assign_new = kk;
-					}
-					else if (d < ds_new) {
-						ds_new = d;
-					}
-				}
-
-				dists_nearest[x_new] = dn_new;
-				dists_second[x_new] = ds_new;
-				assignments[x_new] = assign_new;
-				
-				// update distance tables for other non-medoids
-				// (check if new medoid is closer than previously assigned)
+				// update distance tables for non-medoids
 				for (size_t yy = n_medoids; yy < n_elems; ++yy) {
 					int y = candidate[yy];
-					float d = D[TriangleMatrix::access(m_new, y)];
-					if (d < dists_nearest[y]) {
-						dists_second[y] = dists_nearest[y];
-						dists_nearest[y] = d;
-						assignments[y] = mm_new;
+					float d_new = D[TriangleMatrix::access(m_new, y)];
+					float dn = dists_nearest[y];
+					float an = assign_nearest[y];
+
+					// former medoid - update everything
+					if (yy == xx) {
+						updateAssignment(
+							y, candidate, n_medoids, D,
+							dists_nearest[y], dists_second[y], 
+							assign_nearest[y], assign_second[y]);
+
+						current.cost += dists_nearest[y];
+						continue;
 					}
-					else if (d < dists_second[y]) {
-						dists_second[y] = d;
+					
+					if (an == mm_new) {
+						// previous nearest medoid was removed
+						float ds = dists_second[y];
+
+						if (d_new < ds) {
+							// new one is closer than second best - just replace the nearest for new one
+							dists_nearest[y] = d_new;
+							assign_nearest[y] = mm_new;
+
+							current.cost += d_new - dn;
+						}
+						else {
+							// second nearest is the best assignment
+							// recompute
+							updateAssignment(y, candidate, n_medoids, D, 
+								dists_nearest[y], dists_second[y], 
+								assign_nearest[y], assign_second[y]);
+
+							current.cost += ds - dn;
+						}
+					} else if (d_new < dn) {
+						// previous nearest wasn't removed
+						// and new medoid is closer than previous nearest
+						dists_second[y] = dn;
+						assign_second[y] = an;
+						dists_nearest[y] = d_new;
+						assign_nearest[y] = mm_new;
+
+						current.cost += d_new - dn;
+					}
+					else { 
+						// previous nearest wasn't removed
+						// new medoid further than previous nearest
+						
+						// possible change at second best
+						float ds = dists_second[y];
+						float as = assign_second[y];
+						
+						if (as != mm_new && d_new < ds) {
+							// second best wasn't removed
+							// new medoid closer than second best
+							dists_second[y] = d_new;
+							assign_second[y] = mm_new;
+						}
+						else {
+							// second nearest is the best assignment
+							// recompute
+							updateAssignment(y, candidate, n_medoids, D,
+								dists_nearest[y], dists_second[y],
+								assign_nearest[y], assign_second[y]);
+
+						}
 					}
 				}
 
 				// save current solution
 				std::swap(current.candidate[mm_new], current.candidate[xx]);
-				current.cost += delta;
+				//current.cost += delta;
 				step = 0;
-
-				//assert(current.cost > 0);
-				LOG_DEBUG << "Accept: " << candidate[xx] << " [" << xx << "] -> " << candidate[mm_new] << " [" << mm_new << "]    (" << delta << ")" << std::endl;
+				
+				LOG_DEBUG << " -> " << current.cost;
+		//		LOG_DEBUG << "Accept: " << candidate[xx] << " [" << xx << "] -> " << candidate[mm_new] << " [" << mm_new << "]    (" << delta << ")" << std::endl;
 			}
 			else {
-				LOG_DEBUG << step << ". Reject: ? -> " << candidate[xx] << " [" << xx << "]     (" << delta << ")" << std::endl;
+		//		LOG_DEBUG << step << ". Reject: ? -> " << candidate[xx] << " [" << xx << "]     (" << delta << ")" << std::endl;
 			}
 		}
 
 		// fixme: recalculate the cost of current(it should be ok)
-		current.cost = calculateCost(D, current.candidate, n_elems, n_medoids);
-
+		// current.cost = calculateCost(D, current.candidate, n_elems, n_medoids);
+		
 		// if current solution is better than the best solution
 		if (current.cost < best.cost) {
 			best.cost = current.cost;
 			std::copy_n(current.candidate, n_medoids, best.candidate);
 		}
+
+		LOG_DEBUG << std::endl;
 	}
+
+	LOG_DEBUG << "\t\tBEST: " << best.cost << std::endl;
 
 	delete[] candidate;
 	delete[] current.candidate;
 	delete[] raw_distances;
-	delete[] assignments;
+	delete[] raw_assign;
 
 }
 
+
+void CLARANS::updateAssignment(
+	int x,
+	int *candidate,
+	size_t n_medoids,
+	const float* D,
+	float& dist_nearest,
+	float& dist_second,
+	int& assign_nearest,
+	int& assign_second) 
+{
+	float dn = std::numeric_limits<float>::max();
+	float ds = std::numeric_limits<float>::max();
+	int an = -1;
+	int as = -1;
+
+	// find two closest medoids
+	for (size_t mm = 0; mm < n_medoids; ++mm) {
+		int m = candidate[mm];
+		float d = D[TriangleMatrix::access(m, x)];
+		if (d < dn) {
+			ds = dn;
+			as = an;
+			dn = d;
+			an = mm;
+		}
+		else if (d < ds) {
+			ds = d;
+			as = mm;
+		}
+	}
+
+	dist_nearest = dn;
+	dist_second = ds;
+	assign_nearest = an;
+	assign_second = as;
+}
 
 
 float CLARANS::calculateCost(const float* distanceMatrix, int *candidate, size_t n_elems, size_t n_medoids) {
