@@ -7,7 +7,9 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 */
 #include "AbstractTreeGenerator.h"
 
-#include "../../libs/instrset.h"
+//#include "../../libs/instrset.h"
+
+#include "../utils/cpuid.h"
 
 #include <algorithm>
 
@@ -16,13 +18,13 @@ using namespace std;
 
 // *******************************************************************
 AbstractTreeGenerator::AbstractTreeGenerator(double indel_exp, size_t n_threads) : indel_exp(indel_exp), n_threads(n_threads) {
-	int x = instrset_detect();
+//	int x = instrset_detect();
+	
+	instruction_set = instruction_set_t::none;
 
-	if (x >= 0 && x <= 8)
-		instruction_set = (instruction_set_t)x;
-	else if (x < 0)
-		instruction_set = instruction_set_t::none;
-	else
+	if ((CPUID(1).ECX() >> 28) & 1)
+		instruction_set = instruction_set_t::avx;
+	if ((CPUID(7).EBX() >> 5) & 1)
 		instruction_set = instruction_set_t::avx2;
 }
 

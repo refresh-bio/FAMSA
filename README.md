@@ -39,7 +39,7 @@ Options:
     * `upgma` - UPGMA,
     * `import <file>` - import from a Newick file.
 * `-medoidtree` - use MedoidTree heuristic for speeding up tree construction (default: disabled)
-* `-parttree` - use PartTree heuristic for speeding up tree construction (default: disabled)
+* `-medoid_threshold <n_seqs>` - if specified, medoid trees are used only for sets with `n_seqs` or more
 * `-gt_export` - export a guide tree to output file in the Newick format
 * `-dist_export` - export a distance matrix to output file in CSV format
 
@@ -83,7 +83,7 @@ Note, that when importing the tree, the branch lengths are not taken into accoun
 
 ## Citing
 [Deorowicz, S., Debudaj-Grabysz, A., Gudyś, A. (2016) FAMSA: Fast and accurate multiple sequence alignment of huge protein families. 
-Scientific reports, 6, 33964](https://www.nature.com/articles/srep33964)
+Scientific Reports, 6, 33964](https://www.nature.com/articles/srep33964)
 
 
 

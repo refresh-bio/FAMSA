@@ -18,6 +18,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <sstream>
 #include <random>
 #include <thread>
+#include <xmmintrin.h>
 
 using namespace std;
 
@@ -161,8 +162,6 @@ void SingleLinkage::run(std::vector<CSequence>& sequences, tree_structure& tree)
 		index[next] = n_seq + i;
 	}
 }
-
-
 
 // *******************************************************************
 void SingleLinkage::runPartial(std::vector<CSequence*>& sequences, tree_structure& tree)

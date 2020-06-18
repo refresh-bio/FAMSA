@@ -5,7 +5,7 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 */
-#include "PartTree.h"
+#include "FastTree.h"
 #include "AbstractTreeGenerator.hpp"
 #include "../lcs/lcsbp.h"
 #include "../utils/deterministic_random.h"
@@ -18,7 +18,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #define DIST_MEASURE Measure::DistanceReciprocal
 
 // *******************************************************************
-PartTree::PartTree(
+FastTree::FastTree(
 	double indel_exp, 
 	size_t n_threads, 
 	std::shared_ptr<IPartialGenerator> partialGenerator, 
@@ -36,7 +36,7 @@ PartTree::PartTree(
 
 
 // *******************************************************************
-void PartTree::run(std::vector<CSequence>& sequences, tree_structure& tree)
+void FastTree::run(std::vector<CSequence>& sequences, tree_structure& tree)
 {
 	// create vector of pointers to be passed to the recursion
 	std::vector<CSequence*> sequencePtrs(sequences.size());
@@ -49,7 +49,7 @@ void PartTree::run(std::vector<CSequence>& sequences, tree_structure& tree)
 
 
 // *******************************************************************
-void PartTree::doStep(std::vector<CSequence*>& sequences, tree_structure& tree)
+void FastTree::doStep(std::vector<CSequence*>& sequences, tree_structure& tree)
 {
 	size_t n_seqs = sequences.size();
 	CLCSBP lcsbp(instruction_set);
@@ -172,7 +172,7 @@ void PartTree::doStep(std::vector<CSequence*>& sequences, tree_structure& tree)
 
 
 // *******************************************************************
-size_t PartTree::randomSeeds(
+size_t FastTree::randomSeeds(
 	std::vector<CSequence*>& sequences,
 	size_t n_seeds,
 	int * seed_ids,
@@ -198,7 +198,7 @@ size_t PartTree::randomSeeds(
 }
 
 // *******************************************************************
-size_t PartTree::clusterSeeds(
+size_t FastTree::clusterSeeds(
 	std::vector<CSequence*>& sequences,
 	size_t n_seeds,
 	size_t n_samples,

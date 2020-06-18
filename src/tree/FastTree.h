@@ -13,10 +13,10 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 #include <memory>
 
-class PartTree : public AbstractTreeGenerator {
+class FastTree : public AbstractTreeGenerator {
 public:
 
-	PartTree(
+	FastTree(
 		double indel_exp, 
 		size_t n_threads, 
 		std::shared_ptr<IPartialGenerator> partialGenerator, 

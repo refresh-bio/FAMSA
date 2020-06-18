@@ -32,6 +32,9 @@ public:
 		case chained:			return "chained";
 		case imported:			return "import";
 		}
+
+		throw new std::runtime_error("Error: Illegal guide tree method.");
+		return "Unknown";
 	}
 
 	static std::string toString(Heuristic v) {
@@ -40,6 +43,10 @@ public:
 		case PartTree:	return "PartTree";
 		case ClusterTree:	return "MedoidTree";
 		}
+
+		// something went wrong
+		throw new std::runtime_error("Error: Illegal guide tree heuristic.");
+		return "Unknown";
 	}
 
 	static Method fromString(const std::string& name) {

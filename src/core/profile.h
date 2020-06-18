@@ -11,13 +11,12 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 #include "../core/defs.h"
 #include "../core/params.h"
+#include "../utils/utils.h"
 
 #include <vector>
 #include <tuple>
 #include <array>
 #include <algorithm>
-
-#include "../libs/asmlib.h"
 
 using namespace std;
 
@@ -50,7 +49,7 @@ public:
 
 	void set_zeros(void)
 	{
-		A_memset(raw_data, 0, n_rows * n_cols);
+		mem_clear(raw_data, n_rows * n_cols);
 	}
 
 	unsigned char *get_row(size_t row_id)

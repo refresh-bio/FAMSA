@@ -152,29 +152,20 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="..\libs\license.txt" />
-  </ItemGroup>
-  <ItemGroup>
+    <ClCompile Include="lcs\lcsbp_avx2_intr.cpp">
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <ClCompile Include="lcs\lcsbp_avx_intr.cpp">
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+    </ClCompile>
     <ClCompile Include="tree\AbstractTreeGenerator.cpp" />
     <ClCompile Include="tree\Clustering.cpp" />
     <ClCompile Include="tree\GuideTree.cpp" />
     <ClCompile Include="core\io_service.cpp" />
     <ClCompile Include="lcs\lcsbp.cpp" />
-    <ClCompile Include="lcs\lcsbp_avx2.cpp">
-      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
-    </ClCompile>
     <ClCompile Include="lcs\lcsbp_classic.cpp" />
-    <ClCompile Include="lcs\lcsbp_avx.cpp">
-      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
-      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
-      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
-      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AdvancedVectorExtensions</EnableEnhancedInstructionSet>
-    </ClCompile>
     <ClCompile Include="tree\NeighborJoining.cpp" />
-    <ClCompile Include="tree\PartTree.cpp" />
+    <ClCompile Include="tree\FastTree.cpp" />
     <ClCompile Include="tree\SingleLinkage.cpp" />
     <ClCompile Include="tree\UPGMA.cpp" />
     <ClCompile Include="utils\log.cpp" />
@@ -184,16 +175,24 @@
     <ClCompile Include="core\queues.cpp" />
     <ClCompile Include="core\sequence.cpp" />
     <ClCompile Include="utils\timer.cpp" />
-    <ClCompile Include="..\libs\instrset_detect.cpp" />
     <ClCompile Include="famsa.cpp" />
+    <ClCompile Include="utils\utils.cpp" />
+    <ClCompile Include="utils\utils_avx.cpp">
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AdvancedVectorExtensions</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <ClCompile Include="utils\utils_avx2.cpp">
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="lcs\lcsbp_avx2_intr.h" />
+    <ClInclude Include="lcs\lcsbp_avx_intr.h" />
     <ClInclude Include="tree\AbstractTreeGenerator.h" />
     <ClInclude Include="tree\Chained.h" />
     <ClInclude Include="tree\Clustering.h" />
     <ClInclude Include="tree\IPartialGenerator.h" />
     <ClInclude Include="tree\NeighborJoining.h" />
-    <ClInclude Include="tree\PartTree.h" />
+    <ClInclude Include="tree\FastTree.h" />
     <ClInclude Include="tree\SingleLinkage.h" />
     <ClInclude Include="tree\UPGMA.h" />
     <ClInclude Include="utils\array.h" />
@@ -203,9 +202,8 @@
     <ClInclude Include="tree\TreeDefs.h" />
     <ClInclude Include="core\io_service.h" />
     <ClInclude Include="lcs\lcsbp.h" />
-    <ClInclude Include="lcs\lcsbp_avx2.h" />
     <ClInclude Include="lcs\lcsbp_classic.h" />
-    <ClInclude Include="lcs\lcsbp_avx.h" />
+    <ClInclude Include="utils\cpuid.h" />
     <ClInclude Include="utils\deterministic_random.h" />
     <ClInclude Include="utils\log.h" />
     <ClInclude Include="utils\meta_oper.h" />
@@ -218,35 +216,7 @@
     <ClInclude Include="utils\timer.h" />
     <ClInclude Include="tree\TreeGrammar.h" />
     <ClInclude Include="core\version.h" />
-    <ClInclude Include="..\libs\asmlib.h" />
-    <ClInclude Include="..\libs\instrset.h" />
-    <ClInclude Include="..\libs\vectorclass.h" />
-    <ClInclude Include="..\libs\vectorf128.h" />
-    <ClInclude Include="..\libs\vectorf256.h" />
-    <ClInclude Include="..\libs\vectorf256e.h" />
-    <ClInclude Include="..\libs\vectorf512.h" />
-    <ClInclude Include="..\libs\vectorf512e.h" />
-    <ClInclude Include="..\libs\vectori128.h" />
-    <ClInclude Include="..\libs\vectori256.h" />
-    <ClInclude Include="..\libs\vectori256e.h" />
-    <ClInclude Include="..\libs\vectori512.h" />
-    <ClInclude Include="..\libs\vectori512e.h" />
-    <ClInclude Include="..\libs\vectormath_common.h" />
-    <ClInclude Include="..\libs\vectormath_exp.h" />
-    <ClInclude Include="..\libs\vectormath_hyp.h" />
-    <ClInclude Include="..\libs\vectormath_lib.h" />
-    <ClInclude Include="..\libs\vectormath_trig.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\libs\asmlib-instructions.pdf" />
-    <None Include="..\libs\vectorclass.pdf" />
-  </ItemGroup>
-  <ItemGroup>
-    <Object Include="..\libs-win\dispatchpatch64.obj" />
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\libs-win\libacof32.lib" />
-    <Library Include="..\libs-win\libacof64.lib" />
+    <ClInclude Include="utils\utils.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

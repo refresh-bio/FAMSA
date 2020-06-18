@@ -2,3 +2,10 @@ FAMSA.VC.VC.opendb
 Debug
 x64
 FAMSA.VC.db
+*.ipch
+*.db
+*.db-shm
+*.db-wal
+*.opendb
+/.vs
+/src/famsa.vcxproj.user

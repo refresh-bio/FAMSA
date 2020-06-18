@@ -9,11 +9,13 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "msa.h"
 #include "./tree/GuideTree.h"
 #include "./tree/SingleLinkage.h"
-#include "./tree/PartTree.h"
+#include "./tree/FastTree.h"
 #include "./tree/UPGMA.h"
 #include "./tree/NeighborJoining.h"
 #include "./core/io_service.h"
 #include "./utils/log.h"
+
+#include "./utils/cpuid.h"
 
 #include <algorithm>
 #include <set>
@@ -28,8 +30,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <numeric>
 #include <fstream>
 #include <sstream>
-
-#include "../libs/vectorclass.h"
 
 using namespace std;
 
@@ -125,6 +125,10 @@ bool CFAMSA::SetParams(CParams &_params)
 
 	params = _params;
 
+	if ((params.gt_heuristic != GT::None) && (sequences.size() < params.heuristic_threshold)) {
+		params.gt_heuristic = GT::None;
+	}
+
 	if(params.enable_gap_rescaling)
 	{
 		double gap_scaler = log2(sequences.size() / (double) params.scaler_log);
@@ -158,13 +162,11 @@ bool CFAMSA::SetParams(CParams &_params)
 // *******************************************************************
 void CFAMSA::DetermineInstructionSet()
 {
-	int x = instrset_detect();
+	instruction_set = instruction_set_t::none;
 
-	if(x >= 0 && x <= 8)
-		instruction_set = (instruction_set_t) x;
-	else if(x < 0)
-		instruction_set = instruction_set_t::none;
-	else
+	if ((CPUID(1).ECX() >> 28) & 1)
+		instruction_set = instruction_set_t::avx;
+	if ((CPUID(7).EBX() >> 5) & 1)
 		instruction_set = instruction_set_t::avx2;
 }
 
@@ -591,7 +593,7 @@ bool CFAMSA::ComputeMSA()
 			// check heuristic
 			switch (params.gt_heuristic) {
 			case GT::PartTree:
-				gen = make_shared<PartTree>(
+				gen = make_shared<FastTree>(
 					params.indel_exp,
 					this->n_threads,
 					dynamic_pointer_cast<IPartialGenerator>(gen),
@@ -600,7 +602,7 @@ bool CFAMSA::ComputeMSA()
 					params.sample_size);
 				break;
 			case GT::ClusterTree:
-				gen = make_shared<PartTree>(
+				gen = make_shared<FastTree>(
 					params.indel_exp,
 					this->n_threads,
 					dynamic_pointer_cast<IPartialGenerator>(gen),

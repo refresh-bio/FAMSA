@@ -39,6 +39,7 @@ typedef struct {
 
 	GT::Method gt_method;
 	GT::Heuristic gt_heuristic;
+	int heuristic_threshold;
 
 	int guide_tree_seed;
 	int subtree_size;
@@ -98,7 +99,8 @@ void show_usage(bool expert)
 		<< "      * upgma - UPGMA\n"
 		<< "      * import <file> - imported from a Newick file\n"
 		<< "  -medoidtree - use MedoidTree heuristic for speeding up tree construction (default: disabled)\n"
-		<< "  -parttree - use PartTree heuristic for speeding up tree construction (default: disabled)\n"
+	//	<< "  -parttree - use PartTree heuristic for speeding up tree construction (default: disabled)\n"
+		<< "  -medoid_threshold <n_seqs> - if specified, medoid trees are used only for sets with <n_seqs> or more\n"
 		<< "  -gt_export - export a guide tree to output file in Newick format\n"
 		<< "  -dist_export - export a distance matrix to output file in CSV format\n\n";
 
@@ -147,6 +149,7 @@ void init_params()
 
 	execution_params.gt_method						= GT::SLINK;
 	execution_params.gt_heuristic					= GT::None;
+	execution_params.heuristic_threshold			= 0;
 
 	execution_params.guide_tree_seed				= 0;
 	execution_params.subtree_size					= 100;
@@ -239,6 +242,9 @@ bool parse_params(int argc, char **argv, bool& showExpert)
 		else if (cur_par == "-medoidtree") {
 			execution_params.gt_heuristic = GT::ClusterTree;
 		}
+		else if (cur_par == "-medoid_threshold") {
+			execution_params.heuristic_threshold = atoi(argv[argno++]);
+		}
 		else if (cur_par == "-subtree_size") {
 			execution_params.subtree_size = atoi(argv[argno++]);
 		}
@@ -314,6 +320,7 @@ void set_famsa_params(CParams &famsa_params)
 
 	famsa_params.gt_method						= execution_params.gt_method;
 	famsa_params.gt_heuristic					= execution_params.gt_heuristic;
+	famsa_params.heuristic_threshold			= execution_params.heuristic_threshold;
 	famsa_params.subtree_size					= execution_params.subtree_size;
 	famsa_params.sample_size					= execution_params.sample_size;
 	famsa_params.cluster_fraction				= execution_params.cluster_fraction;

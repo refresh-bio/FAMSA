@@ -39,6 +39,7 @@ struct CParams
 
 	GT::Method gt_method;
 	GT::Heuristic gt_heuristic;
+	int heuristic_threshold;
 	int guide_tree_seed;
 	int subtree_size;
 	int sample_size;
@@ -95,6 +96,7 @@ struct CParams
 
 		gt_method = GT::SLINK;
 		gt_heuristic = GT::None;
+		heuristic_threshold = 0;
 		export_tree = false;
 		export_distances = false;
 		subtree_size = 50;

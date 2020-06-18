@@ -4,12 +4,6 @@
     <Filter Include="tree">
       <UniqueIdentifier>{ef795228-abf5-48ab-8066-c443301d43ea}</UniqueIdentifier>
     </Filter>
-    <Filter Include="..%255clibs">
-      <UniqueIdentifier>{34b95dff-10fe-4c3b-b2e8-8c9cf55c655e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="..%255clibs-win">
-      <UniqueIdentifier>{6b212ff3-f4d6-4375-b9c8-1f1eda8b1a94}</UniqueIdentifier>
-    </Filter>
     <Filter Include="core">
       <UniqueIdentifier>{feadd0e7-1814-4acf-8501-072e28f6762f}</UniqueIdentifier>
     </Filter>
@@ -19,28 +13,17 @@
     <Filter Include="lcs">
       <UniqueIdentifier>{263818da-dcee-49b9-9610-b54e00e4d18b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libs">
+      <UniqueIdentifier>{df31a996-e854-4d0a-8cad-754d2d88c1ca}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <Text Include="..\libs\license.txt">
-      <Filter>..%255clibs</Filter>
-    </Text>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\libs\instrset_detect.cpp">
-      <Filter>..%255clibs</Filter>
-    </ClCompile>
     <ClCompile Include="famsa.cpp" />
     <ClCompile Include="msa.cpp" />
     <ClCompile Include="core\io_service.cpp">
       <Filter>core</Filter>
     </ClCompile>
     <ClCompile Include="lcs\lcsbp.cpp">
-      <Filter>lcs</Filter>
-    </ClCompile>
-    <ClCompile Include="lcs\lcsbp_avx.cpp">
-      <Filter>lcs</Filter>
-    </ClCompile>
-    <ClCompile Include="lcs\lcsbp_avx2.cpp">
       <Filter>lcs</Filter>
     </ClCompile>
     <ClCompile Include="lcs\lcsbp_classic.cpp">
@@ -67,9 +50,6 @@
     <ClCompile Include="tree\UPGMA.cpp">
       <Filter>tree</Filter>
     </ClCompile>
-    <ClCompile Include="tree\PartTree.cpp">
-      <Filter>tree</Filter>
-    </ClCompile>
     <ClCompile Include="tree\NewickParser.cpp">
       <Filter>tree</Filter>
     </ClCompile>
@@ -85,62 +65,26 @@
     <ClCompile Include="tree\Clustering.cpp">
       <Filter>tree</Filter>
     </ClCompile>
+    <ClCompile Include="lcs\lcsbp_avx_intr.cpp">
+      <Filter>lcs</Filter>
+    </ClCompile>
+    <ClCompile Include="lcs\lcsbp_avx2_intr.cpp">
+      <Filter>lcs</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\utils.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\utils_avx.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\utils_avx2.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
+    <ClCompile Include="tree\FastTree.cpp">
+      <Filter>tree</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\libs\asmlib.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\instrset.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\vectorclass.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\vectorf128.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\vectorf256.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\vectorf256e.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\vectorf512.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\vectorf512e.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\vectori128.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\vectori256.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\vectori256e.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\vectori512.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\vectori512e.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\vectormath_common.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\vectormath_exp.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\vectormath_hyp.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\vectormath_lib.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
-    <ClInclude Include="..\libs\vectormath_trig.h">
-      <Filter>..%255clibs</Filter>
-    </ClInclude>
     <ClInclude Include="msa.h" />
     <ClInclude Include="utils\array.h">
       <Filter>utils</Filter>
@@ -152,12 +96,6 @@
       <Filter>core</Filter>
     </ClInclude>
     <ClInclude Include="lcs\lcsbp.h">
-      <Filter>lcs</Filter>
-    </ClInclude>
-    <ClInclude Include="lcs\lcsbp_avx.h">
-      <Filter>lcs</Filter>
-    </ClInclude>
-    <ClInclude Include="lcs\lcsbp_avx2.h">
       <Filter>lcs</Filter>
     </ClInclude>
     <ClInclude Include="lcs\lcsbp_classic.h">
@@ -205,9 +143,6 @@
     <ClInclude Include="tree\IPartialGenerator.h">
       <Filter>tree</Filter>
     </ClInclude>
-    <ClInclude Include="tree\PartTree.h">
-      <Filter>tree</Filter>
-    </ClInclude>
     <ClInclude Include="tree\Chained.h">
       <Filter>tree</Filter>
     </ClInclude>
@@ -229,26 +164,20 @@
     <ClInclude Include="tree\NeighborJoining.h">
       <Filter>tree</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="..\libs\asmlib-instructions.pdf">
-      <Filter>..%255clibs</Filter>
-    </None>
-    <None Include="..\libs\vectorclass.pdf">
-      <Filter>..%255clibs</Filter>
-    </None>
-  </ItemGroup>
-  <ItemGroup>
-    <Object Include="..\libs-win\dispatchpatch64.obj">
-      <Filter>..%255clibs-win</Filter>
-    </Object>
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\libs-win\libacof32.lib">
-      <Filter>..%255clibs-win</Filter>
-    </Library>
-    <Library Include="..\libs-win\libacof64.lib">
-      <Filter>..%255clibs-win</Filter>
-    </Library>
+    <ClInclude Include="lcs\lcsbp_avx_intr.h">
+      <Filter>lcs</Filter>
+    </ClInclude>
+    <ClInclude Include="lcs\lcsbp_avx2_intr.h">
+      <Filter>lcs</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\utils.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\cpuid.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="tree\FastTree.h">
+      <Filter>tree</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

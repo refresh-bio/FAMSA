@@ -9,14 +9,21 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"1.5.20"
-#define FAMSA_DATE		"2020-05-26"
+#define FAMSA_VER		"1.6.1"
+#define FAMSA_DATE		"2020-06-18"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+1.6.1 (2020-06-18)
+- Added parameter for automatic medoid tree usage. Some refactoring. Added license file.
+
+1.6.0 (2020-06-18)
+- Removed VCL and ASMLIB dependencies.
+- Some low-level optimizations in LCS calculations.
 
 1.5.20 (2020-05-26)
 - PartTree always select assumed number of seeds (1.5.16 patch applied only to MedoidTree). 
