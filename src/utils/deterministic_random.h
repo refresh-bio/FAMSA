@@ -106,3 +106,24 @@ template<class IntType>
 auto det_uniform_int_distribution<IntType>::max() const -> result_type {
 	return upper;
 };
+
+
+
+
+template<class RandomIt, class URBG>
+void partial_shuffle(RandomIt first, RandomIt middle, RandomIt last, URBG&& g)
+{
+	typedef typename std::iterator_traits<RandomIt>::difference_type diff_t;
+	typedef det_uniform_int_distribution<diff_t> distr_t;
+	typedef typename distr_t::param_type param_t;
+
+	distr_t D;
+	diff_t n = middle - first;
+	diff_t N = last - first - 1;
+	for (diff_t i =0; i < n; ++i) {
+		using std::swap;
+		swap(first[i], first[D(g, param_t(i, N))]);
+	}
+}
+
+

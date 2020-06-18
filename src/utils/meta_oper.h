@@ -40,6 +40,7 @@ inline void IterRev(const Lambda &oper, uint_<0>) {
 }
 
 #ifdef _MSC_VER					// Visual C++
+#include <intrin.h>
 #define POPCNT(x)	__popcnt64(x)
 #endif
 

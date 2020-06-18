@@ -7,7 +7,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 */
 
 #include "../lcs/lcsbp_classic.h"
-#include "../libs/vectorclass.h"
 
 // *******************************************************************
 // Prepares (if necessary sufficient amount of memory for LCS calculation

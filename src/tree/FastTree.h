@@ -13,10 +13,10 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 #include <memory>
 
-class PartTree : public AbstractTreeGeneator {
+class FastTree : public AbstractTreeGenerator {
 public:
 
-	PartTree(
+	FastTree(
 		double indel_exp, 
 		size_t n_threads, 
 		std::shared_ptr<IPartialGenerator> partialGenerator, 
@@ -32,6 +32,8 @@ protected:
 	int subtreeSize;
 	int sampleSize;
 	int clusteringThreshold;
+
+	std::vector<int> randomIds;
 
 	void doStep(std::vector<CSequence*>& sequences, tree_structure& tree);
 

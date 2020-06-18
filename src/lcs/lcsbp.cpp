@@ -3,9 +3,9 @@
 #include "lcsbp_classic.h"
 
 #ifndef NO_AVX
-#include "lcsbp_avx.h"
+#include "lcsbp_avx_intr.h"
 #ifndef NO_AVX2
-#include "lcsbp_avx2.h"
+#include "lcsbp_avx2_intr.h"
 #endif
 #endif
 
@@ -16,9 +16,9 @@ CLCSBP::CLCSBP(instruction_set_t _instruction_set)
 
 	lcsbp_classic = std::shared_ptr<CLCSBP_Classic>(new CLCSBP_Classic());	
 #ifndef NO_AVX
-	lcsbp_avx = std::shared_ptr<CLCSBP_AVX>(new CLCSBP_AVX());
+	lcsbp_avx_intr = std::shared_ptr<CLCSBP_AVX_INTR>(new CLCSBP_AVX_INTR());
 #ifndef NO_AVX2
-	lcsbp_avx2 = std::shared_ptr<CLCSBP_AVX2>(new CLCSBP_AVX2());
+	lcsbp_avx2_intr = std::shared_ptr<CLCSBP_AVX2_INTR>(new CLCSBP_AVX2_INTR());
 #endif 
 #endif 
 
@@ -52,13 +52,16 @@ void CLCSBP::GetLCSBP(CSequence *seq0, CSequence *seq1, CSequence *seq2, CSequen
 #ifndef NO_AVX
 			if (instruction_set < instruction_set_t::avx2)
 			{
-				lcsbp_avx->Calculate(seq0, seq1, seq2, dist1, dist2);
-				lcsbp_avx->Calculate(seq0, seq3, seq4, dist3, dist4);
+//				lcsbp_avx->Calculate(seq0, seq1, seq2, dist1, dist2);
+//				lcsbp_avx->Calculate(seq0, seq3, seq4, dist3, dist4);
+				lcsbp_avx_intr->Calculate(seq0, seq1, seq2, dist1, dist2);
+				lcsbp_avx_intr->Calculate(seq0, seq3, seq4, dist3, dist4);
 			}
 			else
 			{
 #ifndef NO_AVX2
-				lcsbp_avx2->Calculate(seq0, seq1, seq2, seq3, seq4, dist1, dist2, dist3, dist4);
+//				lcsbp_avx2->Calculate(seq0, seq1, seq2, seq3, seq4, dist1, dist2, dist3, dist4);
+				lcsbp_avx2_intr->Calculate(seq0, seq1, seq2, seq3, seq4, dist1, dist2, dist3, dist4);
 #else
 				lcsbp_avx->Calculate(seq0, seq1, seq2, dist1, dist2);
 				lcsbp_avx->Calculate(seq0, seq3, seq4, dist3, dist4);

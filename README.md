@@ -83,7 +83,7 @@ Note, that when importing the tree, the branch lengths are not taken into accoun
 
 ## Citing
 [Deorowicz, S., Debudaj-Grabysz, A., Gudyś, A. (2016) FAMSA: Fast and accurate multiple sequence alignment of huge protein families. 
-Scientific reports, 6, 33964](https://www.nature.com/articles/srep33964)
+Scientific Reports, 6, 33964](https://www.nature.com/articles/srep33964)
 
 
 

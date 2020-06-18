@@ -16,6 +16,9 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <stack>
 #include <mutex>
 
+// UPGMA defines and consts
+typedef float UPGMA_dist_t;
+
 class CUPGMAQueue
 {
 	std::vector<CSequence> *sequences;
@@ -40,11 +43,11 @@ public:
 	bool GetTask(int &row_id, std::vector<CSequence> *&_sequences, UPGMA_dist_t *&dist_row);
 };
 
-
-class UPGMA : public AbstractTreeGeneator, public IPartialGenerator {
+class UPGMA : public AbstractTreeGenerator, public IPartialGenerator {
 public:
 	
-	UPGMA(double indel_exp, size_t n_threads) : AbstractTreeGeneator(indel_exp, n_threads) {}
+	UPGMA(double indel_exp, size_t n_threads, bool is_modified) 
+		: AbstractTreeGenerator(indel_exp, n_threads), is_modified(is_modified) {}
 
 	void run(std::vector<CSequence>& sequences, tree_structure& tree) override;
 
@@ -52,7 +55,12 @@ public:
 
 	void computeDistances(std::vector<CSequence>& sequences, UPGMA_dist_t *dist_matrix);
 
+	template <bool is_modified>
 	void computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_structure& tree);
 
 	bool saveDistances(const std::string& file_name, std::vector<CSequence>& sequences);
+
+protected:
+	const UPGMA_dist_t BIG_DIST = (UPGMA_dist_t) 1e29;
+	bool is_modified;
 };

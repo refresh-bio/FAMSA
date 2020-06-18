@@ -34,12 +34,12 @@ struct CParams
 	bool enable_auto_refinement;
 	bool verbose_mode;
 	bool very_verbose_mode;
-	uint64_t sackin_index;
 	uint64_t ref_seq_subtree_size;
 	double indel_exp;
 
 	GT::Method gt_method;
 	GT::Heuristic gt_heuristic;
+	int heuristic_threshold;
 	int guide_tree_seed;
 	int subtree_size;
 	int sample_size;
@@ -96,6 +96,7 @@ struct CParams
 
 		gt_method = GT::SLINK;
 		gt_heuristic = GT::None;
+		heuristic_threshold = 0;
 		export_tree = false;
 		export_distances = false;
 		subtree_size = 50;
@@ -104,7 +105,6 @@ struct CParams
 		cluster_fraction = 0.2;
 		cluster_iters = 2;
 
-		sackin_index = 0;
 		ref_seq_subtree_size = 0;
 		test_ref_sequences = false;
 

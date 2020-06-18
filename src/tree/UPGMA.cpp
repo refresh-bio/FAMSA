@@ -20,13 +20,32 @@ The time and memory consumption is O(k^2)
 
 using namespace std;
 
-#define	AVG(x, y)	(((x) + (y))/2)
+
+// general average
+template <class T, bool is_modified>
+struct Average {
+	T operator()(T x, T y) const { return (x + y) * 0.5f; }
+};
+
+// modified average (MAFFT)
+template <class T>
+struct Average<T, true> {
+	T operator()(T x, T y) const { return 0.05f * (x + y) + 0.9f * std::min(x, y); }
+};
+
 
 // *******************************************************************
 void UPGMA::run(std::vector<CSequence>& sequences, tree_structure& tree) {
 	UPGMA_dist_t* distances = TriangleMatrix::allocate<UPGMA_dist_t>(sequences.size());
 	computeDistances(sequences, distances);
-	computeTree(distances, sequences.size(), tree);
+	
+	if (is_modified) {
+		computeTree<true>(distances, sequences.size(), tree);
+	}
+	else {
+		computeTree<false>(distances, sequences.size(), tree);
+	}
+	
 	delete[] distances;
 }
 
@@ -34,8 +53,15 @@ void UPGMA::run(std::vector<CSequence>& sequences, tree_structure& tree) {
 void UPGMA::runPartial(std::vector<CSequence*>& sequences, tree_structure& tree) {
 	UPGMA_dist_t* distances = TriangleMatrix::allocate<UPGMA_dist_t>(sequences.size());
 	CLCSBP lcsbp(instruction_set);
-	calculateSimilarityMatrix<CSequence*, UPGMA_dist_t, Transformation::Reciprocal>(sequences.data(), sequences.size(), distances, lcsbp);
-	computeTree(distances, sequences.size(), tree);
+	calculateSimilarityMatrix<CSequence*, UPGMA_dist_t, Measure::DistanceReciprocal>(sequences.data(), sequences.size(), distances, lcsbp);
+	
+	if (is_modified) {
+		computeTree<true>(distances, sequences.size(), tree);
+	}
+	else {
+		computeTree<false>(distances, sequences.size(), tree);
+	}
+	
 	delete[] distances;
 }
 
@@ -60,8 +86,8 @@ void UPGMA::computeDistances(std::vector<CSequence>& sequences, UPGMA_dist_t *di
 
 		while (slq.GetTask(row_id, sequences, dist_row))
 		{
-			calculateSimilarityVector<CSequence, UPGMA_dist_t, Transformation::Reciprocal>(
-				&(*sequences)[row_id],
+			calculateSimilarityVector<CSequence, UPGMA_dist_t, Measure::DistanceReciprocal>(
+				(*sequences)[row_id],
 				sequences->data(),
 				row_id,
 				dist_row,
@@ -78,8 +104,11 @@ void UPGMA::computeDistances(std::vector<CSequence>& sequences, UPGMA_dist_t *di
 }
 
 // *******************************************************************
+template <bool is_modified>
 void UPGMA::computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_structure& tree)
 {
+	Average<UPGMA_dist_t, is_modified> average;
+	
 	uint64_t g_uLeafCount;
 	uint64_t g_uTriangleSize;
 	uint64_t g_uInternalNodeCount;
@@ -214,7 +243,7 @@ void UPGMA::computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_structure& t
 			const UPGMA_dist_t dR = g_Dist[vR];
 			UPGMA_dist_t dtNewDist;
 
-			dtNewDist = AVG(dL, dR);
+			dtNewDist = average(dL, dR);
 
 			if (g_uNearestNeighbor[j] == Rmin)
 				g_uNearestNeighbor[j] = Lmin;

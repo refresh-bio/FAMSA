@@ -62,5 +62,29 @@ bool GuideTree::saveNewick(
 }
 
 
+// *******************************************************************
+uint64_t GuideTree::calculateSackinIndex() {
+	
+	uint64_t idx = 0;
+	size_t n_sequences = getSequenceCount();
+	
+	if (n_sequences) {
+		std::vector<size_t> depths(this->guide_tree.size());
+		for (size_t i = guide_tree.size() - 1; i >= n_sequences; --i)
+		{
+			depths[guide_tree[i].first] = depths[i] + 1;
+			depths[guide_tree[i].second] = depths[i] + 1;
+		}
+
+
+		for (int i = 0; i < n_sequences; ++i) {
+			idx += depths[i] + 1;
+		}
+	}
+
+	return idx;
+}
+
+
 
 

@@ -9,14 +9,48 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"1.5.12"
-#define FAMSA_DATE		"2020-03-24"
+#define FAMSA_VER		"1.6.1"
+#define FAMSA_DATE		"2020-06-18"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+1.6.1 (2020-06-18)
+- Added parameter for automatic medoid tree usage. Some refactoring. Added license file.
+
+1.6.0 (2020-06-18)
+- Removed VCL and ASMLIB dependencies.
+- Some low-level optimizations in LCS calculations.
+
+1.5.20 (2020-05-26)
+- PartTree always select assumed number of seeds (1.5.16 patch applied only to MedoidTree). 
+- Small fix in Sackin index calculation.
+
+1.5.19 (2020-04-18)
+- Uniform distance computation in PartTree and MedoidTree.
+
+1.5.18 (2020-04-17)
+- Added modified UPGMA algorithm and distance correction (MAFFT-inspired).
+
+1.5.17 (2020-04-16)
+- Stats dumped to file in the verbose mode.
+- Sackin index calculation right after tree construction.
+
+1.5.16 (2020-04-10)
+- PartTree and MedoidTree always select assumed number of seeds.
+
+1.5.15 (2020-04-08)
+- Fixed bug in calculating clustering cost and assignment update.
+
+1.5.14 (2020-04-07)
+- Bug in Neighbor Joining fixed.
+
+1.5.13 (2020-04-06)
+- Alternative method of combining children and parental trees in PartTree.
+- Neighbor Joining algorithm added.
 
 1.5.12 (2020-03-24)
 - Fixed bug with -dist_export mode (sequences not ordered as in input FASTA file)

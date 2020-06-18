@@ -8,6 +8,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 #include <string>
 #include <iostream>
+#include <numeric>
 
 #include "./core/io_service.h"
 #include "./msa.h"
@@ -38,6 +39,7 @@ typedef struct {
 
 	GT::Method gt_method;
 	GT::Heuristic gt_heuristic;
+	int heuristic_threshold;
 
 	int guide_tree_seed;
 	int subtree_size;
@@ -146,6 +148,7 @@ void init_params()
 
 	execution_params.gt_method						= GT::SLINK;
 	execution_params.gt_heuristic					= GT::None;
+	execution_params.heuristic_threshold			= 0;
 
 	execution_params.guide_tree_seed				= 0;
 	execution_params.subtree_size					= 100;
@@ -238,6 +241,9 @@ bool parse_params(int argc, char **argv, bool& showExpert)
 		else if (cur_par == "-medoidtree") {
 			execution_params.gt_heuristic = GT::ClusterTree;
 		}
+		else if (cur_par == "-medoid_threshold") {
+			execution_params.heuristic_threshold = atoi(argv[argno++]);
+		}
 		else if (cur_par == "-subtree_size") {
 			execution_params.subtree_size = atoi(argv[argno++]);
 		}
@@ -313,6 +319,7 @@ void set_famsa_params(CParams &famsa_params)
 
 	famsa_params.gt_method						= execution_params.gt_method;
 	famsa_params.gt_heuristic					= execution_params.gt_heuristic;
+	famsa_params.heuristic_threshold			= execution_params.heuristic_threshold;
 	famsa_params.subtree_size					= execution_params.subtree_size;
 	famsa_params.sample_size					= execution_params.sample_size;
 	famsa_params.cluster_fraction				= execution_params.cluster_fraction;
@@ -357,6 +364,7 @@ int main(int argc, char *argv[])
 		Log::getInstance(Log::LEVEL_VERBOSE).enable();
 	}
 	if (params.very_verbose_mode) {
+		Log::getInstance(Log::LEVEL_VERBOSE).enable();
 		Log::getInstance(Log::LEVEL_DEBUG).enable();
 	}
 

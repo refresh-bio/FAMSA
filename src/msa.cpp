@@ -9,10 +9,13 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "msa.h"
 #include "./tree/GuideTree.h"
 #include "./tree/SingleLinkage.h"
-#include "./tree/PartTree.h"
+#include "./tree/FastTree.h"
 #include "./tree/UPGMA.h"
+#include "./tree/NeighborJoining.h"
 #include "./core/io_service.h"
 #include "./utils/log.h"
+
+#include "./utils/cpuid.h"
 
 #include <algorithm>
 #include <set>
@@ -27,8 +30,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <numeric>
 #include <fstream>
 #include <sstream>
-
-#include "../libs/vectorclass.h"
 
 using namespace std;
 
@@ -124,6 +125,10 @@ bool CFAMSA::SetParams(CParams &_params)
 
 	params = _params;
 
+	if ((params.gt_heuristic != GT::None) && (sequences.size() < params.heuristic_threshold)) {
+		params.gt_heuristic = GT::None;
+	}
+
 	if(params.enable_gap_rescaling)
 	{
 		double gap_scaler = log2(sequences.size() / (double) params.scaler_log);
@@ -157,13 +162,11 @@ bool CFAMSA::SetParams(CParams &_params)
 // *******************************************************************
 void CFAMSA::DetermineInstructionSet()
 {
-	int x = instrset_detect();
+	instruction_set = instruction_set_t::none;
 
-	if(x >= 0 && x <= 8)
-		instruction_set = (instruction_set_t) x;
-	else if(x < 0)
-		instruction_set = instruction_set_t::none;
-	else
+	if ((CPUID(1).ECX() >> 28) & 1)
+		instruction_set = instruction_set_t::avx;
+	if ((CPUID(7).EBX() >> 5) & 1)
 		instruction_set = instruction_set_t::avx2;
 }
 
@@ -176,8 +179,6 @@ bool CFAMSA::ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree)
 	final_profile->Clear();
 
 	CProfileQueue pq(&gapped_sequences, &profiles, &guide_tree);
-
-	params.sackin_index = pq.GetSackinIndex();
 
 	vector<thread *> workers(n_threads, nullptr);
 
@@ -510,7 +511,7 @@ bool CFAMSA::ComputeMSA()
 		cerr << "  gap terminal open cost (rescalled): " << params.gap_term_open << "\n";
 		cerr << "  gap terminal extension cost (rescalled): " << params.gap_term_ext << "\n";
 		cerr << "  gap cost scaller log-term: " << params.scaler_log << "\n";
-		cerr << "  gap cost scaller div-term: " << params.scaler_div << "\n";	
+		cerr << "  gap cost scaller div-term: " << params.scaler_div << "\n";
 		cerr << "  enable gap rescaling: " << params.enable_gap_rescaling << "\n";
 		cerr << "  enable gap optimization: " << params.enable_gap_optimization << "\n";
 		cerr << "  enable total score calculation: " << params.enable_total_score_calculation << "\n";
@@ -518,17 +519,17 @@ bool CFAMSA::ComputeMSA()
 		cerr << "  guided alignment radius: " << params.guided_alignment_radius << "\n\n";
 
 	}
-		
+
 #ifdef DEVELOPER_MODE
 	if (params.test_ref_sequences)
 		LoadRefSequences();
 #endif
 
 	string instr_names[] = { "None", "SSE", "SSE2", "SSE3", "SSE3S", "SSE41", "SSE42", "AVX", "AVX2" };
-	LOG_VERBOSE << "Hardware configuration: " << endl 
+	LOG_VERBOSE << "Hardware configuration: " << endl
 		<< " Number of threads: " << n_threads << endl
 		<< " Instruction set: " << instr_names[(int)instruction_set] << endl << endl;
-	
+
 
 	GuideTree tree;
 
@@ -537,13 +538,13 @@ bool CFAMSA::ComputeMSA()
 	// store distance matrix
 	if (params.export_distances) {
 		LOG_VERBOSE << "Calculating distances and storing in: " << params.output_file_name;
-		UPGMA upgma(params.indel_exp, this->n_threads);
+		UPGMA upgma(params.indel_exp, this->n_threads, false);
 		upgma.saveDistances(params.output_file_name, sequences);
 		LOG_VERBOSE << " [OK]" << endl;
 		goOn = false; // break processing at this point
 	}
 
-	
+
 	if (goOn) {
 		timers[TIMER_SORTING].StartTimer();
 		if (params.shuffle == -1) {
@@ -563,54 +564,59 @@ bool CFAMSA::ComputeMSA()
 			sequences[i].sequence_no = i;
 		}
 		timers[TIMER_SORTING].StopTimer();
-		
-		
+
+
 		timers[TIMER_TREE_BUILD].StartTimer();
 		if (params.gt_method == GT::imported) {
 			LOG_VERBOSE << "Importing guide tree from: " << params.guide_tree_in_file;
 			tree.loadNewick(params.guide_tree_in_file, sequences);
 		}
 		else {
-			std::shared_ptr<AbstractTreeGeneator> gen;
+			std::shared_ptr<AbstractTreeGenerator> gen;
 			LOG_VERBOSE << "Computing guide tree...";
-			
+
 			// check main method
 			switch (params.gt_method) {
-				case GT::SLINK:
-					gen = make_shared<SingleLinkage>(params.indel_exp, this->n_threads); 
-					break;
-				case GT::UPGMA:
-					gen = make_shared<UPGMA>(params.indel_exp, this->n_threads); 
-					break;
+			case GT::SLINK:
+				gen = make_shared<SingleLinkage>(params.indel_exp, this->n_threads);
+				break;
+			case GT::UPGMA:
+				gen = make_shared<UPGMA>(params.indel_exp, this->n_threads, false);
+				break;
+			case GT::UPGMA_modified:
+				gen = make_shared<UPGMA>(params.indel_exp, this->n_threads, true);
+				break;
+			case GT::NJ:
+				gen = make_shared<NeighborJoining>(params.indel_exp, this->n_threads);
 			}
 
 			// check heuristic
 			switch (params.gt_heuristic) {
-				case GT::PartTree:
-					gen = make_shared<PartTree>(
-						params.indel_exp, 
-						this->n_threads, 
-						dynamic_pointer_cast<IPartialGenerator>(gen), 
-						params.subtree_size,
-						nullptr,
-						params.sample_size);
-					break;
-				case GT::ClusterTree:
-					gen = make_shared<PartTree>(
-						params.indel_exp, 
-						this->n_threads, 
-						dynamic_pointer_cast<IPartialGenerator>(gen), 
-						params.subtree_size,
-						make_shared<CLARANS>(params.cluster_fraction, params.cluster_iters),
-						params.sample_size);
-					break;
+			case GT::PartTree:
+				gen = make_shared<FastTree>(
+					params.indel_exp,
+					this->n_threads,
+					dynamic_pointer_cast<IPartialGenerator>(gen),
+					params.subtree_size,
+					nullptr,
+					params.sample_size);
+				break;
+			case GT::ClusterTree:
+				gen = make_shared<FastTree>(
+					params.indel_exp,
+					this->n_threads,
+					dynamic_pointer_cast<IPartialGenerator>(gen),
+					params.subtree_size,
+					make_shared<CLARANS>(params.cluster_fraction, params.cluster_iters),
+					params.sample_size);
+				break;
 			}
 
 			(*gen)(this->sequences, tree.raw());
 		}
 		LOG_VERBOSE << " [OK]" << endl;
 		timers[TIMER_TREE_BUILD].StopTimer();
-	} 
+	}
 
 	// store guide tree in Newick format 
 	if (params.export_tree) {
@@ -621,16 +627,28 @@ bool CFAMSA::ComputeMSA()
 		timers[TIMER_TREE_STORE].StopTimer();
 		goOn = false; // break processing at this point
 	}
-	
-	
+
+
 #ifdef DEVELOPER_MODE
 	double monte_carlo_subtree_size;
-	if(params.test_ref_sequences)
+	if (params.test_ref_sequences)
 		params.ref_seq_subtree_size = tree.refSequencesSubTreeSize(
-			sequences, 
+			sequences,
 			ref_sequences,
 			&monte_carlo_subtree_size);
 #endif
+	uint64_t sackin;
+	if (params.verbose_mode || params.very_verbose_mode) {
+		sackin = tree.calculateSackinIndex();
+		FILE *out = fopen("famsa.stats", "wt");
+		fprintf(out, "[stats]\n");
+		fprintf(out, "n_sequences=%d\n", sequences.size());
+		fprintf(out, "Sackin_idx=%lld\n", sackin);
+		fprintf(out, "Sackin_idx_norm=%.3f\n", sackin / (double)sequences.size());
+		//fprintf(out, "Ref_seq_subtree_size=%lld\n", params.ref_seq_subtree_size);
+		//fprintf(out, "Monte_carlo_subtree_size=%.1f", monte_carlo_subtree_size);
+		fclose(out);
+	}
 
 	if (goOn) {
 		// Convert sequences into gapped sequences
@@ -651,6 +669,10 @@ bool CFAMSA::ComputeMSA()
 			return false;
 		LOG_VERBOSE << "[OK]" << endl;
 		timers[TIMER_REFINMENT].StopTimer();
+
+		if (final_profile->Size() != gapped_sequences.size()) {
+			throw std::runtime_error("Error: incomplete guide tree - report a bug");
+		}
 	}
 
 	LOG_VERBOSE
@@ -661,28 +683,17 @@ bool CFAMSA::ComputeMSA()
 		<< " Alignment construction                           : " << timers[TIMER_ALIGNMENT].GetElapsedTime() << "s\n"
 		<< " Iterative refinement                             : " << timers[TIMER_REFINMENT].GetElapsedTime() << "s\n"
 		<< " No. of sequences : " << sequences.size() << "\n"
-		<< " Sackin index for guide tree: " << params.sackin_index << "\n"
-		<< " Sackin index for guide tree (normalized): " << params.sackin_index / (double)sequences.size() << "\n";
+		<< " Sackin index for guide tree: " << sackin << "\n"
+		<< " Sackin index for guide tree (normalized): " << sackin / (double)sequences.size() << "\n";
 
 #ifdef DEVELOPER_MODE
 	if (params.test_ref_sequences)
 	{
-		LOG_VERBOSE 
+		LOG_VERBOSE
 			<< "Ref. seq. subtree size: " << params.ref_seq_subtree_size << "\n"
 			<< "Monte Carlo subtree size: " << monte_carlo_subtree_size << "\n";
 	}
+#endif
 
-#ifdef LOG_STATS
-	FILE *out = fopen("execution.stats", "wt");
-	fprintf(out, "[stats]\n");
-	fprintf(out, "No_sequences=%d\n", sequences.size());
-	fprintf(out, "Sackin_idx=%lld\n", params.sackin_index);
-	fprintf(out, "Sackin_idx_norm=%.3f\n", params.sackin_index / (double) sequences.size());
-	fprintf(out, "Ref_seq_subtree_size=%lld\n", params.ref_seq_subtree_size);
-	fprintf(out, "Monte_carlo_subtree_size=%.1f", monte_carlo_subtree_size);
-	fclose(out);
-#endif
-#endif
-	
 	return true;
 }

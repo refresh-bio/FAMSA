@@ -18,6 +18,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <sstream>
 #include <random>
 #include <thread>
+#include <xmmintrin.h>
 
 using namespace std;
 
@@ -48,8 +49,8 @@ void SingleLinkage::run(std::vector<CSequence>& sequences, tree_structure& tree)
 
 		while (slq.GetTask(row_id, sequences, sim_vector))
 		{
-			calculateSimilarityVector<CSequence, double>(
-				&(*sequences)[row_id],
+			calculateSimilarityVector<CSequence, double, Measure::SimilarityDefault>(
+				(*sequences)[row_id],
 				sequences->data(),
 				row_id,
 				sim_vector->data(),
@@ -162,8 +163,6 @@ void SingleLinkage::run(std::vector<CSequence>& sequences, tree_structure& tree)
 	}
 }
 
-
-
 // *******************************************************************
 void SingleLinkage::runPartial(std::vector<CSequence*>& sequences, tree_structure& tree)
 {
@@ -186,12 +185,12 @@ void SingleLinkage::runPartial(std::vector<CSequence*>& sequences, tree_structur
 		pi[i] = i;
 		lambda[i] = -infty_double;
 
-		if (i % (100) == 0) {
+/*		if (i % (100) == 0) {
 			LOG_DEBUG << "Computing guide tree - " << fixed << setprecision(1)
 				<< 100.0 * ((double)i * (i + 1) / 2) / ((double)n_seq * (n_seq + 1) / 2) << "\%    (" << i << " of " << n_seq << ")  \r";
 		}
-
-		calculateSimilarityVector<CSequence*, double>(
+*/
+		calculateSimilarityVector<CSequence*, double, Measure::SimilarityDefault>(
 			sequences[i],
 			sequences.data(),
 			i,
@@ -252,7 +251,7 @@ void SingleLinkage::runPartial(std::vector<CSequence*>& sequences, tree_structur
 		}
 	}
 
-	LOG_DEBUG << "Computing guide tree - 100.0\%                                        \r";
+//	LOG_DEBUG << "Computing guide tree - 100.0\%                                        \r";
 
 	vector<int> elements(n_seq - 1);
 	for (int i = 0; i < n_seq - 1; ++i)

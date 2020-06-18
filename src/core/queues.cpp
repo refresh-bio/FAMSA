@@ -53,11 +53,6 @@ CProfileQueue::CProfileQueue(vector<CGappedSequence> *_gapped_sequences, map<siz
 		child_parent_mapping[id2] = i;
 	}
 
-	// Calculate Sackin index for guide tree
-	sackin_index = 0;
-	for (int i = 0; i < gapped_sequences->size(); ++i)
-		sackin_index += prof_depth[i] + 1;
-
 	counter = 0;
 }
 
@@ -119,13 +114,3 @@ void CProfileQueue::AddSolution(size_t prof_id, CProfile *prof)
 
 	cv.notify_all();
 }
-
-// *******************************************************************
-// Return Sackin index 
-// *******************************************************************
-uint64_t CProfileQueue::GetSackinIndex()
-{
-	return sackin_index;
-}
-
-
