@@ -104,10 +104,10 @@ void UPGMA::computeDistances(std::vector<CSequence>& sequences, UPGMA_dist_t *di
 }
 
 // *******************************************************************
-template <bool is_modified>
+template <bool MODIFIED>
 void UPGMA::computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_structure& tree)
 {
-	Average<UPGMA_dist_t, is_modified> average;
+	Average<UPGMA_dist_t, MODIFIED> average;
 	
 	uint64_t g_uLeafCount;
 	uint64_t g_uTriangleSize;
