@@ -9,14 +9,17 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"1.6.1"
-#define FAMSA_DATE		"2020-06-18"
+#define FAMSA_VER		"1.6.2"
+#define FAMSA_DATE		"2020-06-19"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+1.6.2 (2020-06-19)
+- Clang compilation fixed.
 
 1.6.1 (2020-06-18)
 - Added parameter for automatic medoid tree usage. Some refactoring. Added license file.
