@@ -1,0 +1,91 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ master, experimental, dev, feature/test-ci ]
+  pull_request:
+    branches: [ master, experimental, dev, feature/test-ci ]
+
+jobs:
+  
+  linux-test:
+    name: Linux test
+    runs-on: ubuntu-latest
+    env: 
+      REF_DIR: ./test/adeno_fiber
+      INPUT: ./test/adeno_fiber/adeno_fiber
+ 
+    steps:
+    - uses: actions/checkout@v2
+    - name: make
+      run: make
+    
+    - name: single linkage (tree only)
+      run: |
+        ./famsa -gt_export ${INPUT} sl.dnd
+        cmp sl.dnd ${REF_DIR}/sl.dnd
+    
+    - name: single linkage (complete alignment)
+      run: |
+        ./famsa ${INPUT} sl.fasta
+        cmp sl.fasta ${REF_DIR}/sl.fasta
+     
+    - name: single linkage (from tree)
+      run: |
+        ./famsa -gt import sl.dnd ${INPUT} sl.dnd.fasta
+        cmp sl.dnd.fasta ${REF_DIR}/sl.fasta
+   
+    - name: upgma (tree only)
+      run: |
+        ./famsa -gt upgma -gt_export ${INPUT} upgma.dnd
+        cmp upgma.dnd ${REF_DIR}/upgma.dnd
+    
+    - name: upgma (complete alignment)
+      run: |
+        ./famsa -gt upgma ${INPUT} upgma.fasta
+        cmp upgma.fasta ${REF_DIR}/upgma.fasta
+     
+    - name: upgma (from tree)
+      run: |
+        ./famsa -gt import upgma.dnd ${INPUT} upgma.dnd.fasta
+        cmp upgma.dnd.fasta ${REF_DIR}/upgma.fasta
+        
+    - name: medoid + single linkage (tree only)
+      run: |
+        ./famsa -medoidtree -gt_export ${INPUT} medoid-sl.dnd
+        cmp  medoid-sl.dnd ${REF_DIR}/medoid-sl.dnd
+    
+    - name: medoid + single linkage (complete alignment)
+      run: |
+        ./famsa -medoidtree ${INPUT} medoid-sl.fasta
+        cmp medoid-sl.fasta ${REF_DIR}/medoid-sl.fasta
+     
+    - name: medoid + single linkage (from tree)
+      run: |
+        ./famsa -gt import medoid-sl.dnd ${INPUT} medoid-sl.fasta
+        cmp medoid-sl.fasta ${REF_DIR}/medoid-sl.fasta
+        
+    - name: medoid + upgma (tree only)
+      run: |
+        ./famsa -gt upgma -medoidtree -gt_export ${INPUT} medoid-upgma.dnd
+        cmp medoid-upgma.dnd ${REF_DIR}/medoid-upgma.dnd
+    
+    - name: medoid + upgma (complete alignment)
+      run: |
+        ./famsa -gt upgma -medoidtree ${INPUT} medoid-upgma.fasta
+        cmp medoid-upgma.fasta ${REF_DIR}/medoid-upgma.fasta
+     
+    - name: medoid + upgma (from tree)
+      run: |
+        ./famsa -gt import medoid-upgma.dnd ${INPUT} medoid-upgma.fasta
+        cmp medoid-upgma.fasta ${REF_DIR}/medoid-upgma.fasta
+      
+  macos-build:
+    name: macOS test
+    runs-on: macOS-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: make
+      run: make
+

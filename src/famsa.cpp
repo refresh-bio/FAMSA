@@ -378,7 +378,7 @@ int main(int argc, char *argv[])
 	size_t input_seq_cnt = IOService::loadFasta(execution_params.input_file_name, sequences);
     if(input_seq_cnt == 0){			
     	LOG_NORMAL << "Error: no (or incorrect) input file\n";
-		return 0;
+		return -1;
 	} else if (input_seq_cnt == 1){
         CGappedSequence resultSeq(sequences[0]);
 		result.push_back(&resultSeq);
@@ -387,18 +387,18 @@ int main(int argc, char *argv[])
 
 	// ***** Load sequences to FAMSA
 	if(!famsa.SetSequences(std::move(sequences)))
-		return 0;
+		return -1;
 
 	if(!famsa.SetParams(params))
 	{
 		LOG_NORMAL << "Error: No input sequences\n";
-		return 0;
+		return -1;
 	}
 
 	if(!famsa.ComputeMSA())
 	{
 		LOG_NORMAL << "Some interal error occured!\n";
-		return 0;
+		return -1;
 	}
 
 	if (famsa.GetAlignment(result)) {
