@@ -1,4 +1,8 @@
 # FAMSA
+
+[![GitHub downloads](https://img.shields.io/github/downloads/refresh-bio/famsa/total.svg?style=flag&label=GitHub%20downloads)](https://github.com/refresh-bio/FAMSA/releases)
+[![Bioconda downloads](https://img.shields.io/conda/dn/bioconda/famsa.svg?style=flag&label=Bioconda%20downloads)](https://anaconda.org/bioconda/famsa)
+
 Algorithm for large-scale multiple sequence alignments (400k proteins in 2 hours and 8BG of RAM)
 
 NOTE: In experimental branch one can find the latest FAMSA version with updates and experimental features.
