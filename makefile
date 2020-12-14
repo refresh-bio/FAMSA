@@ -62,7 +62,6 @@ else
 ifeq ($(NO_AVX2), true)
 LCS_OBJS := src/lcs/lcsbp.o \
 	src/lcs/lcsbp_classic.o \
-	src/lcs/lcsbp_avx.o \
 	src/lcs/lcsbp_avx_intr.o
 
 src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
