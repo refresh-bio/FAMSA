@@ -63,8 +63,8 @@ void CLCSBP::GetLCSBP(CSequence *seq0, CSequence *seq1, CSequence *seq2, CSequen
 //				lcsbp_avx2->Calculate(seq0, seq1, seq2, seq3, seq4, dist1, dist2, dist3, dist4);
 				lcsbp_avx2_intr->Calculate(seq0, seq1, seq2, seq3, seq4, dist1, dist2, dist3, dist4);
 #else
-				lcsbp_avx->Calculate(seq0, seq1, seq2, dist1, dist2);
-				lcsbp_avx->Calculate(seq0, seq3, seq4, dist3, dist4);
+				lcsbp_avx_intr->Calculate(seq0, seq1, seq2, dist1, dist2);
+				lcsbp_avx_intr->Calculate(seq0, seq3, seq4, dist3, dist4);
 #endif
 			}
 
