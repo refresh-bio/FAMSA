@@ -97,7 +97,3 @@ famsa <- function(stringset = NULL, help = FALSE, verbose = FALSE,
 
   return(ret)
 }
-
-
-
-
