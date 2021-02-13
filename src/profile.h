@@ -9,9 +9,9 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _PROFILE_H
 #define _PROFILE_H
 
-#include "../core/defs.h"
-#include "../core/params.h"
-#include "../utils/utils.h"
+#include "defs.h"
+#include "params.h"
+#include "utils.h"
 
 #include <vector>
 #include <tuple>
@@ -155,10 +155,10 @@ template<typename T, unsigned N_ROWS> class CProfileValues {
 		{
 			delete[] raw_data;
 			delete[] data;
-			
+
 			raw_data = nullptr;
 			data     = nullptr;
-			
+
 			n_cols = 0;
 		}
 	}
@@ -252,7 +252,7 @@ public:
 	void add_column(size_t col_id, T* source)
 	{
 		T* dest = data[col_id];
-		
+
 		for(size_t i = 0; i < N_ROWS; ++i)
 			dest[i] += source[i];
 	}
@@ -266,7 +266,7 @@ public:
 	void add_column_part(size_t col_id, size_t n, vector<score_t> &source)
 	{
 		T* dest = data[col_id];
-		
+
 		for(size_t i = 0; i < n; ++i)
 			dest[i] += source[i];
 	}
@@ -274,7 +274,7 @@ public:
 	void add_column_part_mult(size_t col_id, size_t n, vector<score_t> &source, score_t mult)
 	{
 		T* dest = data[col_id];
-		
+
 		for(size_t i = 0; i < n; ++i)
 			dest[i] += source[i] * mult;
 	}
@@ -344,10 +344,10 @@ class CProfile {
 	void AlignSeqSeq(CProfile *profile1, CProfile *profile2);
 	void AlignSeqProf(CProfile *profile1, CProfile *profile2, vector<int> *column_mapping1, vector<int> *column_mapping2);
 	void AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int> *column_mapping1, vector<int> *column_mapping2);
-	
-	
+
+
 	void ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatrix &matrix, dp_row_elem_t &last_row);
-	
+
 	void InsertGaps(size_t prof_col_id, CProfile *profile, size_t col_id, size_t n_gap_open, size_t n_gap_ext, size_t n_gap_term_open, size_t n_gap_term_ext);
 	void InsertColumn(size_t prof_col_id, CProfile *profile, size_t col_id);
 

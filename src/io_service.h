@@ -7,7 +7,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 */
 #pragma once
 
-#include "../core/sequence.h"
+#include "sequence.h"
 
 #include <string>
 #include <vector>
@@ -17,7 +17,7 @@ class IOService {
 
 public:
 	static size_t loadFasta(const std::string& file_name, std::vector<CSequence>& sequences);
-	
+
 	static bool saveAlignment(const std::string& file_name, const vector<CGappedSequence*> & sequences);
-	
+
 };

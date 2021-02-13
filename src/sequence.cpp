@@ -6,7 +6,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 */
 
-#include "../core/sequence.h"
+#include "sequence.h"
 
 #include <algorithm>
 #include <assert.h>
@@ -90,7 +90,7 @@ void CSequence::ComputeBitMasks()
 }
 
 // *******************************************************************
-void CSequence::ReleaseBitMasks() 
+void CSequence::ReleaseBitMasks()
 {
 	delete bit_masks;
 	bit_masks = nullptr;
@@ -107,10 +107,10 @@ CGappedSequence::CGappedSequence(CSequence &_sequence)
     symbols = _sequence.data;
     size    = symbols.size();
 	uppercase = _sequence.uppercase;
-    
+
     gapped_size = size;
     n_gaps.resize(size+1, 0);
-    
+
 	InitialiseDPS();
 }
 

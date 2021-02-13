@@ -9,8 +9,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 #include "TreeDefs.h"
 
-#include "../core/sequence.h"
-#include "../core/defs.h"
+#include "sequence.h"
+#include "defs.h"
 
 #include <vector>
 
@@ -29,10 +29,10 @@ class AbstractTreeGenerator {
 public:
 
 	AbstractTreeGenerator(double indel_exp, size_t n_threads);
-	
+
 	void operator()(std::vector<CSequence>& sequences, tree_structure& tree);
 
-	
+
 	template <class seq_type, class similarity_type, Measure measure>
 	void calculateSimilarityVector(
 		seq_type& ref,
@@ -61,7 +61,7 @@ protected:
 	double indel_exp;
 	size_t n_threads;
 	instruction_set_t instruction_set;
-	
+
 	virtual void run(std::vector<CSequence>& sequences, tree_structure& tree) = 0;
 
 #ifdef DEVELOPER_MODE

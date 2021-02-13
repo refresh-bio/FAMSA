@@ -13,14 +13,14 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <windows.h>
 
 // **********************************************************
-typedef struct 
+typedef struct
 {
 	LARGE_INTEGER start;
 	LARGE_INTEGER stop;
 } stop_watch_t;
 
 // **********************************************************
-class CStopWatch 
+class CStopWatch
 {
 	stop_watch_t timer;
 	LARGE_INTEGER frequency;
@@ -28,8 +28,8 @@ class CStopWatch
 
 public:
 	CStopWatch();
-	void StartTimer( );
-	void StopTimer( );
+	void StartTimer();
+	void StopTimer();
 	double GetElapsedTime();
 };
 
@@ -47,20 +47,20 @@ typedef struct
 #include <sys/resource.h>
 #include <unistd.h>
 
-typedef struct 
+typedef struct
 {
 	timeval start;
 	timeval stop;
 } stop_watch_t;
 
-class CStopWatch 
+class CStopWatch
 {
 	stop_watch_t timer;
 
 public:
-	CStopWatch() {};
-	void StartTimer( );
-	void StopTimer( );
+	CStopWatch();
+	void StartTimer();
+	void StopTimer();
 	double GetElapsedTime();
 };
 

@@ -6,7 +6,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 */
 
-#include "../lcs/lcsbp_classic.h"
+#include "lcsbp_classic.h"
 
 // *******************************************************************
 // Prepares (if necessary sufficient amount of memory for LCS calculation
@@ -115,10 +115,10 @@ void CLCSBP_Classic::Calculate(CSequence *seq0, CSequence *seq1,
 	case 30:	CLCSBP_Classic_Impl<30>::Calculate(seq0, seq1, res, X, s0bm);					break;
 	case 31:	CLCSBP_Classic_Impl<31>::Calculate(seq0, seq1, res, X, s0bm);					break;
 	case 32:	CLCSBP_Classic_Impl<32>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	default: 
-		calculate(seq0, seq1, res, bv_len);	
+	default:
+		calculate(seq0, seq1, res, bv_len);
 	}
-	
+
 	dist1 = res[0];
 }
 

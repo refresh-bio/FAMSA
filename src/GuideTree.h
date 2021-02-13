@@ -8,14 +8,14 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #pragma once
 
 #include "TreeDefs.h"
-#include "../core/sequence.h"
+#include "sequence.h"
 
 #include <vector>
 
 
 class GuideTree {
 public:
-	
+
 	tree_structure & raw() { return guide_tree; }
 
 	GuideTree() {}

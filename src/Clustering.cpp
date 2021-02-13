@@ -1,8 +1,8 @@
 #include "Clustering.h"
 #include "TreeDefs.h"
 
-#include "../utils/deterministic_random.h"
-#include "../utils/log.h"
+#include "deterministic_random.h"
+#include "log.h"
 
 #include <algorithm>
 #include <numeric>
@@ -21,8 +21,8 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 	int maxNeighbor = n_swaps < minMaxNeighbor
 		? n_swaps
 		: std::max((int)(exploreFraction * n_swaps), minMaxNeighbor);
-	
-	// FastCLARANS paper correction 
+
+	// FastCLARANS paper correction
 	// (FastPAM always investigates all possible medoids for swap, so we need to decrease a number of steps)
 	int correctedMaxNeighbour = maxNeighbor / n_medoids;
 
@@ -39,12 +39,12 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 	float INF = std::numeric_limits<float>::max();
 	solution_t best{ INF, medoids };
 	solution_t current{ INF, new int[n_elems] };
-	
+
 	float *raw_distances = new float[n_elems * 3];
 	float *dists_nearest	= raw_distances + 0 * n_elems;
 	float *dists_second		= raw_distances + 1 * n_elems;
 	float *deltas = raw_distances + 2 * n_elems;
-	
+
 	int * raw_assign = new int[n_elems * 2];
 	int * assign_nearest = raw_assign + 0 * n_elems;
 	int * assign_second = raw_assign + 1 * n_elems;
@@ -52,7 +52,7 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 	// select centers randomly
 	std::mt19937 gen_nodes;
 	std::mt19937 gen_positions;
-	
+
 	det_uniform_int_distribution<int> non_medoid_sampling(n_medoids, n_elems - 1);
 
 	// test NUM_LOCAL starting nodes
@@ -60,7 +60,7 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 	//	LOG_DEBUG << std::endl << "=====================================================" << std::endl;
 		// select starting node randomly
 		std::shuffle(candidate + n_fixed_medoids, candidate + n_elems, gen_nodes);
-		
+
 		std::copy_n(candidate, n_elems, current.candidate);
 		current.cost = std::numeric_limits<float>::max();
 
@@ -76,7 +76,7 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 		// initialize info for non-medoids
 		current.cost = 0;
 		for (size_t xx = n_medoids; xx < n_elems; ++xx) {
-			
+
 			int x = candidate[xx];
 			updateAssignment(x, candidate, n_medoids, D, dists_nearest[x], dists_second[x], assign_nearest[x], assign_second[x]);
 			current.cost += dists_nearest[x];
@@ -85,7 +85,7 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 
 		// search partition graph
 		for (int step = 0; step < correctedMaxNeighbour; ++step) {
-			
+
 	/*		if (Log::getInstance(Log::LEVEL_DEBUG).isEnabled()) {
 				std::copy_n(candidate, n_medoids, std::ostream_iterator<int>(std::cerr, ","));
 				float realCost = calculateCost(D, candidate, n_elems, n_medoids);
@@ -102,7 +102,7 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 		//	std::fill_n(deltas, n_medoids, -dx); // gain for making x a new medoid (same for all current medoids)
 			// bug in the psuedocode?
 			std::fill_n(deltas, n_medoids, 0); // gain for making x a new medoid (same for all current medoids)
-			
+
 			// establish which medoid should be swapped with x
 			// iterate over other non-medoids y
 			for (int yy = n_medoids; yy < n_elems; ++yy) {
@@ -117,13 +117,13 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 				float dn = dists_nearest[y];
 				float ds = dists_second[y];
  				int n = candidate[nn];
-				
+
 				// nn is removed so y will be reassigned
 				deltas[nn] += std::min(dxy, ds) - dn;
-				
+
 				// if y is reassigned to x
 				float change = dxy - dn;
-				if (change < 0) { 
+				if (change < 0) {
 					// iterate over other medoids
 					for (int kk = 0; kk < nn; ++kk) {
 						deltas[kk] += change; // gain for swapping x with y
@@ -164,13 +164,13 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 					if (yy == xx) {
 						updateAssignment(
 							y, candidate, n_medoids, D,
-							dists_nearest[y], dists_second[y], 
+							dists_nearest[y], dists_second[y],
 							assign_nearest[y], assign_second[y]);
 
 						current.cost += dists_nearest[y];
 						continue;
 					}
-					
+
 					if (an == mm_new) {
 						// previous nearest medoid was removed
 						float ds = dists_second[y];
@@ -185,8 +185,8 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 						else {
 							// second nearest is the best assignment
 							// recompute
-							updateAssignment(y, candidate, n_medoids, D, 
-								dists_nearest[y], dists_second[y], 
+							updateAssignment(y, candidate, n_medoids, D,
+								dists_nearest[y], dists_second[y],
 								assign_nearest[y], assign_second[y]);
 
 							current.cost += ds - dn;
@@ -201,14 +201,14 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 
 						current.cost += d_new - dn;
 					}
-					else { 
+					else {
 						// previous nearest wasn't removed
 						// new medoid further than previous nearest
-						
+
 						// possible change at second best
 						float ds = dists_second[y];
 						float as = assign_second[y];
-						
+
 						if (as != mm_new && d_new < ds) {
 							// second best wasn't removed
 							// new medoid closer than second best
@@ -230,7 +230,7 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 				std::swap(current.candidate[mm_new], current.candidate[xx]);
 				//current.cost += delta;
 				step = 0;
-				
+
 				LOG_DEBUG << " -> " << current.cost;
 		//		LOG_DEBUG << "Accept: " << candidate[xx] << " [" << xx << "] -> " << candidate[mm_new] << " [" << mm_new << "]    (" << delta << ")" << std::endl;
 			}
@@ -241,7 +241,7 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 
 		// fixme: recalculate the cost of current(it should be ok)
 		// current.cost = calculateCost(D, current.candidate, n_elems, n_medoids);
-		
+
 		// if current solution is better than the best solution
 		if (current.cost < best.cost) {
 			best.cost = current.cost;
@@ -269,7 +269,7 @@ void CLARANS::updateAssignment(
 	float& dist_nearest,
 	float& dist_second,
 	int& assign_nearest,
-	int& assign_second) 
+	int& assign_second)
 {
 	float dn = std::numeric_limits<float>::max();
 	float ds = std::numeric_limits<float>::max();
@@ -300,9 +300,9 @@ void CLARANS::updateAssignment(
 
 
 float CLARANS::calculateCost(const float* distanceMatrix, int *candidate, size_t n_elems, size_t n_medoids) {
-	
+
 	float cost = 0.0;
-	
+
 	// iterate over non-medoids
 	for (size_t xx = n_medoids; xx < n_elems; ++xx) {
 		int x = candidate[xx];

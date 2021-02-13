@@ -1,8 +1,8 @@
 #ifndef _LSCBP_H
 #define _LSCBP_H
-	
+
 #include <memory>
-#include "../core/defs.h"
+#include "defs.h"
 
 class CLCSBP_Classic;
 class CLCSBP_AVX_INTR;
@@ -21,7 +21,7 @@ class CLCSBP
 
 public:
 	CLCSBP(instruction_set_t _instruction_set = instruction_set_t::none);
-	
+
 	void GetLCSBP(CSequence *seq0, CSequence *seq1, CSequence *seq2, CSequence *seq3, CSequence *seq4,
 		uint32_t &dist1, uint32_t &dist2, uint32_t &dist3, uint32_t &dist4);
 

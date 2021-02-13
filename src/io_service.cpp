@@ -6,7 +6,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 */
 
-#include "../core/io_service.h"
+#include "io_service.h"
 
 #include <fstream>
 #include <iostream>

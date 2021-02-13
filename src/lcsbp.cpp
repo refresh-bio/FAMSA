@@ -1,4 +1,4 @@
-#include "../core/sequence.h"
+#include "sequence.h"
 #include "lcsbp.h"
 #include "lcsbp_classic.h"
 
@@ -14,13 +14,13 @@ CLCSBP::CLCSBP(instruction_set_t _instruction_set)
 {
 	instruction_set = _instruction_set;
 
-	lcsbp_classic = std::shared_ptr<CLCSBP_Classic>(new CLCSBP_Classic());	
+	lcsbp_classic = std::shared_ptr<CLCSBP_Classic>(new CLCSBP_Classic());
 #ifndef NO_AVX
 	lcsbp_avx_intr = std::shared_ptr<CLCSBP_AVX_INTR>(new CLCSBP_AVX_INTR());
 #ifndef NO_AVX2
 	lcsbp_avx2_intr = std::shared_ptr<CLCSBP_AVX2_INTR>(new CLCSBP_AVX2_INTR());
-#endif 
-#endif 
+#endif
+#endif
 
 
 }

@@ -17,16 +17,16 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <mutex>
 #include <condition_variable>
 
-#include "./core/queues.h"
-#include "./core/sequence.h"
-#include "./core/profile.h"
-#include "./core/params.h"
-#include "./utils/timer.h"
+#include "queues.h"
+#include "sequence.h"
+#include "profile.h"
+#include "params.h"
+#include "timer.h"
 
-#include "./lcs/lcsbp.h"
-#include "./lcs/lcsbp_classic.h"
+#include "lcsbp.h"
+#include "lcsbp_classic.h"
 
-class CFAMSA 
+class CFAMSA
 {
 protected:
 	static const int TIMER_SORTING = 0;
@@ -61,7 +61,7 @@ protected:
 #ifdef DEBUG_MODE
 	double estimated_identity;
 #endif
-	
+
 	void DetermineInstructionSet();
 	void init_sm();
 
@@ -88,7 +88,7 @@ public:
 #endif
 
 	bool GetAlignment(vector<CGappedSequence*> &result);
-	
+
 	score_t GetScore()
 	{
 		if(final_profile != nullptr)

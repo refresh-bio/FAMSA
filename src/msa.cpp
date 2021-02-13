@@ -7,15 +7,15 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 */
 
 #include "msa.h"
-#include "./tree/GuideTree.h"
-#include "./tree/SingleLinkage.h"
-#include "./tree/FastTree.h"
-#include "./tree/UPGMA.h"
-#include "./tree/NeighborJoining.h"
-#include "./core/io_service.h"
-#include "./utils/log.h"
+#include "GuideTree.h"
+#include "SingleLinkage.h"
+#include "FastTree.h"
+#include "UPGMA.h"
+#include "NeighborJoining.h"
+#include "io_service.h"
+#include "log.h"
 
-#include "./utils/cpuid.h"
+#include "cpuid.h"
 
 #include <algorithm>
 #include <set>

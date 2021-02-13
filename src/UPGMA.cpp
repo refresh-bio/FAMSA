@@ -12,7 +12,7 @@ The time and memory consumption is O(k^2)
 #include "UPGMA.h"
 #include "AbstractTreeGenerator.hpp"
 
-#include "../lcs/lcsbp.h"
+#include "lcsbp.h"
 
 #include <thread>
 #include <algorithm>
@@ -38,14 +38,14 @@ struct Average<T, true> {
 void UPGMA::run(std::vector<CSequence>& sequences, tree_structure& tree) {
 	UPGMA_dist_t* distances = TriangleMatrix::allocate<UPGMA_dist_t>(sequences.size());
 	computeDistances(sequences, distances);
-	
+
 	if (is_modified) {
 		computeTree<true>(distances, sequences.size(), tree);
 	}
 	else {
 		computeTree<false>(distances, sequences.size(), tree);
 	}
-	
+
 	delete[] distances;
 }
 
@@ -54,14 +54,14 @@ void UPGMA::runPartial(std::vector<CSequence*>& sequences, tree_structure& tree)
 	UPGMA_dist_t* distances = TriangleMatrix::allocate<UPGMA_dist_t>(sequences.size());
 	CLCSBP lcsbp(instruction_set);
 	calculateSimilarityMatrix<CSequence*, UPGMA_dist_t, Measure::DistanceReciprocal>(sequences.data(), sequences.size(), distances, lcsbp);
-	
+
 	if (is_modified) {
 		computeTree<true>(distances, sequences.size(), tree);
 	}
 	else {
 		computeTree<false>(distances, sequences.size(), tree);
 	}
-	
+
 	delete[] distances;
 }
 
@@ -108,7 +108,7 @@ template <bool MODIFIED>
 void UPGMA::computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_structure& tree)
 {
 	Average<UPGMA_dist_t, MODIFIED> average;
-	
+
 	uint64_t g_uLeafCount;
 	uint64_t g_uTriangleSize;
 	uint64_t g_uInternalNodeCount;

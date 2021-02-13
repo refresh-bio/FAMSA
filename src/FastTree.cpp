@@ -7,9 +7,9 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 */
 #include "FastTree.h"
 #include "AbstractTreeGenerator.hpp"
-#include "../lcs/lcsbp.h"
-#include "../utils/deterministic_random.h"
-#include "../utils/log.h"
+#include "lcsbp.h"
+#include "deterministic_random.h"
+#include "log.h"
 
 #include <algorithm>
 #include <random>
@@ -19,13 +19,13 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 // *******************************************************************
 FastTree::FastTree(
-	double indel_exp, 
-	size_t n_threads, 
-	std::shared_ptr<IPartialGenerator> partialGenerator, 
-	int subtreeSize, 
+	double indel_exp,
+	size_t n_threads,
+	std::shared_ptr<IPartialGenerator> partialGenerator,
+	int subtreeSize,
 	std::shared_ptr<IClustering> clustering,
 	int sampleSize)
-	: 
+	:
 		AbstractTreeGenerator(indel_exp, n_threads),
 		partialGenerator(partialGenerator),
 		subtreeSize(subtreeSize),
@@ -55,10 +55,10 @@ void FastTree::doStep(std::vector<CSequence*>& sequences, tree_structure& tree)
 	CLCSBP lcsbp(instruction_set);
 
 	if ((!clustering && n_seqs > subtreeSize) || (clustering && n_seqs > clusteringThreshold)) {
-		
+
 		float* dists = new float[n_seqs * 2]; // second row will be used later
 		int* seed_ids = new int[subtreeSize];
-		
+
 		float* dist_row = dists;
 		size_t n_seeds;
 
@@ -86,7 +86,7 @@ void FastTree::doStep(std::vector<CSequence*>& sequences, tree_structure& tree)
 			calculateSimilarityVector<CSequence*, float, DIST_MEASURE>(seeds[k], sequences.data(), n_seqs, current_row, lcsbp);
 
 			for (size_t j = 0; j < n_seqs; ++j) {
-				if (current_row[j] < dist_row[j]) { 	// use dist_row for storing smallest distances 
+				if (current_row[j] < dist_row[j]) { 	// use dist_row for storing smallest distances
 					dist_row[j] = current_row[j];
 					assignments[j] = k;
 				}
@@ -139,7 +139,7 @@ void FastTree::doStep(std::vector<CSequence*>& sequences, tree_structure& tree)
 			auto& node = tree[node_id];
 
 			node.first = node.first < seeds.size()
-				? (subgroups[node.first].size() > 1 ? subroots[node.first] : seeds[node.first]->sequence_no)	// case: seed id - change to subroot or seq id 
+				? (subgroups[node.first].size() > 1 ? subroots[node.first] : seeds[node.first]->sequence_no)	// case: seed id - change to subroot or seq id
 				: node.first + previousTop - seeds.size();	 // case: intermediate node
 
 			node.second = node.second < seeds.size()
@@ -159,11 +159,11 @@ void FastTree::doStep(std::vector<CSequence*>& sequences, tree_structure& tree)
 				auto& node = tree[node_id];
 
 				node.first = node.first < sequences.size()
-					? sequences[node.first]->sequence_no				// case: sequence id 
+					? sequences[node.first]->sequence_no				// case: sequence id
 					: node.first + previousTop - sequences.size();	// case: intermediate node
 
 				node.second = node.second < sequences.size()
-					? sequences[node.second]->sequence_no				// case: sequence id 
+					? sequences[node.second]->sequence_no				// case: sequence id
 					: node.second + previousTop - sequences.size();	// case: intermediate node
 			}
 		}
@@ -186,7 +186,7 @@ size_t FastTree::randomSeeds(
 
 	std::mt19937 mt;
 	std::iota(randomIds.begin(), randomIds.begin() + n_seqs, 0);
-	
+
 	size_t furthestId = std::max_element(dist_row + 1, dist_row + n_seqs) - dist_row;
 	std::swap(randomIds[1], randomIds[furthestId]);
 	partial_shuffle(randomIds.begin() + 2, randomIds.begin() + n_seeds, randomIds.begin() + n_seqs, mt);
@@ -228,7 +228,7 @@ size_t FastTree::clusterSeeds(
 		sample_ids = new int[n_samples];
 		std::copy(randomIds.begin(), randomIds.begin() + n_samples, sample_ids);
 		std::sort(sample_ids, sample_ids + n_samples);
-	
+
 		samples = new CSequence*[n_samples];
 		for (size_t j = 0; j < n_samples; ++j) {
 			samples[j] = sequences[sample_ids[j]];
@@ -241,7 +241,7 @@ size_t FastTree::clusterSeeds(
 	// calculate distance matrix
 	float* distances = TriangleMatrix::allocate<float>(n_samples);
 	this->calculateSimilarityMatrix<CSequence*, float, DIST_MEASURE>(samples, n_samples, distances, lcsbp);
-	
+
 	// perform clustering
 	(*clustering)(distances, n_samples, n_seeds, 1, seed_ids);
 

@@ -7,7 +7,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 */
 
 #include "lcsbp_avx_intr.h"
-#include "../core/defs.h"
+#include "defs.h"
 
 #include "algorithm"
 #include <memory>
@@ -30,7 +30,7 @@ void CLCSBP_AVX_INTR::prepare_X(size_t bv_len)
 	raw_X_size = X_size + 64;
 	raw_X = malloc(raw_X_size);
 	orig_X = raw_X;
-	
+
 	X = (__m128i*)my_align(64, X_size, raw_X, raw_X_size);
 }
 
@@ -142,7 +142,7 @@ void CLCSBP_AVX_INTR::Calculate(CSequence *seq0, CSequence *seq1, CSequence *seq
 	case 32: CLCSBP_AVX_INTR_Impl<32>::Calculate(seq0, seq1, seq2, res, max_len, X);					break;
 	default: calculate(seq0, seq1, seq2, res, bv_len, max_len);		break;
 	}
-	
+
 	dist1 = res[0];
 	dist2 = res[1];
 }

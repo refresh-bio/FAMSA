@@ -6,7 +6,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 */
 
-#include "../core/queues.h"
+#include "queues.h"
 #include <iostream>
 
 //#define PRODUCE_LOG

@@ -1,7 +1,7 @@
 #include "NeighborJoining.h"
 #include "AbstractTreeGenerator.hpp"
 
-#include "../lcs/lcsbp.h"
+#include "lcsbp.h"
 
 #include <limits>
 
@@ -21,7 +21,7 @@ void NeighborJoining::runPartial(std::vector<CSequence*>& sequences, tree_struct
 	float* distances = TriangleMatrix::allocate<float>(sequences.size());
 	CLCSBP lcsbp(instruction_set);
 	calculateSimilarityMatrix<CSequence*, float, Measure::DistanceReciprocal>(sequences.data(), sequences.size(), distances, lcsbp);
-	
+
 	computeTree(distances, sequences.size(), tree);
 
 	delete[] distances;
@@ -52,7 +52,7 @@ void NeighborJoining::computeTree(float* distances, size_t n_seq, tree_structure
 			}
 		}
 	}
-	
+
 	// merge clusters as long as there are two left
 	for (int iter = 0, n_clusters = n_seq; n_clusters > 2; ++iter, --n_clusters) {
 
@@ -80,10 +80,10 @@ void NeighborJoining::computeTree(float* distances, size_t n_seq, tree_structure
 		auto & cj = clusters[min_j];
 		float Dij = D[TriangleMatrix::access(ci.row_id, cj.row_id)];
 
-	
+
 		// ci is going to be replaced by a new cluster
 		tree.push_back(node_t(ci.node_id, cj.node_id));
-		
+
 		ci.sum_of_dists = 0;
 		ci.node_id = n_seq + iter;
 

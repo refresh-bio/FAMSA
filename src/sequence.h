@@ -9,8 +9,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _SEQUENCE_H
 #define _SEQUENCE_H
 
-#include "../core/defs.h"
-#include "../utils/array.h"
+#include "defs.h"
+#include "array.h"
 #include <string>
 #include <vector>
 
@@ -29,17 +29,16 @@ public:
 	uint32_t length;
 
 	Array<bit_vec_t>* bit_masks;
-	
+
 public:
 	CSequence(const string& _id, const string& seq);
 	~CSequence();
-
 	void ComputeBitMasks();
 	void ReleaseBitMasks();
 	string DecodeSequence();
 };
 
-class CGappedSequence 
+class CGappedSequence
 {
 	static char mapping_table[25];
 

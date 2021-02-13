@@ -17,9 +17,9 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <list>
 #include <stack>
 
-#include "../core/defs.h"
-#include "../core/sequence.h"
-#include "../core/profile.h"
+#include "defs.h"
+#include "sequence.h"
+#include "profile.h"
 
 class CProfileQueue
 {

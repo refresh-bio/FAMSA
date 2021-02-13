@@ -6,8 +6,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 */
 
-#include "../core/profile.h"
-#include "../core/sequence.h"
+#include "profile.h"
+#include "sequence.h"
 #include <assert.h>
 #include <array>
 #include <set>
@@ -23,7 +23,7 @@ int aacode[32] = {0, 20, 4, 3, 6, 13, 7, 8, 9, 23, 11, 10, 12, 2, 23, 14, 5, 1, 
 /* {a0,b1,c2,d3,e4,f5,g6,h7,i8,j-1,k9,l10,m11,n12,o23,p13,q14,r15,s16,t17,u17,v18,w19,x20,y21,z22};
 
  char CSequence::mapping_table[25] = "ARNDCQEGHILKMFPSTWYVBZX*";
-                                      0123456789*123456789*123
+									  0123456789*123456789*123
 									  */
 // ****************************************************************************
 // Construct empty profile
@@ -113,7 +113,7 @@ void CProfile::CalculateCounters(CGappedSequence *gs)
 		for(size_t i = 2; i < first_non_gap; ++i)
 			counters.add_value(i, GAP_TERM_EXT, 1);
 	}
-	
+
 	// Set counters for terminal gaps at back
 	if (last_non_gap < width)
 	{
@@ -144,7 +144,7 @@ void CProfile::CalculateCounters(CGappedSequence *gs)
 			//counters.add_value(seq_pos+gs->n_gaps[i]-1, GAP_OPEN, 1);
 
 			// Increment gap ext counters
-			for(int j = 1; j < n_gaps[i]; ++j)		
+			for(int j = 1; j < n_gaps[i]; ++j)
 				counters.add_value(seq_pos+j, GAP_EXT, 1);
 		}
 		seq_pos += n_gaps[i];
@@ -321,7 +321,7 @@ void CProfile::GetGapStats(vector<size_t> &stats)
 	stats.resize(width + 1, data.size());
 
 	vector<size_t> stats_term;
-	
+
 	for(auto &p : data)
 	{
 		size_t seq_pos = 0;
@@ -350,7 +350,7 @@ bool CProfile::Condense(vector<int> &column_mapping)
 
 	// Find non empty columns
 	GetGapStats(gap_stats);
-	
+
 	vector<pair<uint32_t, uint32_t>> cols_to_remove;
 
 	for(uint32_t i = 1; i <= width; ++i)
@@ -358,7 +358,7 @@ bool CProfile::Condense(vector<int> &column_mapping)
 		{
 			if(gap_stats[i-1] == card)
 				cols_to_remove.back().second++;
-			else 
+			else
 				cols_to_remove.push_back(make_pair(i, 1));
 		}
 
@@ -381,7 +381,7 @@ bool CProfile::Condense(vector<int> &column_mapping)
 		for(auto &p: data)
 			p->RemoveGaps(x.first, x.second);
 	}
-	
+
 	width = data.front()->gapped_size;
 
 	CalculateCountersScores();
@@ -647,7 +647,7 @@ bool CProfile::OptimizeGaps()
 }
 
 // ****************************************************************************
-// 
+//
 void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int> *column_mapping1, vector<int> *column_mapping2)
 {
 	size_t prof1_width = profile1->width;
@@ -698,10 +698,10 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 	//scoresX.get_value(j, GAP_EXT) returns information of how the column j of the profile X aligns with a single gap_ext
 	//etc.
 	//The task is to calculate how the column j of the profile X aligns with a column of gaps of different categories
-	
+
 	for (size_t j = 0; j <= prof2_width; ++j)
 	{
-		prof2_gaps[j].open      = scores2.get_value(j, GAP_OPEN); 
+		prof2_gaps[j].open      = scores2.get_value(j, GAP_OPEN);
 		prof2_gaps[j].ext       = scores2.get_value(j, GAP_EXT);
 		prof2_gaps[j].term_open = scores2.get_value(j, GAP_TERM_OPEN);
 		prof2_gaps[j].term_ext  = scores2.get_value(j, GAP_TERM_EXT);
@@ -715,9 +715,9 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 	if (prof2_width >= 1)
 	{
 		prev_row[1].D = -infty;
-				
+
 		prev_row[1].H = prev_row[0].D + prof2_gaps[1].term_open * prof1_card;
-		
+
 		prev_row[1].V = -infty;
 		matrix.set_dir_all(0, 1, direction_t::H);
 	}
@@ -725,7 +725,7 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 	for (size_t j = 2; j <= prof2_width; ++j)
 	{
 		prev_row[j].D  = -infty;
-		
+
 		prev_row[j].H = prev_row[j - 1].H + prof2_gaps[j].term_ext * prof1_card;
 
 		prev_row[j].V  = -infty;
@@ -734,20 +734,20 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 	prev_row[prof2_width].H = -infty;
 
 	// Precomputing for gap correction in the profile2
-	vector<score_t> n_gaps_prof2_to_change(prof2_width + 1); 
+	vector<score_t> n_gaps_prof2_to_change(prof2_width + 1);
 	vector<score_t> n_gaps_prof2_term_to_change(prof2_width + 1);
 	vector<score_t> gaps_prof2_change(prof2_width + 1);
 
 	for (size_t j = 1; j <= prof2_width; ++j)
 	{
-		DP_SolveGapsProblemWhenStarting(j, prof2_width, prof2_card, profile2, 
+		DP_SolveGapsProblemWhenStarting(j, prof2_width, prof2_card, profile2,
 			gap_corrections[j].n_gap_start_open, gap_corrections[j].n_gap_start_ext, gap_corrections[j].n_gap_start_term_open, gap_corrections[j].n_gap_start_term_ext);
 
 		DP_SolveGapsProblemWhenContinuing(j, prof2_width, prof2_card, profile2,
 			gap_corrections[j].n_gap_cont_ext, gap_corrections[j].n_gap_cont_term_ext);
 
 #ifndef NO_GAP_CORRECTION
-		n_gaps_prof2_to_change[j]      = profile2->counters.get_value(j, GAP_OPEN);      //the number of gaps to be changed from gap_open into gap_ext 
+		n_gaps_prof2_to_change[j]      = profile2->counters.get_value(j, GAP_OPEN);      //the number of gaps to be changed from gap_open into gap_ext
 		n_gaps_prof2_term_to_change[j] = profile2->counters.get_value(j, GAP_TERM_OPEN); //the number of gaps to be changed from term_open into term_ext
 
 #else
@@ -758,7 +758,7 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 		gaps_prof2_change[j] = n_gaps_prof2_to_change[j] * (gap_ext - gap_open) +
 					n_gaps_prof2_term_to_change[j] * (gap_term_ext - gap_term_open);
 	}
-	
+
 	// Calculate matrix interior
 	for (size_t i = 1; i <= prof1_width; ++i)
 	{
@@ -794,7 +794,7 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 		// Calculate frequency of symbols in (i-1)-th column of profile1
 		col1.clear();
 		size_t col1_n_non_gaps = 0;
-		for(size_t k = 0; k < NO_AMINOACIDS_AND_GAPS; ++k)			
+		for(size_t k = 0; k < NO_AMINOACIDS_AND_GAPS; ++k)
 			if(profile1->counters.get_value(i, k))
 			{
 				size_t count = profile1->counters.get_value(i, k);
@@ -806,7 +806,7 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 
 		// Precomputing for gap correction in the profile1
 		n_gap_prof1_start_open = n_gap_prof1_start_ext = n_gap_prof1_start_term_open = n_gap_prof1_start_term_ext = 0;
-		DP_SolveGapsProblemWhenStarting(i , prof1_width, prof1_card, profile1, 
+		DP_SolveGapsProblemWhenStarting(i , prof1_width, prof1_card, profile1,
 			n_gap_prof1_start_open, n_gap_prof1_start_ext, n_gap_prof1_start_term_open, n_gap_prof1_start_term_ext);
 
 		DP_SolveGapsProblemWhenContinuing(i, prof1_width, prof1_card, profile1,
@@ -835,9 +835,9 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 			score_t *scores2_column = scores2.get_column(j);
 
 			//scores2_column contains information on how the column j aligns with a single character that could appear in the profile 1
-			//the variable t is to store a cost of the alignment of the column j with a specific character (col1[k].first) 
+			//the variable t is to store a cost of the alignment of the column j with a specific character (col1[k].first)
 			//of a concrete number of occurrences (col1[k].second) of the profile 1
-			
+
 			score_t t = 0;
 			switch(col1_size)
 			{
@@ -854,14 +854,14 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 					t += col1[k].second * scores2_column[col1[k].first];
 			}
 
-			//an alignment of a column with another column, after an an alignment of two columns  
+			//an alignment of a column with another column, after an an alignment of two columns
 			score_t t_D = prev_row[j-1].D + t;
-            
+
 			//..........................................................................
 			//an alignment of a column with another column, after inserting a column of gaps before, into the profile 1
 			score_t t_H = prev_row[j - 1].H;
-				
-			//One has to check if there is a need of exchanging gap_opens/gap_term_opens (from the column of the profile 1 that is being just aligned) 
+
+			//One has to check if there is a need of exchanging gap_opens/gap_term_opens (from the column of the profile 1 that is being just aligned)
 			//into gap_extensions/gap_term_extensions
 			//If so, the value of the variable t has to be corrected, because it was computed with:
 			//t += col1[k].liczba_gap_open * scores2_column[GAP_OPEN];
@@ -874,7 +874,7 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 				//correction by delta_t
 				score_t delta_t = n_gaps_prof1_to_change      * (scores2_column[GAP_EXT] - scores2_column[GAP_OPEN]) +
 					n_gaps_prof1_term_to_change * (scores2_column[GAP_TERM_EXT] - scores2_column[GAP_TERM_OPEN]);
-					
+
 				t_H = t_H + t + delta_t;
 			}
 			else
@@ -906,13 +906,13 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 			// Calcualte score for H
 			//...........................................................................
 			//inserting a columns of gaps into the profile 1
-			
+
 			//the case when a column (i) was aligned with the column (j-1)
 			score_t gap_corr = prof2_gaps[j].open * n_gap_prof1_start_open           + prof2_gaps[j].ext * n_gap_prof1_start_ext +
 				               prof2_gaps[j].term_open * n_gap_prof1_start_term_open + prof2_gaps[j].term_ext * n_gap_prof1_start_term_ext;
 
 			t_D = curr_row[j - 1].D + gap_corr;
-			
+
 			//the case when a sequence of gaps is continued (another columnn of gaps is inserted)
 			t_H = curr_row[j - 1].H + prof2_gaps[j].ext * n_gap_prof1_cont_ext +
 				                      prof2_gaps[j].term_ext * n_gap_prof1_cont_term_ext;
@@ -928,7 +928,7 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 					curr_row[j].H = t_D;
 					matrix.set_dir_H(matrix_cell, direction_t::D);
 				}
-				else if (t_V > t_H)	//Attention!!! Swapping the checking order 
+				else if (t_V > t_H)	//Attention!!! Swapping the checking order
 				{
 					curr_row[j].H = t_V;
 					matrix.set_dir_H(matrix_cell, direction_t::V);
@@ -937,7 +937,7 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 				{
 					curr_row[j].H = t_H;
 					matrix.set_dir_H(matrix_cell, direction_t::H);
-					
+
 				}
 			}
 			else
@@ -1004,7 +1004,7 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 			{
 				if(t_D > t_V)
 				{
-					curr_row[j].V = t_D;				
+					curr_row[j].V = t_D;
 					matrix.set_dir_V(matrix_cell, direction_t::D);
 				}
 				else
@@ -1016,7 +1016,7 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 #else
 				if(t_D > t_V)
 				{
-					curr_row[j].V = t_D;				
+					curr_row[j].V = t_D;
 					matrix.set_dir_V(matrix_cell, direction_t::D);
 				}
 				else
@@ -1028,7 +1028,7 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 
 		}
 
-		curr_row.swap(prev_row);		
+		curr_row.swap(prev_row);
 	}
 
 	// Construct alignment
@@ -1036,7 +1036,7 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 }
 
 // ****************************************************************************
-// 
+//
 void CProfile::AlignSeqSeq(CProfile *profile1, CProfile *profile2)
 {
 	size_t prof1_width = profile1->width;
@@ -1065,7 +1065,7 @@ void CProfile::AlignSeqSeq(CProfile *profile1, CProfile *profile2)
 	if (1 <= prof2_width)
 	{
 		prev_row[1].D = -infty;
-		prev_row[1].H = gap_term_open; 
+		prev_row[1].H = gap_term_open;
 		prev_row[1].V = -infty;
 		matrix.set_dir_all(0, 1, direction_t::H);
 	}
@@ -1073,7 +1073,7 @@ void CProfile::AlignSeqSeq(CProfile *profile1, CProfile *profile2)
 	for (size_t j = 2; j <= prof2_width; ++j)
 	{
 		prev_row[j].D = -infty;
-		prev_row[j].H = max(prev_row[j - 1].H, prev_row[j - 1].D) + gap_term_ext; 
+		prev_row[j].H = max(prev_row[j - 1].H, prev_row[j - 1].D) + gap_term_ext;
 		prev_row[j].V = -infty;
 		matrix.set_dir_all(0, j, direction_t::H);
 	}
@@ -1131,7 +1131,7 @@ void CProfile::AlignSeqSeq(CProfile *profile1, CProfile *profile2)
 			//a gap is to be inserted into a profile
 
 			//This gap takes the form of gap_open if a match was before
-			t_D = curr_row[j - 1].D + (i < prof1_width ? gap_open : gap_term_open); 
+			t_D = curr_row[j - 1].D + (i < prof1_width ? gap_open : gap_term_open);
 
 			//This gap takes the form of gap_ext if a gap was inserted before
 			t_H = curr_row[j - 1].H + (i < prof1_width ? gap_ext : gap_term_ext);
@@ -1150,7 +1150,7 @@ void CProfile::AlignSeqSeq(CProfile *profile1, CProfile *profile2)
 			//...........................................................................
 			// Calculate score for V
 			//...........................................................................
-			
+
 			t_D = prev_row[j].D + (j < prof2_width ? gap_open : gap_term_open);
 			t_V = prev_row[j].V + (j < prof2_width ? gap_ext : gap_term_ext);
 
@@ -1221,7 +1221,7 @@ void CProfile::ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatri
 		dir = direction_t::V;
 		total_score = last_elem.V;
 	}
-	
+
 	prev_dir = direction_t::D;
 	init_dir = dir;
 
@@ -1260,33 +1260,33 @@ void CProfile::ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatri
 	//The last entry in the "path" is made inside the loop and it means the entrance to the boundary row/column. The two indices i and j are equal to 0 .
 	//Tested!
 	//After making reverse() the last entry is on position 0. That means the "right" path starts at index 1
-	
+
 	reverse(path.begin(), path.end());
-	
+
 	// Construct the new profile
 	i = prof1_width;
 	j = prof2_width;
 
 	prev_dir = direction_t::D; //This prevents recognition of continuing a gap sequence, when the first inserted symbol should be a gap
-		
+
 	dir = path[1];
-	
+
 	counters.resize(width + 1);
 	counters.set_zeros();
 	scores.resize(width + 1);
 	scores.set_zeros();
 
 	size_t new_prof_col_id = 1;
-	i = 0; 
+	i = 0;
 	j = 0;
 	n_gap_to_transfer1 = n_gap_term_to_transfer1 = n_gap_to_transfer2 = n_gap_term_to_transfer2 = 0;
 	n_gap_open_at_left1 = n_gap_ext_at_left1 = n_gap_term_open_at_left1 = n_gap_term_ext_at_left1 = 0;
 	n_gap_open_at_left2 = n_gap_ext_at_left2 = n_gap_term_open_at_left2 = n_gap_term_ext_at_left2 = 0;
 
-	path.push_back(direction_t::V); 
-	
+	path.push_back(direction_t::V);
+
 	// Traversing the DP matrix
-	
+
 	cumulate_gap_inserts = false;
 	no_cumulated_gap_inserts = 0;
 
@@ -1298,7 +1298,7 @@ void CProfile::ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatri
 			j++;
 
 			//if as a result of the insertion of a column of gaps on the left side of the current column
-			//there is a need to transform gap_opens into gap_exts inside the current column. 
+			//there is a need to transform gap_opens into gap_exts inside the current column.
 			//Understood as the transfer of information from the previous column
 			if (n_gap_to_transfer1 || n_gap_term_to_transfer1)
 			{
@@ -1334,7 +1334,7 @@ void CProfile::ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatri
 
 			n_gap_open_at_left1 = n_gap_ext_at_left1 = n_gap_term_open_at_left1 = n_gap_term_ext_at_left1 = 0;
 			n_gap_open_at_left2 = n_gap_ext_at_left2 = n_gap_term_open_at_left2 = n_gap_term_ext_at_left2 = 0;
-			
+
 			InsertColumn(new_prof_col_id, profile1, i);
 			InsertColumn(new_prof_col_id, profile2, j);
 			prev_dir = dir;
@@ -1347,10 +1347,10 @@ void CProfile::ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatri
 
 			if (prev_dir == dir)		// inside a gap
 				SolveGapsProblemWhenContinuing(i, prof1_width, prof1_size, n_gap_to_transfer1, n_gap_term_to_transfer1, n_gap_open, n_gap_ext, n_gap_term_open, n_gap_term_ext, n_gap_open_at_left1, n_gap_ext_at_left1, n_gap_term_open_at_left1, n_gap_term_ext_at_left1);
-			
+
 			else //if (prev_dir != dir)							// start of a gap
 				SolveGapsProblemWhenStarting(i, prof1_width, prof1_size, profile1, n_gap_to_transfer1, n_gap_term_to_transfer1, n_gap_open, n_gap_ext, n_gap_term_open, n_gap_term_ext);
-			
+
 			//the following information is to be used when extending the sequence of gaps.
 			//It is then the need to trace what has been inserted in the previous step.
 			n_gap_open_at_left1 = n_gap_open;
@@ -1432,8 +1432,8 @@ void CProfile::ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatri
 				n_gap_to_transfer1 = n_gap_term_to_transfer1 = 0;
 			}
 			//----------------
-			
-			InsertColumn(new_prof_col_id, profile1, ++i);			
+
+			InsertColumn(new_prof_col_id, profile1, ++i);
 			InsertGaps(new_prof_col_id, profile2, new_prof_col_id, n_gap_open, n_gap_ext, n_gap_term_open, n_gap_term_ext);
 		}
 		else
@@ -1473,8 +1473,8 @@ void CProfile::InsertGaps(size_t prof_col_id, CProfile *profile, size_t col_id, 
 		no_cumulated_gap_inserts = 0;
 	}
 
-	score_t gap_cost = n_gap_open * (gap_open_r) + 
-					   n_gap_ext * (gap_ext_r) + 
+	score_t gap_cost = n_gap_open * (gap_open_r) +
+					   n_gap_ext * (gap_ext_r) +
 					   n_gap_term_open * (gap_term_open_r) +
 					   n_gap_term_ext * (gap_term_ext_r);
 
@@ -1485,7 +1485,7 @@ void CProfile::InsertGaps(size_t prof_col_id, CProfile *profile, size_t col_id, 
 
 	counters.add_value(prof_col_id, GAP, num);				// total number of gaps in profile
 
-	for(size_t i = 0; i < NO_AMINOACIDS; ++i)	
+	for(size_t i = 0; i < NO_AMINOACIDS; ++i)
 		scores.add_value(prof_col_id, i, gap_cost);
 }
 
@@ -1506,12 +1506,12 @@ void CProfile::InsertColumn(size_t prof_col_id, CProfile *profile, size_t col_id
 void CProfile::SolveGapsProblemWhenContinuing(size_t source_col_id, size_t prof_width, size_t prof_size, size_t &n_gap_to_transfer, size_t &n_gap_term_to_transfer, size_t &n_gap_open, size_t &n_gap_ext, size_t &n_gap_term_open, size_t &n_gap_term_ext, size_t n_gap_open_at_left, size_t n_gap_ext_at_left, size_t n_gap_term_open_at_left, size_t n_gap_term_ext_at_left)
 {
 	// inside a gap
-	if (source_col_id == prof_width || source_col_id == 0) 
+	if (source_col_id == prof_width || source_col_id == 0)
 			n_gap_term_ext += prof_size;
 	else
 	{
 #ifndef NO_GAP_CORRECTION
-			//the number of n_gap_term_ext corresponds to the number of GAP_TERM_OPEN in the column on the left 
+			//the number of n_gap_term_ext corresponds to the number of GAP_TERM_OPEN in the column on the left
 		n_gap_term_ext += n_gap_term_open_at_left;
 
 			//the number of n_gap_term_ext corresponds to the number of GAP_TERM_EXT in the column on the left
@@ -1527,7 +1527,7 @@ void CProfile::SolveGapsProblemWhenContinuing(size_t source_col_id, size_t prof_
 
 #else
 		n_gap_ext = prof_size;
-		n_gap_open = prof_size - n_gap_ext - n_gap_term_ext;		
+		n_gap_open = prof_size - n_gap_ext - n_gap_term_ext;
 #endif
 	}
 
@@ -1540,13 +1540,13 @@ void CProfile::SolveGapsProblemWhenStarting(size_t source_col_id, size_t prof_wi
 	{	//the begining of a terminal gap. n_gap_term_open corresponds to the size of the profile
 		n_gap_term_open += prof_size;
 
-		//There can be the necessity of modifications in the column on the right. 
+		//There can be the necessity of modifications in the column on the right.
 		//"open" should be turned into "ext"
-		
+
 #ifndef NO_GAP_CORRECTION
 		n_gap_term_to_transfer = profile->counters.get_value(source_col_id + 1, GAP_TERM_OPEN);
 #else
-		n_gap_term_to_transfer = 0; 
+		n_gap_term_to_transfer = 0;
 #endif
 
 	}
@@ -1556,7 +1556,7 @@ void CProfile::SolveGapsProblemWhenStarting(size_t source_col_id, size_t prof_wi
 		//If - in the last column of the current profile - there were term_opens or term_exts
 		//one should insert term_ext
 		//Term_opens should be inserted to the rest of the sequences
-		
+
 #ifndef NO_GAP_CORRECTION
 		counter_t cnt = profile->counters.get_value(source_col_id, GAP_TERM_OPEN) + profile->counters.get_value(source_col_id, GAP_TERM_EXT);
 		n_gap_term_ext = cnt;
@@ -1564,20 +1564,20 @@ void CProfile::SolveGapsProblemWhenStarting(size_t source_col_id, size_t prof_wi
 		n_gap_term_open += (prof_size - cnt);
 #else
 		n_gap_term_open = prof_size;
-		n_gap_term_ext = 0;	
+		n_gap_term_ext = 0;
 #endif
 	}
 	else	//start of a gap inside the profile
 	{
 
 #ifndef NO_GAP_CORRECTION
-		//the number of n_gap_term_open corresponds to the number of GAP_TERM_OPEN in the column on the right, 
+		//the number of n_gap_term_open corresponds to the number of GAP_TERM_OPEN in the column on the right,
 		n_gap_term_open += profile->counters.get_value(source_col_id + 1, GAP_TERM_OPEN);
 
 		//GAP_TERM_OPEN from the right column should be turned into GAP_TERM_EXT
 		n_gap_term_to_transfer = n_gap_term_open;
 
-		//the number of n_gap_term_ext corresponds to GAP_TERM_OPEN in the left column, 
+		//the number of n_gap_term_ext corresponds to GAP_TERM_OPEN in the left column,
 		n_gap_term_ext += profile->counters.get_value(source_col_id, GAP_TERM_OPEN);
 
 		//the number of n_gap_term_ext corresponds to GAP_TERM_EXT in the left column,
@@ -1600,10 +1600,10 @@ void CProfile::SolveGapsProblemWhenStarting(size_t source_col_id, size_t prof_wi
 
 #else
 		n_gap_open = prof_size;
-		n_gap_term_to_transfer = 0;		
-		n_gap_ext = 0;					
+		n_gap_term_to_transfer = 0;
+		n_gap_ext = 0;
 #endif
-	
+
 	}
 }
 
@@ -1612,10 +1612,10 @@ void CProfile::DP_SolveGapsProblemWhenStarting(size_t source_col_id, size_t prof
 {
 	//The situation below never happens in DP matrix
 	//if (source_col_id == 0)
-	//{	
+	//{
 	//	n_gap_term_open += prof_size;
 	//}
-	//else 
+	//else
 	if (source_col_id >= prof_width)
 	{
 		//the begining of a terminal gap on the right side of the profile
@@ -1631,7 +1631,7 @@ void CProfile::DP_SolveGapsProblemWhenStarting(size_t source_col_id, size_t prof
 		n_gap_term_open += (prof_size - cnt);
 #else
 		n_gap_term_open = prof_size;
-		n_gap_term_ext = 0;				
+		n_gap_term_ext = 0;
 #endif
 
 	}
@@ -1639,18 +1639,18 @@ void CProfile::DP_SolveGapsProblemWhenStarting(size_t source_col_id, size_t prof
 	{
 
 #ifndef NO_GAP_CORRECTION
-		//the number of n_gap_term_open corresponds to the number of GAP_TERM_OPEN in the column on the right, 
+		//the number of n_gap_term_open corresponds to the number of GAP_TERM_OPEN in the column on the right,
 		n_gap_term_open += profile->counters.get_value(source_col_id + 1, GAP_TERM_OPEN);
 
 		counter_t *source_col = profile->counters.get_column(source_col_id);
 
-		//the number of n_gap_term_ext corresponds to GAP_TERM_OPEN in the left column,  
+		//the number of n_gap_term_ext corresponds to GAP_TERM_OPEN in the left column,
 		n_gap_term_ext += source_col[GAP_TERM_OPEN];
 
 		//the number of n_gap_term_ext corresponds to GAP_TERM_EXT in the left column,
 		n_gap_term_ext += source_col[GAP_TERM_EXT];
 
-		//the number of n_gap_ext corresponds to GAP_OPEN in the left column, 
+		//the number of n_gap_ext corresponds to GAP_OPEN in the left column,
 		n_gap_ext = source_col[GAP_OPEN];
 
 		//the number of n_gap_ext corresponds to GAP_EXT in the left column,
@@ -1660,7 +1660,7 @@ void CProfile::DP_SolveGapsProblemWhenStarting(size_t source_col_id, size_t prof
 		n_gap_open = prof_size - n_gap_ext - n_gap_term_open - n_gap_term_ext;
 #else
 		n_gap_open = prof_size;
-		n_gap_ext = 0;		
+		n_gap_ext = 0;
 #endif
 	}
 }
@@ -1670,25 +1670,25 @@ void CProfile::DP_SolveGapsProblemWhenStarting(size_t source_col_id, size_t prof
 void CProfile::DP_SolveGapsProblemWhenContinuing(size_t source_col_id, size_t prof_width, size_t prof_size, CProfile *profile, size_t &n_gap_ext, size_t &n_gap_term_ext)
 {
 	// inside a gap
-	//if (source_col_id == prof_width) 
+	//if (source_col_id == prof_width)
 	//	n_gap_term_ext += prof_size;
 	//else
 	if (source_col_id == prof_width)
 	{
-		//continuation of a terminal gap on the right side of the profile 
+		//continuation of a terminal gap on the right side of the profile
 		n_gap_term_ext = prof_size;
 		n_gap_ext      = 0;
 	}
-	else	//continuation of a gap inside the profile 
+	else	//continuation of a gap inside the profile
 	{
 
 #ifndef NO_GAP_CORRECTION
-		//the number of n_gap_term_ext corresponds to the number of GAP_TERM_OPEN in the column on the right,  
+		//the number of n_gap_term_ext corresponds to the number of GAP_TERM_OPEN in the column on the right,
 		n_gap_term_ext = profile->counters.get_value(source_col_id + 1, GAP_TERM_OPEN);
 
 		counter_t *source_col = profile->counters.get_column(source_col_id);
 
-		//the number of n_gap_term_ext corresponds to the number of GAP_TERM_OPEN in the column on the left, 
+		//the number of n_gap_term_ext corresponds to the number of GAP_TERM_OPEN in the column on the left,
 		n_gap_term_ext += source_col[GAP_TERM_OPEN];
 
 		//the number of n_gap_term_ext corresponds to the number of GAP_TERM_EXT in the column on the left,
@@ -1697,13 +1697,13 @@ void CProfile::DP_SolveGapsProblemWhenContinuing(size_t source_col_id, size_t pr
 		n_gap_ext = prof_size - n_gap_term_ext;
 #else
 		n_gap_ext = prof_size;
-		n_gap_term_ext = 0;			
+		n_gap_term_ext = 0;
 #endif
 	}
 }
 
 // ****************************************************************************
-// Compute the range of cells that must be computed during the guided profile alignment according to the 
+// Compute the range of cells that must be computed during the guided profile alignment according to the
 // mapping of column in the source alignment
 void CProfile::FindRowRanges(vector<int> *column_mapping1, vector<int> *column_mapping2, vector<pair<int, int>> &row_ranges)
 {
@@ -1714,7 +1714,7 @@ void CProfile::FindRowRanges(vector<int> *column_mapping1, vector<int> *column_m
 	row_ranges.resize(size+2);
 	for(int i = 0; i <= size; ++i)
 		row_ranges[i] = make_pair(column_mapping2->size()+1, 0);
-	
+
 	int i1 = 0;
 	int i2 = 0;
 	int i_res_max = max(column_mapping1->back(), column_mapping2->back());
@@ -1761,7 +1761,7 @@ void CProfile::AlignSeqProf(CProfile *profile1, CProfile *profile2, vector<int> 
 	//size_t prof1_card = profile1->data.size();
 	size_t prof1_card = 1;
 	size_t prof2_card = profile2->data.size();
-	
+
 	// The profile1 contains a single sequence so there are no gaps here
 	vector<symbol_t> &seq1 = const_cast<vector<symbol_t>&>(profile1->data[0]->symbols);
 
@@ -1796,7 +1796,7 @@ void CProfile::AlignSeqProf(CProfile *profile1, CProfile *profile2, vector<int> 
 	//scoresX.get_value(j, GAP_EXT) returns information of how the column j of the profile X aligns with a single gap_ext
 	//etc.
 	//The task is to calculate how the column j of the profile X aligns with a column of gaps of different categories
-	
+
 	for (size_t j = 0; j <= prof2_width; ++j)
 	{
 		prof2_gaps[j].open = scores2.get_value(j, GAP_OPEN);
@@ -1833,7 +1833,7 @@ void CProfile::AlignSeqProf(CProfile *profile1, CProfile *profile2, vector<int> 
 	}
 	prev_row[prof2_width].H = -infty;
 
-	// Precomputing korekcji gapów w profile2
+	// Precomputing korekcji gapow w profile2
 	vector<score_t> n_gaps_prof2_to_change(prof2_width + 1);
 	vector<score_t> n_gaps_prof2_term_to_change(prof2_width + 1);
 	vector<score_t> gaps_prof2_change(prof2_width + 1);
@@ -1847,7 +1847,7 @@ void CProfile::AlignSeqProf(CProfile *profile1, CProfile *profile2, vector<int> 
 			gap_corrections[j].n_gap_cont_ext, gap_corrections[j].n_gap_cont_term_ext);
 
 #ifndef NO_GAP_CORRECTIONS
-		n_gaps_prof2_to_change[j] = profile2->counters.get_value(j, GAP_OPEN);      //the number of gaps to be changed from gap_open into gap_ext 
+		n_gaps_prof2_to_change[j] = profile2->counters.get_value(j, GAP_OPEN);      //the number of gaps to be changed from gap_open into gap_ext
 		n_gaps_prof2_term_to_change[j] = profile2->counters.get_value(j, GAP_TERM_OPEN); //the number of gaps to be changed from term_open into term_ext
 #else
 		n_gaps_prof2_to_change[j] = 0;
@@ -1904,7 +1904,7 @@ void CProfile::AlignSeqProf(CProfile *profile1, CProfile *profile2, vector<int> 
 			//analyzing an alignment of the column j of the profile 2 with the column i of the profile 1
 			score_t *scores2_column = scores2.get_column(j);
 
-			//an alignment of a column with another column, after an an alignment of two columns  
+			//an alignment of a column with another column, after an an alignment of two columns
 			score_t t = scores2_column[seq1[i]];
 			score_t t_D = prev_row[j - 1].D + t;
 
@@ -1915,10 +1915,10 @@ void CProfile::AlignSeqProf(CProfile *profile1, CProfile *profile2, vector<int> 
 			t_H = t_H + t;
 
 			//..........................................................................
-			//an alignment of a column with another column, after inserting a column of gaps before, into the profile 2 
+			//an alignment of a column with another column, after inserting a column of gaps before, into the profile 2
 			score_t t_V = prev_row[j - 1].V;
 
-			//One has to check if there is a need of exchanging gap_opens/gap_term_opens (from the column of the profile 2 that is being just aligned) 
+			//One has to check if there is a need of exchanging gap_opens/gap_term_opens (from the column of the profile 2 that is being just aligned)
 			//into gap_extensions/gap_term_extensions
 			//If so, the value of the variable t has to be corrected
 
@@ -2206,7 +2206,7 @@ score_t CProfile::CalculateTotalScore(void)
 				*dest = *src1++ + *src2++ - *src3++;
 	}
 
-	
+
 	// Determine the exact number of gap_opens and gap_term_opens
 	int64_t size = data.size();
 	for (auto &x : gap_positions)
@@ -2224,13 +2224,13 @@ score_t CProfile::CalculateTotalScore(void)
 			n_gaps_inside -= gap_ranges[width - i][i + 1];
 		int cur_n_gaps = gap_matrix[len][i];
 		n_gaps_inside -= cur_n_gaps;
-		
+
 		if(i == 1 || i+len-1 == width)
 			n_gap_term_open += (size - cur_n_gaps - n_gaps_inside) * cur_n_gaps;
 		else
 			n_gap_open += (size - cur_n_gaps - n_gaps_inside) * cur_n_gaps;
 	}
-		
+
 	n_gap_ext      -= n_gap_open;
 	n_gap_term_ext -= n_gap_term_open;
 

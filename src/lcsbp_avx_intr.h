@@ -9,8 +9,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _LCSBP_AVX_INTR_H
 #define _LCSBP_AVX_INTR_H
 
-#include "../core/sequence.h"
-#include "../utils/meta_oper.h"
+#include "sequence.h"
+#include "meta_oper.h"
 #include <nmmintrin.h>
 
 template <unsigned BV_LEN> class CLCSBP_AVX_INTR_Impl;
@@ -41,7 +41,7 @@ public:
 		if (orig_X)
 			free(orig_X);
 	}
-	
+
 	void Calculate(CSequence *seq0, CSequence *seq1, CSequence *seq2, uint32_t &dist1, uint32_t &dist2);
 };
 
@@ -63,14 +63,14 @@ public:
 		V2 = _mm_add_epi64(V, tB);												\
 		sB = _mm_cmpgt_epi64(_mm_xor_si128(V, sign64_bit), _mm_xor_si128(V2, sign64_bit));		\
 		*pX++ = _mm_or_si128(V2, _mm_xor_si128(V, tB));											\
-	}	
+	}
 #define AVX_INTR_LCS_INNER_LOOP_SINGLE					\
 	{										\
 		V = *pX;					\
 		tB = _mm_and_si128(V, _mm_set_epi64x(*pbm2++, *pbm1++));				\
 		V2 = _mm_add_epi64(V, tB);												\
 		*pX++ = _mm_or_si128(V2, _mm_xor_si128(V, tB));											\
-	}	
+	}
 #define AVX_INTR_LCS_INNER_LOOP					\
 	{										\
 		V = *pX;					\
@@ -78,14 +78,14 @@ public:
 		V2 = _mm_sub_epi64(_mm_add_epi64(V, tB), sB);												\
 		sB = _mm_cmpgt_epi64(_mm_xor_si128(V, sign64_bit), _mm_xor_si128(V2, sign64_bit));		\
 		*pX++ = _mm_or_si128(V2, _mm_xor_si128(V, tB));											\
-	}	
+	}
 #define AVX_INTR_LCS_INNER_LOOP_LAST					\
 	{										\
 		V = *pX;					\
 		tB = _mm_and_si128(V, _mm_set_epi64x(*pbm2++, *pbm1++));				\
 		V2 = _mm_sub_epi64(_mm_add_epi64(V, tB), sB);												\
 		*pX++ = _mm_or_si128(V2, _mm_xor_si128(V, tB));											\
-	}	
+	}
 
 
 	static void Calculate(CSequence *seq0, CSequence *seq1, CSequence *seq2, uint32_t *res, uint32_t max_len, __m128i *X)

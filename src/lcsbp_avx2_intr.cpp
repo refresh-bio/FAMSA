@@ -7,7 +7,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 */
 
 #include "lcsbp_avx2_intr.h"
-#include "../core/defs.h"
+#include "defs.h"
 
 #include <algorithm>
 #include <memory>
@@ -203,7 +203,7 @@ void CLCSBP_AVX2_INTR::Calculate(CSequence* seq0, CSequence* seq1, CSequence* se
 	default: calculate(seq0, seq1, seq2, seq3, seq4, res, bv_len, max_len);		break;
 	}
 
-	//	calculate(seq0, seq1, seq2, seq3, seq4, res, bv_len, max_len);	
+	//	calculate(seq0, seq1, seq2, seq3, seq4, res, bv_len, max_len);
 
 	dist1 = res[0];
 	dist2 = res[1];

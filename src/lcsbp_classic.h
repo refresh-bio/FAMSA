@@ -9,8 +9,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _LCSBP_CLASSIC_H
 #define _LCSBP_CLASSIC_H
 
-#include "../core/sequence.h"
-#include "../utils/meta_oper.h"
+#include "sequence.h"
+#include "meta_oper.h"
 
 template <unsigned BV_LEN> class CLCSBP_Classic_Impl;
 
@@ -24,7 +24,7 @@ class CLCSBP_Classic
 
 	CSequence *pf_seq0;
 	bit_vec_iterator_t s0bm[NO_SYMBOLS];
-	
+
 	inline void prepare_X(size_t bv_len);
 	void calculate(CSequence *seq0, CSequence *seq1, uint32_t *res, uint32_t bv_len);
 	void prefetch_bitmasks(CSequence *seq0);
@@ -36,12 +36,12 @@ public:
 
 		pf_seq0 = nullptr;
 	};
-	
+
 	~CLCSBP_Classic() {
 		if (X)
 			delete[] X;
 	};
-		
+
 	void Calculate(CSequence *seq0, CSequence *seq1,
 		uint32_t &dist1);
 };
@@ -135,7 +135,7 @@ public:
 		if (BV_LEN > 25)			*pX0++ = ~(uint64_t)0;
 		if (BV_LEN > 26)			*pX0++ = ~(uint64_t)0;
 		if (BV_LEN > 27)			*pX0++ = ~(uint64_t)0;
-		if (BV_LEN > 28)			*pX0++ = ~(uint64_t)0; 
+		if (BV_LEN > 28)			*pX0++ = ~(uint64_t)0;
 		if (BV_LEN > 29)			*pX0++ = ~(uint64_t)0;
 		if (BV_LEN > 30)			*pX0++ = ~(uint64_t)0;
 		if (BV_LEN > 31)			*pX0++ = ~(uint64_t)0;

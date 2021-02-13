@@ -9,8 +9,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _LCSBP_AVX2_INTR_H
 #define _LCSBP_AVX2_INTR_H
 
-#include "../core/sequence.h"
-#include "../utils/meta_oper.h"
+#include "sequence.h"
+#include "meta_oper.h"
 
 #include <immintrin.h>
 
@@ -115,14 +115,14 @@ public:
 		V2 = _mm256_add_epi64(V, tB);												\
 		sB = _mm256_cmpgt_epi64(_mm256_xor_si256(V, sign64_bit), _mm256_xor_si256(V2, sign64_bit));		\
 		*pX++ = _mm256_or_si256(V2, _mm256_xor_si256(V, tB));											\
-	}	
+	}
 #define AVX2_INTR_LCS_INNER_LOOP_SINGLE										\
 	{															\
 		V = *pX;		\
 		tB = _mm256_and_si256(V, _mm256_set_m128i(*pp34++, *pp12++));				\
 		V2 = _mm256_add_epi64(V, tB);												\
 		*pX++ = _mm256_or_si256(V2, _mm256_xor_si256(V, tB));											\
-	}	
+	}
 #define AVX2_INTR_LCS_INNER_LOOP										\
 	{															\
 		V = *pX;		\
@@ -130,14 +130,14 @@ public:
 		V2 = _mm256_sub_epi64(_mm256_add_epi64(V, tB), sB);												\
 		sB = _mm256_cmpgt_epi64(_mm256_xor_si256(V, sign64_bit), _mm256_xor_si256(V2, sign64_bit));		\
 		*pX++ = _mm256_or_si256(V2, _mm256_xor_si256(V, tB));											\
-	}	
+	}
 #define AVX2_INTR_LCS_INNER_LOOP_LAST										\
 	{															\
 		V = *pX;		\
 		tB = _mm256_and_si256(V, _mm256_set_m128i(*pp34++, *pp12++));				\
 		V2 = _mm256_sub_epi64(_mm256_add_epi64(V, tB), sB);												\
 		*pX++ = _mm256_or_si256(V2, _mm256_xor_si256(V, tB));											\
-	}	
+	}
 
 	static void Calculate(__m128i* precomp_masks, CSequence* seq0, CSequence* seq1, CSequence* seq2, CSequence* seq3, CSequence* seq4, uint32_t* res, uint32_t max_len, __m256i* X)
 	{

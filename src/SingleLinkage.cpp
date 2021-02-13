@@ -7,9 +7,9 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 */
 #include "SingleLinkage.h"
 #include "AbstractTreeGenerator.hpp"
-#include "../lcs/lcsbp.h"
+#include "lcsbp.h"
 
-#include "../utils/log.h"
+#include "log.h"
 
 #include <algorithm>
 #include <iostream>

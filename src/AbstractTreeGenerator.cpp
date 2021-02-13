@@ -9,7 +9,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 //#include "../../libs/instrset.h"
 
-#include "../utils/cpuid.h"
+#include "cpuid.h"
 
 #include <algorithm>
 
@@ -19,7 +19,7 @@ using namespace std;
 // *******************************************************************
 AbstractTreeGenerator::AbstractTreeGenerator(double indel_exp, size_t n_threads) : indel_exp(indel_exp), n_threads(n_threads) {
 //	int x = instrset_detect();
-	
+
 	instruction_set = instruction_set_t::none;
 
 	if ((CPUID(1).ECX() >> 28) & 1)

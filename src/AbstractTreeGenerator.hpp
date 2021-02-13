@@ -8,7 +8,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #pragma once
 #include "AbstractTreeGenerator.h"
 
-#include "../lcs/lcsbp.h"
+#include "lcsbp.h"
 
 #include <cmath>
 #include <type_traits>
@@ -21,7 +21,7 @@ inline CSequence* seq_to_ptr(CSequence& x) { return &x; }
 template <class T, Measure measure>
 struct Transform {
 	//static_assert(0, "Cannot use dummy implementation");
-	
+
 	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) {
 		return 0;
 	}
@@ -29,9 +29,9 @@ struct Transform {
 
 template <class T>
 struct Transform<T, Measure::SimilarityDefault>{
-	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) { 
+	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) {
 		T indel = len1 + len2 - 2 * lcs;
-		return indel == 0 ? ((T)lcs * 1000) : ((T)lcs / indel); 
+		return indel == 0 ? ((T)lcs * 1000) : ((T)lcs / indel);
 	}
 };
 
@@ -39,7 +39,7 @@ template <class T>
 struct Transform<T, Measure::DistanceReciprocal> {
 	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) {
 		T indel = len1 + len2 - 2 * lcs;
-		return (T)indel / lcs; 
+		return (T)indel / lcs;
 	}
 };
 
@@ -47,7 +47,7 @@ template <class T>
 struct Transform<T, Measure::DistanceInverse> {
 	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) {
 		T indel = len1 + len2 - 2 * lcs;
-		return indel == 0 ? (-(T)lcs * 1000) : (-(T)lcs / indel); 
+		return indel == 0 ? (-(T)lcs * 1000) : (-(T)lcs / indel);
 	}
 };
 
@@ -61,9 +61,9 @@ struct Transform<T, Measure::DistanceLCSByLength> {
 template <class T>
 struct Transform<T, Measure::DistanceLCSByLengthCorrected> {
 	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) {
-		// make len1 the longer 
+		// make len1 the longer
 		if (len1 < len2) { std::swap(len1, len2);  }
-		
+
 		T d = 1.0 - (T)lcs / len2;
 
 		// MAFFT distance correction
@@ -81,15 +81,15 @@ similarity_type can be:
 */
 template <class seq_type, class similarity_type, Measure measure>
 void AbstractTreeGenerator::calculateSimilarityVector(
-	seq_type& ref, 
-	seq_type* sequences, 
-	size_t n_seqs, 
-	similarity_type* out_vector, 
+	seq_type& ref,
+	seq_type* sequences,
+	size_t n_seqs,
+	similarity_type* out_vector,
 	CLCSBP& lcsbp)
 {
 	uint32_t lcs_lens[4];
 	Transform<similarity_type, measure> transform;
-	
+
 	seq_to_ptr(ref)->ComputeBitMasks();
 
 	// process portions of 4 sequences
@@ -133,15 +133,15 @@ void AbstractTreeGenerator::calculateSimilarityVector(
 // *******************************************************************
 template <class seq_type, class similarity_type, Measure measure>
 void AbstractTreeGenerator::calculateSimilarityMatrix(
-	seq_type* sequences, 
-	size_t n_seq, 
-	similarity_type *out_matrix, 
+	seq_type* sequences,
+	size_t n_seq,
+	similarity_type *out_matrix,
 	CLCSBP& lcsbp) {
 
 	for (size_t row_id = 0; row_id < n_seq; ++row_id) {
-		
+
 		size_t row_offset = TriangleMatrix::access(row_id, 0);
-		
+
 		calculateSimilarityVector<seq_type, similarity_type, measure>(
 			sequences[row_id],
 			sequences,
@@ -149,5 +149,5 @@ void AbstractTreeGenerator::calculateSimilarityMatrix(
 			out_matrix + row_offset,
 			lcsbp);
 	}
-	
+
 }

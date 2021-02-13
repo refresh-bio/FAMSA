@@ -9,7 +9,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _TREE_GRAMMAR_H
 #define _TREE_GRAMMAR_H
 
-#include "../core/sequence.h"
+#include "sequence.h"
 
 #include <boost/spirit/home/classic.hpp>
 #include <boost/spirit/home/classic/phoenix.hpp>
@@ -43,7 +43,7 @@ struct TreeWrapper {
 
 	TreeWrapper(const std::vector<CSequence>& sequences) {
 		guideTree.resize(2 * sequences.size(), std::pair<int,int>(-1,-1));
-		
+
 		// fill in mappings
 		for (int i = 0; i < sequences.size(); ++i) {
 			const auto &seq = sequences[i];
@@ -101,7 +101,7 @@ struct functor_joinBranches
 		// connect nodes
 		wrapper.guideTree[wrapper.currentInternalId].first = left.id;
 		wrapper.guideTree[wrapper.currentInternalId].second = right.id;
-		
+
 	//	std::cout << "getNodes()[" << wrapper.currentInternalId << "] = join(" <<
 	//		leftChild->idx << ":" << leftChild->dist << "," << rightChild->idx << ":" << rightChild->dist << ")" << std::endl;
 
