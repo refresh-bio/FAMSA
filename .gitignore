@@ -7,5 +7,10 @@ FAMSA.VC.db
 *.db-shm
 *.db-wal
 *.opendb
+*.o
 /.vs
 /src/famsa.vcxproj.user
+src/desktop.ini
+.vscode/settings.json
+.Rproj.user
+src/famsa.dll
