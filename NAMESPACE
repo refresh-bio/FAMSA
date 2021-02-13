@@ -1,0 +1,2 @@
+exportPattern("^[[:alpha:]]+")
+    useDynLib(famsa, .registration = TRUE, .fixes = ".")
