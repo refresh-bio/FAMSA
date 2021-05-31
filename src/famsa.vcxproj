@@ -103,6 +103,9 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Program Files (x86)\Visual Leak Detector\include;$(ProjectDir)/../libs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/D_HAS_STD_BYTE=0 /D_ENABLE_EXTENDED_ALIGNED_STORAGE %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -142,6 +145,9 @@
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <ControlFlowGuard>false</ControlFlowGuard>
       <AdditionalIncludeDirectories>C:\Program Files (x86)\Visual Leak Detector\include;$(ProjectDir)/../libs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard_C>stdc11</LanguageStandard_C>
+      <LanguageStandard>Default</LanguageStandard>
+      <AdditionalOptions>/D_HAS_STD_BYTE=0 /D_ENABLE_EXTENDED_ALIGNED_STORAGE %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

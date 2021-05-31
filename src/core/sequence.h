@@ -13,6 +13,10 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "../utils/array.h"
 #include <string>
 #include <vector>
+#include <array>
+
+#include <immintrin.h>
+
 
 using namespace std;
 
@@ -28,15 +32,27 @@ public:
 	vector<bool> uppercase;
 	uint32_t length;
 
-	Array<bit_vec_t>* bit_masks;
+#ifdef __APPLE__
+	uint16_t hist[NO_SYMBOLS];
+#else
+	uint16_t alignas(32) hist[NO_SYMBOLS];
+#endif
+
+	Array<bit_vec_t> bit_masks;
 	
 public:
+	CSequence();
 	CSequence(const string& _id, const string& seq);
+	CSequence(const CSequence& x);
+	CSequence(CSequence&& x) noexcept;
 	~CSequence();
+
+	CSequence& operator=(const CSequence& x) noexcept;
 
 	void ComputeBitMasks();
 	void ReleaseBitMasks();
 	string DecodeSequence();
+	void PrepareHistogram();
 };
 
 class CGappedSequence 
@@ -65,12 +81,15 @@ public:
 
     void InsertGap(size_t pos);
     void InsertGaps(size_t pos, uint32_t n);
-    void RemoveGap(size_t pos);
+	void InsertGapsVector(const vector<pair<uint32_t, uint32_t>> &v_gaps);
+
+	void RemoveGap(size_t pos);
     void RemoveGaps(size_t pos, uint32_t n);
 	symbol_t GetSymbol(size_t pos);
 
     void DecodeRaw(symbol_t *seq);
     string Decode();
+	uint32_t NoSymbols();
 };
 
 #endif

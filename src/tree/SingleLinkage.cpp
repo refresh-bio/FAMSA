@@ -31,8 +31,8 @@ void SingleLinkage::run(std::vector<CSequence>& sequences, tree_structure& tree)
 	int prefetch_offset_2nd = 128 * 2;
 
 	vector<int> pi(n_seq + max(prefetch_offset, prefetch_offset_2nd), 0);
-	vector<double> lambda(n_seq);
-	vector<double> *sim_vector;
+	vector<slink_similarity_t> lambda(n_seq);
+	vector<slink_similarity_t> *sim_vector;
 
 	CSingleLinkageQueue slq(&sequences, n_seq, n_threads * 8);
 	vector<thread *> workers(n_threads, nullptr);
@@ -45,16 +45,30 @@ void SingleLinkage::run(std::vector<CSequence>& sequences, tree_structure& tree)
 		CLCSBP lcsbp(instruction_set);
 		int row_id;
 		vector<CSequence> *sequences;
-		vector<double> *sim_vector;
+		vector<slink_similarity_t> *sim_vector;
+
+		vector<double> loc_sim_vector;
 
 		while (slq.GetTask(row_id, sequences, sim_vector))
 		{
+			loc_sim_vector.resize(sim_vector->size());
+
 			calculateSimilarityVector<CSequence, double, Measure::SimilarityDefault>(
 				(*sequences)[row_id],
 				sequences->data(),
 				row_id,
-				sim_vector->data(),
+				loc_sim_vector.data(),
 				lcsbp);
+
+#ifdef SLINK_HANDLE_TIES
+			for (size_t i = 0; i < loc_sim_vector.size(); ++i)
+			{
+				(*sim_vector)[i].first = loc_sim_vector[i];
+				(*sim_vector)[i].second = ids_to_uint64(i, row_id);
+			}
+#else
+			swap(*sim_vector, loc_sim_vector);
+#endif
 
 			slq.RegisterSolution(row_id);
 		}
@@ -64,7 +78,11 @@ void SingleLinkage::run(std::vector<CSequence>& sequences, tree_structure& tree)
 	for (int i = 0; i < n_seq; ++i)
 	{
 		pi[i] = i;
+#ifdef SLINK_HANDLE_TIES
+		lambda[i] = make_pair(-infty_double, 0);
+#else
 		lambda[i] = -infty_double;
+#endif
 
 		if (i % (100) == 0) {
 			LOG_DEBUG << "Computing guide tree - " << fixed << setprecision(1)
@@ -91,7 +109,9 @@ void SingleLinkage::run(std::vector<CSequence>& sequences, tree_structure& tree)
 
 			auto &x = (*sim_vector)[next];
 
-			if (isgreater(*p_lambda, *p_sim_vector))
+//			if (isgreater(*p_lambda, *p_sim_vector))
+			if (*p_lambda > *p_sim_vector)
+//			if (*p_lambda >= *p_sim_vector)
 			{
 				x = max(x, *p_sim_vector);
 			}
@@ -121,7 +141,8 @@ void SingleLinkage::run(std::vector<CSequence>& sequences, tree_structure& tree)
 #endif
 
 			next = *p_pi;
-			if (isgreaterequal(lambda[next], *p_lambda))
+//			if (isgreaterequal(lambda[next], *p_lambda))
+			if (lambda[next] >= *p_lambda)
 				*p_pi = i;
 
 			++p_pi;
@@ -173,17 +194,22 @@ void SingleLinkage::runPartial(std::vector<CSequence*>& sequences, tree_structur
 	int prefetch_offset_2nd = 128 * 2;
 
 	vector<int> pi(n_seq + max(prefetch_offset, prefetch_offset_2nd), 0);
-	vector<double> lambda(n_seq);
-	vector<double> sim_vector(n_seq);
+	vector<slink_similarity_t> lambda(n_seq);
+	vector<slink_similarity_t> sim_vector(n_seq);
+	vector<double> loc_sim_vector(sim_vector.size());
 
 	CLCSBP lcsbp(instruction_set);
-
 
 	// Single linkage algorithm is here
 	for (int i = 0; i < n_seq; ++i)
 	{
 		pi[i] = i;
+
+#ifdef SLINK_HANDLE_TIES
+		lambda[i] = make_pair(-infty_double, 0);
+#else
 		lambda[i] = -infty_double;
+#endif
 
 /*		if (i % (100) == 0) {
 			LOG_DEBUG << "Computing guide tree - " << fixed << setprecision(1)
@@ -194,8 +220,18 @@ void SingleLinkage::runPartial(std::vector<CSequence*>& sequences, tree_structur
 			sequences[i],
 			sequences.data(),
 			i,
-			sim_vector.data(),
+			loc_sim_vector.data(),
 			lcsbp);
+
+#ifdef SLINK_HANDLE_TIES
+		for (size_t j = 0; j < loc_sim_vector.size(); ++j)
+		{
+			sim_vector[j].first = loc_sim_vector[j];
+			sim_vector[j].second = ids_to_uint64(j, i);
+		}
+#else
+		swap(*sim_vector, loc_sim_vector);
+#endif
 
 		auto p_lambda = lambda.begin();
 		auto p_sim_vector = sim_vector.begin();
@@ -215,7 +251,8 @@ void SingleLinkage::runPartial(std::vector<CSequence*>& sequences, tree_structur
 
 			auto &x = (sim_vector)[next];
 
-			if (isgreater(*p_lambda, *p_sim_vector))
+//			if (isgreater(*p_lambda, *p_sim_vector))
+			if (*p_lambda > *p_sim_vector)
 			{
 				x = max(x, *p_sim_vector);
 			}
@@ -243,7 +280,8 @@ void SingleLinkage::runPartial(std::vector<CSequence*>& sequences, tree_structur
 #endif
 
 			next = *p_pi;
-			if (isgreaterequal(lambda[next], *p_lambda))
+//			if (isgreaterequal(lambda[next], *p_lambda))
+			if (lambda[next] >= *p_lambda)
 				*p_pi = i;
 
 			++p_pi;
@@ -308,7 +346,7 @@ CSingleLinkageQueue::~CSingleLinkageQueue()
 }
 
 // *******************************************************************
-bool CSingleLinkageQueue::GetTask(int &row_id, vector<CSequence> *&_sequences, vector<double> *&sim_vector)
+bool CSingleLinkageQueue::GetTask(int &row_id, vector<CSequence> *&_sequences, vector<slink_similarity_t> *&sim_vector)
 {
 	unique_lock<mutex> lck(mtx);
 	cv_tasks.wait(lck, [this] {return !this->available_buffers.empty() || this->eoq_flag; });
@@ -354,7 +392,7 @@ void CSingleLinkageQueue::RegisterSolution(int row_id)
 }
 
 // *******************************************************************
-bool CSingleLinkageQueue::GetSolution(int row_id, vector<double> *&sim_vector)
+bool CSingleLinkageQueue::GetSolution(int row_id, vector<slink_similarity_t> *&sim_vector)
 {
 	unique_lock<mutex> lck(mtx);
 	cv_rows.wait(lck, [this, row_id] {return this->ready_rows[row_id].second; });

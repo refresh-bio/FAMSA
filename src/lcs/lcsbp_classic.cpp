@@ -32,7 +32,7 @@ void CLCSBP_Classic::prefetch_bitmasks(CSequence *seq0)
 
 	for (int i = 0; i < NO_SYMBOLS; ++i) {
 		//s0bm[i] = seq0->bit_masks[i].begin();
-		s0bm[i] = (*seq0->bit_masks)[i];
+		s0bm[i] = seq0->bit_masks[i];
 	}
 }
 
@@ -72,53 +72,61 @@ void CLCSBP_Classic::calculate(CSequence *seq0, CSequence *seq1, uint32_t *res, 
 
 // *******************************************************************
 void CLCSBP_Classic::Calculate(CSequence *seq0, CSequence *seq1,
-	uint32_t &dist1)
+	uint32_t *dist)
 {
 	size_t bv_len = (seq0->length + bv_size - 1) / bv_size;
 
 	prepare_X(bv_len);
 	prefetch_bitmasks(seq0);
 
-	uint32_t res[1] = { 0 };
+	dist[0] = 0;
 
 	switch (bv_len)
 	{
-	case 1:	CLCSBP_Classic_Impl<1>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 2:	CLCSBP_Classic_Impl<2>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 3:	CLCSBP_Classic_Impl<3>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 4:	CLCSBP_Classic_Impl<4>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 5:	CLCSBP_Classic_Impl<5>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 6:	CLCSBP_Classic_Impl<6>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 7:	CLCSBP_Classic_Impl<7>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 8:	CLCSBP_Classic_Impl<8>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 9:	CLCSBP_Classic_Impl<9>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 10:	CLCSBP_Classic_Impl<10>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 11:	CLCSBP_Classic_Impl<11>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 12:	CLCSBP_Classic_Impl<12>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 13:	CLCSBP_Classic_Impl<13>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 14:	CLCSBP_Classic_Impl<14>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 15:	CLCSBP_Classic_Impl<15>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 16:	CLCSBP_Classic_Impl<16>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 17:	CLCSBP_Classic_Impl<17>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 18:	CLCSBP_Classic_Impl<18>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 19:	CLCSBP_Classic_Impl<19>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 20:	CLCSBP_Classic_Impl<20>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 21:	CLCSBP_Classic_Impl<21>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 22:	CLCSBP_Classic_Impl<22>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 23:	CLCSBP_Classic_Impl<23>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 24:	CLCSBP_Classic_Impl<24>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 25:	CLCSBP_Classic_Impl<25>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 26:	CLCSBP_Classic_Impl<26>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 27:	CLCSBP_Classic_Impl<27>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 28:	CLCSBP_Classic_Impl<28>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 29:	CLCSBP_Classic_Impl<29>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 30:	CLCSBP_Classic_Impl<30>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 31:	CLCSBP_Classic_Impl<31>::Calculate(seq0, seq1, res, X, s0bm);					break;
-	case 32:	CLCSBP_Classic_Impl<32>::Calculate(seq0, seq1, res, X, s0bm);					break;
+	case 1:	CLCSBP_Classic_Impl<1>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 2:	CLCSBP_Classic_Impl<2>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 3:	CLCSBP_Classic_Impl<3>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 4:	CLCSBP_Classic_Impl<4>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 5:	CLCSBP_Classic_Impl<5>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 6:	CLCSBP_Classic_Impl<6>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 7:	CLCSBP_Classic_Impl<7>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 8:	CLCSBP_Classic_Impl<8>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 9:	CLCSBP_Classic_Impl<9>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 10:	CLCSBP_Classic_Impl<10>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 11:	CLCSBP_Classic_Impl<11>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 12:	CLCSBP_Classic_Impl<12>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 13:	CLCSBP_Classic_Impl<13>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 14:	CLCSBP_Classic_Impl<14>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 15:	CLCSBP_Classic_Impl<15>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 16:	CLCSBP_Classic_Impl<16>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 17:	CLCSBP_Classic_Impl<17>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 18:	CLCSBP_Classic_Impl<18>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 19:	CLCSBP_Classic_Impl<19>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 20:	CLCSBP_Classic_Impl<20>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 21:	CLCSBP_Classic_Impl<21>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 22:	CLCSBP_Classic_Impl<22>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 23:	CLCSBP_Classic_Impl<23>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 24:	CLCSBP_Classic_Impl<24>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 25:	CLCSBP_Classic_Impl<25>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 26:	CLCSBP_Classic_Impl<26>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 27:	CLCSBP_Classic_Impl<27>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 28:	CLCSBP_Classic_Impl<28>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 29:	CLCSBP_Classic_Impl<29>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 30:	CLCSBP_Classic_Impl<30>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 31:	CLCSBP_Classic_Impl<31>::Calculate(seq0, seq1, dist, X, s0bm);					break;
+	case 32:	CLCSBP_Classic_Impl<32>::Calculate(seq0, seq1, dist, X, s0bm);					break;
 	default: 
-		calculate(seq0, seq1, res, bv_len);	
+		calculate(seq0, seq1, dist, bv_len);
 	}
-	
-	dist1 = res[0];
 }
 
+// *******************************************************************
+uint32_t CLCSBP_Classic::HistogramLCS(const uint16_t* h0, const uint16_t* h1)
+{
+	uint32_t est_lcs = 0;
+
+	for (uint32_t i = 0; i < NO_SYMBOLS; ++i)
+		est_lcs += min(h0[i], h1[i]);
+
+	return est_lcs;
+}

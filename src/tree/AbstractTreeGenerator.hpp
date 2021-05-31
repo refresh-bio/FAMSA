@@ -36,6 +36,81 @@ struct Transform<T, Measure::SimilarityDefault>{
 };
 
 template <class T>
+struct Transform<T, Measure::LCS2_AB>{
+	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) { 
+		return (T)lcs * (T)(lcs) / ((T)len1 * (T)len2);
+	}
+};
+
+template <class T>
+struct Transform<T, Measure::LCS2_indel_ApB>{
+	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) { 
+		T indel = len1 + len2 - 2 * lcs;
+		T s = len1 + len2;
+		T l = lcs;
+		if (indel == 0)
+			return 100000000;
+//		return l * l / (4*s*s + 4*l*l);*/
+
+/*		double m = log2(log2(min(len1, len2)));
+		double M = log2(log2(max(len1, len2)));
+
+		return (l / indel) * (m / M);*/
+
+/*		T s_geo = sqrt((T)len1 * (T)len2);
+		T indel_geo = 2 * s_geo - 2 * lcs;
+		if (indel_geo < 0.0001)
+			indel_geo = 0.0001;
+
+		return l / sqrt(indel_geo);*/
+
+		T s_harm = 1.0 / (1.0 / (T)len1 + 1.0 / (T)len2);
+		T indel_harm = 2 * s_harm - 2 * lcs;
+		if (indel_harm < 0.0001)
+			indel_harm = 0.0001;
+
+		return l / sqrt(indel_harm);
+
+//		return l / sqrt(indel);
+//		return sqrt(l) / log2(indel);
+	}
+};
+
+template <class T>
+struct Transform<T, Measure::LCS_sqrt_indel>{
+private:
+	std::vector<T> pp_sqrt_rec;
+	uint32_t cur_pp_size = 0;
+
+	void pp_extend(uint32_t val)
+	{
+		pp_sqrt_rec.resize(val + 1);
+		for (; cur_pp_size <= val; ++cur_pp_size)
+			pp_sqrt_rec[cur_pp_size] = 1.0 / sqrt(cur_pp_size);
+//			pp_sqrt_rec[cur_pp_size] = 1.0 / pow(cur_pp_size, 1.0 / 3.0);
+	}
+
+public:
+	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) { 
+		T indel = len1 + len2 - 2 * lcs;
+		T l = lcs;
+
+		if (indel == 0)
+			return 100000000;
+
+		if (indel >= cur_pp_size)
+			pp_extend(indel);
+
+/*		T m = min(len1, len2);
+		T M = max(len1, len2);
+		T f = pow(m / M, 0.01);
+
+		return l * pp_sqrt_rec[indel] * f;*/
+		return l * pp_sqrt_rec[indel];
+	}
+};
+
+template <class T>
 struct Transform<T, Measure::DistanceReciprocal> {
 	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) {
 		T indel = len1 + len2 - 2 * lcs;
@@ -100,7 +175,7 @@ void AbstractTreeGenerator::calculateSimilarityVector(
 			seq_to_ptr(sequences[j * 4 + 1]),
 			seq_to_ptr(sequences[j * 4 + 2]),
 			seq_to_ptr(sequences[j * 4 + 3]),
-			lcs_lens[0], lcs_lens[1], lcs_lens[2], lcs_lens[3]);
+			lcs_lens);
 
 		for (int k = 0; k < 4; ++k) {
 			out_vector[j * 4 + k] = transform(lcs_lens[k], seq_to_ptr(ref)->length, seq_to_ptr(sequences[j * 4 + k])->length);
@@ -116,17 +191,68 @@ void AbstractTreeGenerator::calculateSimilarityVector(
 			(n_processed + 1 < n_seqs) ? seq_to_ptr(sequences[n_processed + 1]) : nullptr,
 			(n_processed + 2 < n_seqs) ? seq_to_ptr(sequences[n_processed + 2]) : nullptr,
 			(n_processed + 3 < n_seqs) ? seq_to_ptr(sequences[n_processed + 3]) : nullptr,
-			lcs_lens[0], lcs_lens[1], lcs_lens[2], lcs_lens[3]);
+			lcs_lens);
 
 		for (int k = 0; k < 4 && n_processed + k < n_seqs; ++k)
-		{
-
 			out_vector[n_processed + k] = transform(lcs_lens[k], seq_to_ptr(ref)->length, seq_to_ptr(sequences[n_processed + k])->length);
-		}
 	}
 
 	seq_to_ptr(ref)->ReleaseBitMasks();
+}
 
+// *******************************************************************
+/*
+similarity_type can be:
+	- CSequence,
+	- CSequence*,
+*/
+template <class seq_type, class similarity_type, typename Iter, typename Transform>
+void AbstractTreeGenerator::calculateSimilarityRange(
+	Transform &transform,
+	seq_type& ref, 
+	seq_type* sequences, 
+	pair<Iter, Iter> ids_range,
+	similarity_type* out_vector,
+	CLCSBP& lcsbp)
+{
+	uint32_t lcs_lens[4];
+	size_t n_seqs = distance(ids_range.first, ids_range.second);
+
+	auto p_ids = ids_range.first;
+
+	// process portions of 4 sequences
+	for (int j = 0; j < n_seqs / 4; ++j, p_ids += 4) {
+		lcsbp.GetLCSBP(
+			seq_to_ptr(ref),
+			seq_to_ptr(sequences[*(p_ids + 0)]),
+			seq_to_ptr(sequences[*(p_ids + 1)]),
+			seq_to_ptr(sequences[*(p_ids + 2)]),
+			seq_to_ptr(sequences[*(p_ids + 3)]),
+			lcs_lens);
+
+		for (int k = 0; k < 4; ++k) {
+			out_vector[j * 4 + k] = transform(lcs_lens[k], seq_to_ptr(ref)->length, seq_to_ptr(sequences[*(p_ids + k)])->length);
+		}
+	}
+
+	// if there is something left
+	size_t n_processed = n_seqs / 4 * 4;
+	if (n_processed < n_seqs) {
+		lcsbp.GetLCSBP(
+			seq_to_ptr(ref),
+/*			(n_processed + 0 < n_seqs) ? seq_to_ptr(sequences[*(p_ids + 0)]) : nullptr,
+			(n_processed + 1 < n_seqs) ? seq_to_ptr(sequences[*(p_ids + 1)]) : nullptr,
+			(n_processed + 2 < n_seqs) ? seq_to_ptr(sequences[*(p_ids + 2)]) : nullptr,
+			(n_processed + 3 < n_seqs) ? seq_to_ptr(sequences[*(p_ids + 3)]) : nullptr,*/
+			seq_to_ptr(sequences[*(p_ids + 0)]),
+			(n_processed + 1 < n_seqs) ? seq_to_ptr(sequences[*(p_ids + 1)]) : seq_to_ptr(sequences[*(p_ids + 0)]),
+			(n_processed + 2 < n_seqs) ? seq_to_ptr(sequences[*(p_ids + 2)]) : seq_to_ptr(sequences[*(p_ids + 0)]),
+			(n_processed + 3 < n_seqs) ? seq_to_ptr(sequences[*(p_ids + 3)]) : seq_to_ptr(sequences[*(p_ids + 0)]),
+			lcs_lens);
+
+		for (int k = 0; k < 4 && n_processed + k < n_seqs; ++k)
+			out_vector[n_processed + k] = transform(lcs_lens[k], seq_to_ptr(ref)->length, seq_to_ptr(sequences[*(p_ids + k)])->length);
+	}
 }
 
 
@@ -148,6 +274,5 @@ void AbstractTreeGenerator::calculateSimilarityMatrix(
 			row_id,
 			out_matrix + row_offset,
 			lcsbp);
-	}
-	
+	}	
 }

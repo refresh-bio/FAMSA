@@ -18,7 +18,14 @@ char CGappedSequence::mapping_table[25] = "ARNDCQEGHILKMFPSTWYVBZX*";
 
 
 // *******************************************************************
-CSequence::CSequence(const string& _id, const string& seq) : id(_id), bit_masks(nullptr)
+CSequence::CSequence()
+{
+	sequence_no = -1;
+	bit_masks.clear();
+}
+
+// *******************************************************************
+CSequence::CSequence(const string& _id, const string& seq) : id(_id)
 {
 	length = seq.length();
 	data.resize(length);
@@ -43,6 +50,64 @@ CSequence::CSequence(const string& _id, const string& seq) : id(_id), bit_masks(
 	}
 }
 
+// *******************************************************************
+CSequence::CSequence(const CSequence& x)
+{
+	sequence_no = x.sequence_no;
+
+	id = x.id;
+	data = x.data;
+	uppercase = x.uppercase;
+	length = x.length;
+
+	if (!x.bit_masks.empty())
+		//		bit_masks = new Array<bit_vec_t>(*(x.bit_masks));
+	{
+		bit_masks.clear();
+		ComputeBitMasks();
+	}
+	else
+		bit_masks.clear();
+}
+
+// *******************************************************************
+CSequence::CSequence(CSequence&& x) noexcept
+{
+	sequence_no = move(x.sequence_no);
+
+	id = move(x.id);
+	data = move(x.data);
+	uppercase = move(x.uppercase);
+	length = move(x.length);
+
+	bit_masks = move(x.bit_masks);
+}
+
+// *******************************************************************
+CSequence& CSequence::operator=(const CSequence& x) noexcept
+{
+	if (this != &x)
+	{
+		sequence_no = x.sequence_no;
+		id = x.id;
+		data = x.data;
+		uppercase = x.uppercase;
+		length = x.length;
+
+		ReleaseBitMasks();
+
+		if (!x.bit_masks.empty())
+			//		bit_masks = new Array<bit_vec_t>(*(x.bit_masks));
+		{
+			bit_masks.clear();
+			ComputeBitMasks();
+		}
+		else
+			bit_masks.clear();
+	}
+
+	return *this;
+}
 
 // *******************************************************************
 CSequence::~CSequence()
@@ -82,19 +147,62 @@ void CSequence::ComputeBitMasks()
 		bit_masks[i].resize(bv_len, (bit_vec_t) 0);
 	*/
 
-	bit_masks = new Array<bit_vec_t>(bv_len, NO_SYMBOLS, (bit_vec_t)0);
+	bit_masks.resize(bv_len, NO_SYMBOLS, (bit_vec_t)0);
 
 	for(size_t i = 0; i < length; ++i)
 		if(data[i] >= 0 && data[i] < NO_VALID_AMINOACIDS)
-			(*bit_masks)[data[i]][i / bv_size] |= ((bit_vec_t) 1) << (i % bv_size);
+			bit_masks[data[i]][i / bv_size] |= ((bit_vec_t) 1) << (i % bv_size);
 }
 
 // *******************************************************************
 void CSequence::ReleaseBitMasks() 
 {
-	delete bit_masks;
-	bit_masks = nullptr;
+	bit_masks.clear();
 }
+
+// *******************************************************************
+void CSequence::PrepareHistogram()
+{
+/*	int p1 = length / 3;
+	int p2 = 2 * length / 3;*/
+
+//	fill_n(i_hist, NO_AMINOACIDS, 0u);
+	fill_n(hist, NO_AMINOACIDS, 0u);
+//	fill_n(hist, NO_SYMBOLS, 0u);
+
+/*	fill_n(hist0, NO_SYMBOLS, 0u);
+	fill_n(hist1, NO_SYMBOLS, 0u);
+	fill_n(hist2, NO_SYMBOLS, 0u);
+	fill_n(hist01, NO_SYMBOLS, 0u);
+	fill_n(hist12, NO_SYMBOLS, 0u);
+	fill_n(hist012, NO_SYMBOLS, 0u);*/
+
+	for (size_t i = 0; i < length; ++i)
+	{
+//		++i_hist[data[i]];
+		++hist[data[i]];
+
+/*		if (i < p1)
+		{
+			++hist0[data[i]];
+			++hist01[data[i]];
+			++hist012[data[i]];
+		}
+		else if (i < p2)
+		{
+			++hist1[data[i]];
+			++hist01[data[i]];
+			++hist012[data[i]];
+		}
+		else
+		{
+			++hist2[data[i]];
+			++hist12[data[i]];
+			++hist012[data[i]];
+		}*/
+	}
+}
+
 
 // *******************************************************************
 //
@@ -179,8 +287,10 @@ string CGappedSequence::Decode()
     s.reserve(gapped_size);
 
 	// Starting gaps
-    for(int j = 0; j < n_gaps[0]; ++j)
-        s.push_back('-');
+/*    for(int j = 0; j < n_gaps[0]; ++j)
+        s.push_back('-');*/
+	s.append(n_gaps[0], '-');
+
     for(int i = 1; i <= size; ++i)
 	{
 		char symbol = mapping_table[symbols[i]];
@@ -189,8 +299,10 @@ string CGappedSequence::Decode()
 			symbol += 32;		// change to lowercase
 
         s.push_back(symbol);
-        for(int j = 0; j < n_gaps[i]; ++j)
-            s.push_back('-');
+
+		/*for(int j = 0; j < n_gaps[i]; ++j)
+            s.push_back('-');*/
+		s.append(n_gaps[i], '-');
 	}
 
 	return std::move(s);
@@ -221,24 +333,41 @@ void CGappedSequence::InsertGap(size_t pos)
  	// Look for the place to insert the gap
 	size_t x = 1;
 
+	++dps[1];
+
 	while(x < dps_size)
 	{
-		if(dps[2 * x] >= pos)
-			x = 2 * x;
-		else
-		{
-			pos -= dps[2 * x];
-			x = 2 * x + 1;
-		}
-	}
-
-	// Increment the no. of gaps
-	++n_gaps[x - dps_size];
-
-	// Update DSP
-	for(; x; x /= 2)
+		x *= 2;
+		if (dps[x] < pos)
+			pos -= dps[x++];
 		++dps[x];
 
+		if (x >= dps_size)
+			break;
+
+		x *= 2;
+		if (dps[x] < pos)
+			pos -= dps[x++];
+		++dps[x];
+
+		if (x >= dps_size)
+			break;
+
+		x *= 2;
+		if (dps[x] < pos)
+			pos -= dps[x++];
+		++dps[x];
+
+		if (x >= dps_size)
+			break;
+
+		x *= 2;
+		if (dps[x] < pos)
+			pos -= dps[x++];
+		++dps[x];
+	}
+
+	++n_gaps[x - dps_size];
     ++gapped_size;
 }
 
@@ -248,25 +377,73 @@ void CGappedSequence::InsertGaps(size_t pos, uint32_t n)
  	// Look for the place to insert the gap
 	size_t x = 1;
 
+	dps[1] += n;
+
 	while(x < dps_size)
 	{
-		if(dps[2 * x] >= pos)
-			x = 2 * x;
-		else
-		{
-			pos -= dps[2 * x];
-			x = 2 * x + 1;
-		}
-	}
-
-	// Increment the no. of gaps
-	n_gaps[x - dps_size] += n;
-
-	// Update DSP
-	for(; x; x /= 2)
+		x *= 2;
+		if (dps[x] < pos)
+			pos -= dps[x++];
 		dps[x] += n;
 
+		if (x >= dps_size)
+			break;
+
+		x *= 2;
+		if (dps[x] < pos)
+			pos -= dps[x++];
+		dps[x] += n;
+
+		if (x >= dps_size)
+			break;
+
+		x *= 2;
+		if (dps[x] < pos)
+			pos -= dps[x++];
+		dps[x] += n;
+
+		if (x >= dps_size)
+			break;
+
+		x *= 2;
+		if (dps[x] < pos)
+			pos -= dps[x++];
+		dps[x] += n;
+	}
+
+	n_gaps[x - dps_size] += n;
     gapped_size += n;
+}
+
+// *******************************************************************
+void CGappedSequence::InsertGapsVector(const vector<pair<uint32_t, uint32_t>> &v_gaps)
+{
+	uint32_t c_pos = 0;
+	uint32_t data_idx = 0;
+	
+	for (auto& x : v_gaps)
+	{
+		while (x.first > c_pos + 1 + n_gaps[data_idx])
+		{
+			c_pos += n_gaps[data_idx] + 1;
+			++data_idx;
+		}
+
+		if (data_idx == n_gaps.size())
+			--data_idx;
+
+		n_gaps[data_idx] += x.second;
+
+		gapped_size += x.second;
+	}
+
+	InitialiseDPS();
+}
+
+// *******************************************************************
+uint32_t CGappedSequence::NoSymbols()
+{
+	return symbols.size();
 }
 
 // *******************************************************************

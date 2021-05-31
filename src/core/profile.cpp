@@ -193,9 +193,12 @@ void CProfile::CalculateScores()
 
 		// Increment symbol scores
 		size_t tot_n_sym = 0;
+		auto counters_col = counters.get_column(i);
+
 		for(symbol_t sym = 0; sym < NO_AMINOACIDS; ++sym)
 		{
-			size_t n_sym = counters.get_value(i, sym);
+//			size_t n_sym = counters.get_value(i, sym);
+			size_t n_sym = counters_col[sym];
 			if(n_sym)
 			{
 				scores.add_column_part_mult(i, NO_AMINOACIDS, params->score_matrix[sym], n_sym);
@@ -218,13 +221,13 @@ void CProfile::CalculateCountersScores()
 
 	// Calculate counters
 	counters.resize(data.front()->gapped_size+1);
-	counters.set_zeros();
+	counters.set_zeros(params->instruction_set);
 	for(auto &p : data)
 		CalculateCounters(p);
 
 	// Calculate scores
 	scores.resize(data.front()->gapped_size+1);
-	scores.set_zeros();
+	scores.set_zeros(params->instruction_set);
 	CalculateScores();
 }
 
@@ -294,9 +297,9 @@ void CProfile::AppendRawSequence(const CGappedSequence &gs)
 		else
 			width = gs.gapped_size - 1;
 		counters.resize(width + 1);
-		counters.set_zeros();
+		counters.set_zeros(params->instruction_set);
 		scores.resize(width + 1);
-		scores.set_zeros();
+		scores.set_zeros(params->instruction_set);
 	}
 	else
 	{
@@ -662,7 +665,7 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 	score_t gap_term_ext  = params->gap_term_ext;
 
 	CDPMatrix matrix(prof1_width + 1, prof2_width + 1);
-	matrix.set_zeros();
+	matrix.set_zeros(params->instruction_set);
 
 	dp_row_t curr_row(prof2_width + 1);
 	dp_row_t prev_row(prof2_width + 1);
@@ -678,11 +681,13 @@ void CProfile::AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int>
 	bool is_guided = column_mapping1 != nullptr && column_mapping2 != nullptr;
 	vector<pair<int, int>> row_ranges;
 
-	if(is_guided)
+	if (is_guided)
 		FindRowRanges(column_mapping1, column_mapping2, row_ranges);
 	else
-		for(int i = 0; i <= (int) prof1_width; ++i)
-			row_ranges.push_back(make_pair(0, prof2_width));
+		/*		for(int i = 0; i <= (int) prof1_width; ++i)
+					row_ranges.push_back(make_pair(0, prof2_width));
+					*/
+		row_ranges.assign(prof1_width + 1, make_pair(0, prof2_width));
 
 	// Precompute scores for gaps for profile2
 	vector<dp_gap_costs> prof2_gaps(prof2_width+1);
@@ -1052,7 +1057,7 @@ void CProfile::AlignSeqSeq(CProfile *profile1, CProfile *profile2)
 	score_t gap_term_ext = params->gap_term_ext;
 
 	CDPMatrix matrix(prof1_width + 1, prof2_width + 1);
-	matrix.set_zeros();
+	matrix.set_zeros(params->instruction_set);
 
 	dp_row_t curr_row(prof2_width + 1);
 	dp_row_t prev_row(prof2_width + 1);
@@ -1098,6 +1103,8 @@ void CProfile::AlignSeqSeq(CProfile *profile1, CProfile *profile2)
 		else
 			curr_row[0].V = -infty;
 
+		auto score_row = params->score_matrix[seq1[i]];
+
 		for (size_t j = 1; j <= prof2_width; ++j)
 		{
 			//...........................................................................
@@ -1109,18 +1116,18 @@ void CProfile::AlignSeqSeq(CProfile *profile1, CProfile *profile2)
 
 			if (t_D > t_H && t_D > t_V)
 			{
-				curr_row[j].D = t_D + params->score_matrix[seq1[i]][seq2[j]];
+				curr_row[j].D = t_D + score_row[seq2[j]];
 				matrix.set_dir_D(i, j, direction_t::D);
 			}
 			else if (t_H >= t_V)
 			{
-				curr_row[j].D = t_H + params->score_matrix[seq1[i]][seq2[j]];
+				curr_row[j].D = t_H + score_row[seq2[j]];
 				matrix.set_dir_D(i, j, direction_t::H);
 				//???
 			}
 			else
 			{
-				curr_row[j].D = t_V + params->score_matrix[seq1[i]][seq2[j]];
+				curr_row[j].D = t_V + score_row[seq2[j]];
 				matrix.set_dir_D(i, j, direction_t::V);
 			}
 
@@ -1193,6 +1200,8 @@ void CProfile::ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatri
 
 	CProfileValues<score_t, NO_SYMBOLS> *scores1 = &(profile1->scores);
 	CProfileValues<score_t, NO_SYMBOLS> *scores2 = &(profile2->scores);
+
+	vector<pair<uint32_t, uint32_t>> v_gaps_prof1, v_gaps_prof2;
 
 	data.clear();
 
@@ -1272,9 +1281,9 @@ void CProfile::ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatri
 	dir = path[1];
 	
 	counters.resize(width + 1);
-	counters.set_zeros();
+	counters.set_zeros(params->instruction_set);
 	scores.resize(width + 1);
-	scores.set_zeros();
+	scores.set_zeros(params->instruction_set);
 
 	size_t new_prof_col_id = 1;
 	i = 0; 
@@ -1366,7 +1375,7 @@ void CProfile::ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatri
 			else
 				cumulate_gap_inserts = false;
 
-			InsertGaps(new_prof_col_id, profile1, new_prof_col_id, n_gap_open, n_gap_ext, n_gap_term_open, n_gap_term_ext);
+			InsertGaps(new_prof_col_id, profile1, new_prof_col_id, n_gap_open, n_gap_ext, n_gap_term_open, n_gap_term_ext, v_gaps_prof1);
 
 			//-----------------
 			if (n_gap_to_transfer2 || n_gap_term_to_transfer2)
@@ -1434,7 +1443,7 @@ void CProfile::ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatri
 			//----------------
 			
 			InsertColumn(new_prof_col_id, profile1, ++i);			
-			InsertGaps(new_prof_col_id, profile2, new_prof_col_id, n_gap_open, n_gap_ext, n_gap_term_open, n_gap_term_ext);
+			InsertGaps(new_prof_col_id, profile2, new_prof_col_id, n_gap_open, n_gap_ext, n_gap_term_open, n_gap_term_ext, v_gaps_prof2);
 		}
 		else
 			assert(0);
@@ -1442,9 +1451,18 @@ void CProfile::ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatri
 		++new_prof_col_id;
 	}
 
+	if (!v_gaps_prof1.empty())
+		FinalizeGaps(profile1, v_gaps_prof1);
+	if (!v_gaps_prof2.empty())
+		FinalizeGaps(profile2, v_gaps_prof2);
+
 	// !!! TODO: consider moving instead of copying
+/*	data.reserve(profile1->data.size() + profile2->data.size());
 	data.insert(data.end(), profile1->data.begin(), profile1->data.end());
-	data.insert(data.end(), profile2->data.begin(), profile2->data.end());
+	data.insert(data.end(), profile2->data.begin(), profile2->data.end());*/
+
+	data = move(profile2->data);
+	data.insert(data.end(), profile1->data.begin(), profile1->data.end());
 
 	profile1->data.clear();
 	profile2->data.clear();
@@ -1456,7 +1474,7 @@ void CProfile::ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatri
 }
 
 // ****************************************************************************
-void CProfile::InsertGaps(size_t prof_col_id, CProfile *profile, size_t col_id, size_t n_gap_open, size_t n_gap_ext, size_t n_gap_term_open, size_t n_gap_term_ext)
+void CProfile::InsertGaps(size_t prof_col_id, CProfile *profile, size_t col_id, size_t n_gap_open, size_t n_gap_ext, size_t n_gap_term_open, size_t n_gap_term_ext, vector<pair<uint32_t, uint32_t>>& v_gaps_prof)
 {
 	score_t gap_open_r	    = params->gap_open;
 	score_t gap_ext_r	    = params->gap_ext;
@@ -1468,8 +1486,17 @@ void CProfile::InsertGaps(size_t prof_col_id, CProfile *profile, size_t col_id, 
 	++no_cumulated_gap_inserts;
 	if(!cumulate_gap_inserts)
 	{
-		for(size_t i = 0; i < num; ++i)
-			profile->data[i]->InsertGaps(col_id + 1 - no_cumulated_gap_inserts, no_cumulated_gap_inserts);
+		size_t col_id_fix = col_id + 1 - no_cumulated_gap_inserts;
+
+/*		if(no_cumulated_gap_inserts > 1)
+			for(size_t i = 0; i < num; ++i)
+				profile->data[i]->InsertGaps(col_id_fix, no_cumulated_gap_inserts);
+		else
+			for(size_t i = 0; i < num; ++i)
+				profile->data[i]->InsertGap(col_id_fix);*/
+
+		v_gaps_prof.emplace_back(col_id_fix, no_cumulated_gap_inserts);
+
 		no_cumulated_gap_inserts = 0;
 	}
 
@@ -1485,8 +1512,38 @@ void CProfile::InsertGaps(size_t prof_col_id, CProfile *profile, size_t col_id, 
 
 	counters.add_value(prof_col_id, GAP, num);				// total number of gaps in profile
 
+	auto col = scores.get_column(prof_col_id);
+	
 	for(size_t i = 0; i < NO_AMINOACIDS; ++i)	
-		scores.add_value(prof_col_id, i, gap_cost);
+		*col++ += gap_cost;
+}
+
+// ****************************************************************************
+void CProfile::FinalizeGaps(CProfile* profile, vector<pair<uint32_t, uint32_t>>& v_gaps_prof)
+{
+	size_t num = profile->data.size();
+
+	if (v_gaps_prof.size() < 10)
+	{
+		for (size_t i = 0; i < num; ++i)
+			for (auto& x : v_gaps_prof)
+				if (x.second == 1)
+					profile->data[i]->InsertGap(x.first);
+				else
+					profile->data[i]->InsertGaps(x.first, x.second);
+	}
+	else
+	{
+		for (size_t i = 0; i < num; ++i)
+			if (v_gaps_prof.size() > profile->data[i]->NoSymbols() / 8)
+				profile->data[i]->InsertGapsVector(v_gaps_prof);
+			else
+				for (auto& x : v_gaps_prof)
+					if (x.second == 1)
+						profile->data[i]->InsertGap(x.first);
+					else
+						profile->data[i]->InsertGaps(x.first, x.second);
+	}
 }
 
 // ****************************************************************************
@@ -1500,7 +1557,6 @@ void CProfile::InsertColumn(size_t prof_col_id, CProfile *profile, size_t col_id
 	counters.add_column(prof_col_id, profile->counters.get_column(col_id));
 	scores.add_column(prof_col_id, profile->scores.get_column(col_id));
 }
-
 
 // ****************************************************************************
 void CProfile::SolveGapsProblemWhenContinuing(size_t source_col_id, size_t prof_width, size_t prof_size, size_t &n_gap_to_transfer, size_t &n_gap_term_to_transfer, size_t &n_gap_open, size_t &n_gap_ext, size_t &n_gap_term_open, size_t &n_gap_term_ext, size_t n_gap_open_at_left, size_t n_gap_ext_at_left, size_t n_gap_term_open_at_left, size_t n_gap_term_ext_at_left)
@@ -1771,7 +1827,7 @@ void CProfile::AlignSeqProf(CProfile *profile1, CProfile *profile2, vector<int> 
 	score_t gap_term_ext = params->gap_term_ext;
 
 	CDPMatrix matrix(prof1_width + 1, prof2_width + 1);
-	matrix.set_zeros();
+	matrix.set_zeros(params->instruction_set);
 
 	dp_row_t curr_row(prof2_width + 1);
 	dp_row_t prev_row(prof2_width + 1);
@@ -1785,8 +1841,9 @@ void CProfile::AlignSeqProf(CProfile *profile1, CProfile *profile2, vector<int> 
 	if(is_guided)
 		FindRowRanges(column_mapping1, column_mapping2, row_ranges);
 	else
-		for(int i = 0; i <= (int) prof1_width; ++i)
-			row_ranges.push_back(make_pair(0, prof2_width));
+/*		for(int i = 0; i <= (int) prof1_width; ++i)
+			row_ranges.push_back(make_pair(0, prof2_width));*/
+		row_ranges.assign(prof1_width + 1, make_pair(0, prof2_width));
 
 	// Precompute scores for gaps for profile2
 	vector<dp_gap_costs> prof2_gaps(prof2_width + 1);
@@ -1857,7 +1914,6 @@ void CProfile::AlignSeqProf(CProfile *profile1, CProfile *profile2, vector<int> 
 		gaps_prof2_change[j] = n_gaps_prof2_to_change[j] * (gap_ext - gap_open) +
 			n_gaps_prof2_term_to_change[j] * (gap_term_ext - gap_term_open);
 	}
-
 
 	// Calculate matrix interior
 	for (size_t i = 1; i <= prof1_width; ++i)

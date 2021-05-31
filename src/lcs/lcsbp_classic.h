@@ -43,7 +43,8 @@ public:
 	};
 		
 	void Calculate(CSequence *seq0, CSequence *seq1,
-		uint32_t &dist1);
+		uint32_t *dist);
+	uint32_t HistogramLCS(const uint16_t* h0, const uint16_t* h1);
 };
 
 template <unsigned BV_LEN> class CLCSBP_Classic_Impl {

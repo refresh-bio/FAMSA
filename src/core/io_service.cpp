@@ -65,10 +65,13 @@ size_t IOService::loadFasta(const std::string& file_name, std::vector<CSequence>
 // *******************************************************************
 bool IOService::saveAlignment(const std::string& file_name, const vector<CGappedSequence*> & sequences)
 {
-	ostream* out;
-	ofstream outfile;
+//	ostream* out;
+//	ofstream outfile;
 
-	if (file_name == "STDOUT") {
+	string s;
+	string id, seq;
+
+/*	if (file_name == "STDOUT") {
 		out = &cout;
 	}
 	else {
@@ -76,15 +79,56 @@ bool IOService::saveAlignment(const std::string& file_name, const vector<CGapped
 		out = &outfile;
 	}
 
-	string s;
-	string id, seq;
-
 	for (auto &p : sequences)
 	{
 		*out << p->id << "\n";
 		string seq = p->Decode();
 		for (size_t pos = 0; pos < seq.size(); pos += 60)
 			*out << seq.substr(pos, 60) << "\n";
+	}*/
+
+	if (file_name == "STDOUT")
+	{
+		for (auto& p : sequences)
+		{
+			cout << p->id << "\n";
+			string seq = p->Decode();
+			for (size_t pos = 0; pos < seq.size(); pos += 60)
+				cout << seq.substr(pos, 60) << "\n";
+		}
+	}
+	else
+	{
+		ofstream outfile;
+		const size_t BUFFER_SIZE = 128 << 20;
+		char *buffer = new char[BUFFER_SIZE];
+
+		outfile.open(file_name.c_str(), ios_base::out);
+		outfile.rdbuf()->pubsetbuf(buffer, BUFFER_SIZE);
+
+		for (auto& p : sequences)
+		{
+			outfile.write(p->id.c_str(), p->id.size());
+			outfile.put('\n');
+
+			string seq = p->Decode();
+			size_t seq_size = seq.size();
+			auto ptr = seq.c_str();
+			size_t step;
+
+			for (size_t pos = 0; pos < seq_size; pos += step, ptr += step)
+			{
+				step = 60;
+				if (pos + step > seq_size)
+					step = seq_size - pos;
+
+				outfile.write(ptr, step);
+				outfile.put('\n');
+			}
+		}
+
+		outfile.close();
+		delete[] buffer;
 	}
 
 	return true;

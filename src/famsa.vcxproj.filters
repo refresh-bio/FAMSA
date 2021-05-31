@@ -13,9 +13,6 @@
     <Filter Include="lcs">
       <UniqueIdentifier>{263818da-dcee-49b9-9610-b54e00e4d18b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="libs">
-      <UniqueIdentifier>{df31a996-e854-4d0a-8cad-754d2d88c1ca}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="famsa.cpp" />

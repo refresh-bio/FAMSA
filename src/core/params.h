@@ -60,6 +60,8 @@ struct CParams
 
 	int64_t shuffle;
 
+	instruction_set_t instruction_set;
+
 	vector<vector<score_t>> score_matrix;
 	vector<score_t> score_vector;
 
@@ -110,6 +112,8 @@ struct CParams
 
 		indel_exp = 1.0;
 		shuffle = -1;
+
+		instruction_set = instruction_set_t::none;
 	};
 };
 

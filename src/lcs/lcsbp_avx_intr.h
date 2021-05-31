@@ -42,7 +42,8 @@ public:
 			free(orig_X);
 	}
 	
-	void Calculate(CSequence *seq0, CSequence *seq1, CSequence *seq2, uint32_t &dist1, uint32_t &dist2);
+	void Calculate(CSequence *seq0, CSequence *seq1, CSequence *seq2, uint32_t *dist);
+	uint32_t HistogramLCS(const uint16_t* h0, const uint16_t* h1);
 };
 
 template <unsigned BV_LEN> class CLCSBP_AVX_INTR_Impl {
@@ -95,7 +96,7 @@ public:
 		__m128i ones = _mm_set1_epi64x(~0ull);
 
 		auto pX0 = X;
-		const Array<bit_vec_t>& bit_masks = *(seq0->bit_masks);
+		const Array<bit_vec_t>& bit_masks = seq0->bit_masks;
 
 		if (BV_LEN > 0)				*pX0++ = ones;
 		if (BV_LEN > 1)				*pX0++ = ones;

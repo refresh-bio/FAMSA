@@ -21,7 +21,10 @@ enum class Measure {
 	DistanceReciprocal,
 	DistanceInverse,
 	DistanceLCSByLength,
-	DistanceLCSByLengthCorrected
+	DistanceLCSByLengthCorrected,
+	LCS2_AB,
+	LCS2_indel_ApB,
+	LCS_sqrt_indel
 };
 
 
@@ -38,6 +41,15 @@ public:
 		seq_type& ref,
 		seq_type* sequences,
 		size_t n_seqs,
+		similarity_type* out_vector,
+		CLCSBP& lcsbp);
+
+	template <class seq_type, class similarity_type, typename Iter, typename Transform>
+	void calculateSimilarityRange(
+		Transform& transform, 
+		seq_type& ref,
+		seq_type* sequences,
+		pair<Iter, Iter> ids_range,
 		similarity_type* out_vector,
 		CLCSBP& lcsbp);
 

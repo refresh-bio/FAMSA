@@ -56,7 +56,8 @@ public:
 	}
 
 	void Calculate(CSequence* seq0, CSequence* seq1, CSequence* seq2, CSequence* seq3, CSequence* seq4,
-		uint32_t& dist1, uint32_t& dist2, uint32_t& dist3, uint32_t& dist4);
+		uint32_t* dist);
+	uint32_t HistogramLCS(const uint16_t* h0, const uint16_t* h1);
 };
 
 //#undef _mm256_set_m128i
@@ -145,7 +146,7 @@ public:
 		__m256i sign64_bit = _mm256_set1_epi64x(1ull << 63);
 		__m256i ones = _mm256_set1_epi64x(~0ull);
 
-		const Array<bit_vec_t>& bit_masks = *(seq0->bit_masks);
+		const Array<bit_vec_t>& bit_masks = seq0->bit_masks;
 
 		size_t bv_len = (seq0->length + bv_size256 - 1) / bv_size256;
 

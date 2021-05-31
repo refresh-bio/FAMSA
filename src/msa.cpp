@@ -68,6 +68,8 @@ CFAMSA::CFAMSA()
 {
 	DetermineInstructionSet();
 
+	params.instruction_set = instruction_set;
+
 	n_threads = 1;
 	final_profile = nullptr;
 
@@ -684,7 +686,7 @@ bool CFAMSA::ComputeMSA()
 		<< " Iterative refinement                             : " << timers[TIMER_REFINMENT].GetElapsedTime() << "s\n"
 		<< " No. of sequences : " << sequences.size() << "\n"
 		<< " Sackin index for guide tree: " << sackin << "\n"
-		<< " Sackin index for guide tree (normalized): " << sackin / (double)sequences.size() << "\n";
+		<< " Sackin index for guide tree (normalized): " << fixed << setprecision(1) << sackin / (double)sequences.size() << "\n";
 
 #ifdef DEVELOPER_MODE
 	if (params.test_ref_sequences)

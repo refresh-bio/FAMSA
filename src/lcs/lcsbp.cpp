@@ -9,6 +9,7 @@
 #endif
 #endif
 
+#include <algorithm>
 
 CLCSBP::CLCSBP(instruction_set_t _instruction_set)
 {
@@ -20,33 +21,32 @@ CLCSBP::CLCSBP(instruction_set_t _instruction_set)
 #ifndef NO_AVX2
 	lcsbp_avx2_intr = std::shared_ptr<CLCSBP_AVX2_INTR>(new CLCSBP_AVX2_INTR());
 #endif 
-#endif 
-
-
+#endif
 }
 
 void CLCSBP::GetLCSBP(CSequence *seq0, CSequence *seq1, CSequence *seq2, CSequence *seq3, CSequence *seq4,
-	uint32_t &dist1, uint32_t &dist2, uint32_t &dist3, uint32_t &dist4)
+	uint32_t *dist)
+//	uint32_t &dist1, uint32_t &dist2, uint32_t &dist3, uint32_t &dist4)
 {
 	if (seq4 == nullptr)
 	{
 		if (seq1 != nullptr)
-			lcsbp_classic->Calculate(seq0, seq1, dist1);
+			lcsbp_classic->Calculate(seq0, seq1, dist+0);
 		if (seq2 != nullptr)
-			lcsbp_classic->Calculate(seq0, seq2, dist2);
+			lcsbp_classic->Calculate(seq0, seq2, dist+1);
 		if (seq3 != nullptr)
-			lcsbp_classic->Calculate(seq0, seq3, dist3);
+			lcsbp_classic->Calculate(seq0, seq3, dist+2);
 		if (seq4 != nullptr)
-			lcsbp_classic->Calculate(seq0, seq4, dist4);
+			lcsbp_classic->Calculate(seq0, seq4, dist+3);
 	}
 	else {
 
 		if (instruction_set < instruction_set_t::avx)				// In theory SSE2 will suffice, but the SSE2-compiled code is too slow
 		{
-			lcsbp_classic->Calculate(seq0, seq1, dist1);
-			lcsbp_classic->Calculate(seq0, seq2, dist2);
-			lcsbp_classic->Calculate(seq0, seq3, dist3);
-			lcsbp_classic->Calculate(seq0, seq4, dist4);
+			lcsbp_classic->Calculate(seq0, seq1, dist+0);
+			lcsbp_classic->Calculate(seq0, seq2, dist+1);
+			lcsbp_classic->Calculate(seq0, seq3, dist+2);
+			lcsbp_classic->Calculate(seq0, seq4, dist+3);
 		}
 		else {
 #ifndef NO_AVX
@@ -54,14 +54,14 @@ void CLCSBP::GetLCSBP(CSequence *seq0, CSequence *seq1, CSequence *seq2, CSequen
 			{
 //				lcsbp_avx->Calculate(seq0, seq1, seq2, dist1, dist2);
 //				lcsbp_avx->Calculate(seq0, seq3, seq4, dist3, dist4);
-				lcsbp_avx_intr->Calculate(seq0, seq1, seq2, dist1, dist2);
-				lcsbp_avx_intr->Calculate(seq0, seq3, seq4, dist3, dist4);
+				lcsbp_avx_intr->Calculate(seq0, seq1, seq2, dist+0);
+				lcsbp_avx_intr->Calculate(seq0, seq3, seq4, dist+2);
 			}
 			else
 			{
 #ifndef NO_AVX2
 //				lcsbp_avx2->Calculate(seq0, seq1, seq2, seq3, seq4, dist1, dist2, dist3, dist4);
-				lcsbp_avx2_intr->Calculate(seq0, seq1, seq2, seq3, seq4, dist1, dist2, dist3, dist4);
+				lcsbp_avx2_intr->Calculate(seq0, seq1, seq2, seq3, seq4, dist);
 #else
 				lcsbp_avx->Calculate(seq0, seq1, seq2, dist1, dist2);
 				lcsbp_avx->Calculate(seq0, seq3, seq4, dist3, dist4);
@@ -76,9 +76,29 @@ void CLCSBP::GetLCSBP(CSequence *seq0, CSequence *seq1, CSequence *seq2, CSequen
 #endif
 		}
 	}
-
 }
 
+// *******************************************************************
+uint32_t CLCSBP::EstimateLCS(const CSequence& s0, const CSequence& s1)
+{
+#ifndef NO_AVX2
+	return lcsbp_avx2_intr->HistogramLCS(s0.hist, s1.hist);
+
+/*	uint32_t est[] = {
+		lcsbp_avx2_intr->HistogramLCS(s0.hist0, s1.hist012) + lcsbp_avx2_intr->HistogramLCS(s0.hist12, s1.hist2),
+		lcsbp_avx2_intr->HistogramLCS(s0.hist0, s1.hist01) + lcsbp_avx2_intr->HistogramLCS(s0.hist1, s1.hist12) + lcsbp_avx2_intr->HistogramLCS(s0.hist2, s1.hist2),
+		lcsbp_avx2_intr->HistogramLCS(s0.hist0, s1.hist01) + lcsbp_avx2_intr->HistogramLCS(s0.hist1, s1.hist1) + lcsbp_avx2_intr->HistogramLCS(s0.hist2, s1.hist12),
+		lcsbp_avx2_intr->HistogramLCS(s0.hist0, s1.hist0) +	lcsbp_avx2_intr->HistogramLCS(s0.hist1, s1.hist012) + lcsbp_avx2_intr->HistogramLCS(s0.hist2, s1.hist2),
+		lcsbp_avx2_intr->HistogramLCS(s0.hist0, s1.hist0) +	lcsbp_avx2_intr->HistogramLCS(s0.hist1, s1.hist01) + lcsbp_avx2_intr->HistogramLCS(s0.hist2, s1.hist12) };
+	return *std::max_element(est, est + 5);*/
+#endif
+
+#ifndef NO_AVX
+	return lcsbp_avx_intr->HistogramLCS(s0.hist, s1.hist);
+#endif
+
+	return lcsbp_classic->HistogramLCS(s0.hist, s1.hist);
+}
 
 
 #ifdef DEVELOPER_MODE

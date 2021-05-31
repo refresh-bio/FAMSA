@@ -17,6 +17,10 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <tuple>
 #include <array>
 #include <algorithm>
+#include <cstring>
+#include <xmmintrin.h>
+#include <mmintrin.h>
+
 
 using namespace std;
 
@@ -47,9 +51,14 @@ public:
 		delete[] data;
 	}
 
-	void set_zeros(void)
+	void set_zeros(instruction_set_t instruction_set = instruction_set_t::none)
 	{
-		mem_clear(raw_data, n_rows * n_cols);
+		if(instruction_set == instruction_set_t::avx2)
+			mem_clear_avx2(raw_data, n_rows * n_cols);
+		else if(instruction_set == instruction_set_t::avx)
+			mem_clear_avx(raw_data, n_rows * n_cols);
+		else
+			mem_clear(raw_data, n_rows * n_cols);
 	}
 
 	unsigned char *get_row(size_t row_id)
@@ -219,9 +228,14 @@ public:
 		deallocate();
 	}
 
-	void set_zeros(void)
+	void set_zeros(instruction_set_t instruction_set = instruction_set_t::none)
 	{
-		fill(raw_data, raw_data + N_ROWS * n_cols, T());
+		if (instruction_set == instruction_set_t::avx2)
+			mem_clear_avx2(raw_data, N_ROWS * n_cols * sizeof(T));
+		else if (instruction_set == instruction_set_t::avx)
+			mem_clear_avx(raw_data, N_ROWS * n_cols * sizeof(T));
+		else
+			memset(raw_data, 0, N_ROWS * n_cols * sizeof(T));
 	}
 
 	size_t get_num_of_non_zeros(void)
@@ -253,8 +267,9 @@ public:
 	{
 		T* dest = data[col_id];
 		
-		for(size_t i = 0; i < N_ROWS; ++i)
-			dest[i] += source[i];
+		for (size_t i = 0; i < N_ROWS; ++i)
+			//			dest[i] += source[i];
+			*dest++ += *source++;
 	}
 
 	void add_value_to_column_part(size_t col_id, size_t max_row_id, T value)
@@ -284,9 +299,18 @@ public:
 		return data[col_id];
 	}
 
+	void prefetch_column(size_t col_id)
+	{
+#ifdef WIN32
+		_mm_prefetch((const char*)(data + col_id), _MM_HINT_T0);
+#else
+		__builtin_prefetch(data + col_id);
+#endif
+	}
+
 	void set_column(size_t col_id, T* column)
 	{
-		copy(column, column + N_ROWS, data[col_id]);
+		copy_n(column, N_ROWS, data[col_id]);
 	}
 };
 
@@ -348,8 +372,9 @@ class CProfile {
 	
 	void ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatrix &matrix, dp_row_elem_t &last_row);
 	
-	void InsertGaps(size_t prof_col_id, CProfile *profile, size_t col_id, size_t n_gap_open, size_t n_gap_ext, size_t n_gap_term_open, size_t n_gap_term_ext);
+	void InsertGaps(size_t prof_col_id, CProfile *profile, size_t col_id, size_t n_gap_open, size_t n_gap_ext, size_t n_gap_term_open, size_t n_gap_term_ext, vector<pair<uint32_t, uint32_t>> &v_gaps_prof);
 	void InsertColumn(size_t prof_col_id, CProfile *profile, size_t col_id);
+	void FinalizeGaps(CProfile* profile, vector<pair<uint32_t, uint32_t>>& v_gaps_prof);
 
 	void CalculateCounters(CGappedSequence *gs);
     void CalculateScores();
