@@ -252,12 +252,6 @@ bool CGappedSequence::operator==(const CGappedSequence &gs)
 }
 
 // *******************************************************************
-bool CGappedSequence::operator!=(const CGappedSequence &gs)
-{
-	return !(*this == gs);
-}
-
-// *******************************************************************
 void CGappedSequence::InitialiseDPS()
 {
 	// Round size of n_gap to the nearest not smaller power of 2
@@ -287,8 +281,6 @@ string CGappedSequence::Decode()
     s.reserve(gapped_size);
 
 	// Starting gaps
-/*    for(int j = 0; j < n_gaps[0]; ++j)
-        s.push_back('-');*/
 	s.append(n_gaps[0], '-');
 
     for(int i = 1; i <= size; ++i)
@@ -300,8 +292,6 @@ string CGappedSequence::Decode()
 
         s.push_back(symbol);
 
-		/*for(int j = 0; j < n_gaps[i]; ++j)
-            s.push_back('-');*/
 		s.append(n_gaps[i], '-');
 	}
 

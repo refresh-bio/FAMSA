@@ -27,6 +27,10 @@ class CProfileQueue
 	map<size_t, CProfile*> *profiles;
 	vector<pair<int, int>> *guide_tree;
 
+	uint32_t max_no_threads;
+	map<size_t, uint32_t> m_reserved_threads;
+	uint32_t no_working_threads;
+
 	vector<pair<int, int>>::iterator gt_iter;
 
 	vector<size_t> ready_profiles;
@@ -42,13 +46,13 @@ class CProfileQueue
 	mutex mtx;
 	condition_variable cv;
 
-	size_t counter;
+	void CheckAlignInParallel(CProfile *prof1, CProfile *prof2, uint32_t& no_threads, uint32_t& no_rows_per_box);
 
 public:
-	CProfileQueue(vector<CGappedSequence> *_gapped_sequences, map<size_t, CProfile*> *_profiles, vector<pair<int, int>> *_guide_tree);
+	CProfileQueue(vector<CGappedSequence> *_gapped_sequences, map<size_t, CProfile*> *_profiles, vector<pair<int, int>> *_guide_tree, uint32_t _max_no_threads);
 	~CProfileQueue();
 
-	bool GetTask(size_t &prof_id, CGappedSequence *&gs, CProfile *&prof1, CProfile *&prof2);
+	bool GetTask(size_t &prof_id, CGappedSequence *&gs, CProfile *&prof1, CProfile *&prof2, uint32_t &no_threads, uint32_t &no_rows_per_block);
 	void AddSolution(size_t prof_id, CProfile *prof);
 };
 

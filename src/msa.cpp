@@ -37,7 +37,7 @@ using namespace std;
 
 double CFAMSA::SM_MIQS[24][24] = {
 //	   A     R     N     D     C     Q     E     G     H     I     L     K     M     F     P     S     T     W     Y     V     B     Z     X     *
-	{  3.2, -1.3, -0.4, -0.4,  1.5, -0.2, -0.4,  0.4, -1.2, -1.3, -1.4, -0.7, -1.0, -2.3, -0.1,  0.8,  0.8, -3.6, -2.4,  0.0, -6.1, -6.1, -6.1, -6.1},	// A
+	{3.2, -1.3, -0.4, -0.4,  1.5, -0.2, -0.4,  0.4, -1.2, -1.3, -1.4, -0.7, -1.0, -2.3, -0.1,  0.8,  0.8, -3.6, -2.4,  0.0, -6.1, -6.1, -6.1, -6.1},	// A
 	{ -1.3,  6.2, -0.1, -1.5, -2.7,  1.8, -0.7, -1.9,  0.9, -2.4, -2.5,  3.3, -1.1, -3.3, -1.1, -0.3, -0.9, -3.8, -1.9, -2.3, -6.1, -6.1, -6.1, -6.1},	// R
 	{ -0.4, -0.1,  5.1,  2.6, -1.6,  0.9,  0.8,  0.2,  1.0, -3.6, -3.5,  0.7, -2.3, -3.5, -1.4,  0.9,  0.0, -4.5, -1.5, -2.6, -6.1, -6.1, -6.1, -6.1},	// N
 	{ -0.4, -1.5,  2.6,  5.7, -3.7,  0.9,  2.7, -0.5,  0.3, -4.5, -4.6,  0.4, -3.3, -5.8, -0.3,  0.3, -0.2, -5.3, -3.9, -3.5, -6.1, -6.1, -6.1, -6.1},	// D
@@ -61,7 +61,35 @@ double CFAMSA::SM_MIQS[24][24] = {
 	{ -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1},	// Z
 	{ -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1},	// X
 	{ -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1}};	// *
-
+	
+// ProfSub
+/*double CFAMSA::SM_MIQS[24][24] = {
+	//	   A     R     N     D     C     Q     E     G     H     I     L     K     M     F     P     S     T     W     Y     V     B     Z     X     *
+{  4, -2, -2, -2,  1, -1,  0,  0, -1, -1, -1, -1, -1, -1, -1,  1,  0, -3, -3,  0, -2, -1,  0, -4},
+{ -2,  6,  0, -2, -4,  1,  0, -2,  1, -3, -2,  2, -1, -2, -2,  0, -1, -2, -2, -2, -1,  0, -1, -4},
+{ -2,  0,  7,  1, -3,  2, -1,  0,  1, -3, -4,  0, -2, -3, -2,  1,  0, -4, -2, -3,  3,  0, -1, -4},
+{ -2, -2,  1,  9, -3,  0,  3, -1,  1, -3, -4, -1, -3, -3, -1,  1, -2, -4, -3, -3,  4,  1, -1, -4},
+{  1, -4, -3, -3, 14, -2, -3, -3, -3, -2, -1, -3, -1, -2, -3, -1, -1, -1, -2, -1, -3, -3, -2, -4},
+{ -1,  1,  2,  0, -2,  4,  1, -2,  0, -3, -2,  1,  0, -3, -1,  0, -1, -2,  0, -2,  0,  3, -1, -4},
+{  0,  0, -1,  3, -3,  1,  4, -3,  0, -4, -3,  0, -2, -4, -1, -1, -4, -3, -2, -2,  1,  4, -1, -4},
+{  0, -2,  0, -1, -3, -2, -3,  9, -3, -4, -4, -2, -3, -4, -2,  0, -2, -2, -3, -3, -1, -2, -1, -4},
+{ -1,  1,  1,  1, -3,  0,  0, -3,  9, -3, -3, -1, -2, -1, -2, -1, -2, -2,  2, -3,  0,  0, -1, -4},
+{ -1, -3, -3, -3, -2, -3, -4, -4, -3,  4,  3, -4,  1,  0, -3, -2, -1, -3, -1,  3, -3, -3, -1, -4},
+{ -1, -2, -4, -4, -1, -2, -3, -4, -3,  3,  6, -3,  2,  0, -3, -3, -1, -2, -1,  3, -4, -3, -1, -4},
+{ -1,  2,  0, -1, -3,  1,  0, -2, -1, -4, -3,  6, -2, -3, -1,  0, -1, -3, -2, -2,  0,  1, -1, -4},
+{ -1, -1, -2, -3, -1,  0, -2, -3, -2,  1,  2, -2,  8,  1, -3, -1, -1, -3,  0,  1, -3, -1, -1, -4},
+{ -1, -2, -3, -3, -2, -3, -4, -4, -1,  0,  0, -3,  1,  6, -4, -2, -2,  1,  3,  0, -3, -3, -1, -4},
+{ -1, -2, -2, -1, -3, -1, -1, -2, -2, -3, -3, -1, -3, -4,  8, -1, -1, -4, -3, -3, -2, -1, -2, -4},
+{  1,  0,  1,  1, -1,  0, -1,  0, -1, -2, -3,  0, -1, -2, -1,  4,  2, -3, -1, -2,  0,  0,  0, -4},
+{  0, -1,  0, -2, -1, -1, -4, -2, -2, -1, -1, -1, -1, -2, -1,  2,  7, -2, -2,  0, -1, -1,  0, -4},
+{ -3, -2, -4, -4, -1, -2, -3, -2, -2, -3, -2, -3, -3,  1, -4, -3, -2, 13,  3, -3, -4, -3, -2, -4},
+{ -3, -2, -2, -3, -2,  0, -2, -3,  2, -1, -1, -2,  0,  3, -3, -1, -2,  3,  8, -1, -3, -2, -1, -4},
+{  0, -2, -3, -3, -1, -2, -2, -3, -3,  3,  3, -2,  1,  0, -3, -2,  0, -3, -1,  4, -3, -2, -1, -4},
+{ -2, -1,  3,  4, -3,  0,  1, -1,  0, -3, -4,  0, -3, -3, -2,  0, -1, -4, -3, -3,  4,  1, -1, -4},
+{ -1,  0,  0,  1, -3,  3,  4, -2,  0, -3, -3,  1, -1, -3, -1,  0, -1, -3, -2, -2,  1,  4, -1, -4},
+{  0, -1, -1, -1, -2, -1, -1, -1, -1, -1, -1, -1, -1, -1, -2,  0,  0, -2, -1, -1, -1, -1, -1, -4},
+{ -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4, -4,  1} };
+*/
 
 // *******************************************************************
 CFAMSA::CFAMSA()
@@ -91,16 +119,16 @@ void CFAMSA::init_sm()
 #ifdef HUGE_ALIGNEMENTS
 	for(int i = 0; i < NO_AMINOACIDS; ++i)
 	{
-		score_vector.push_back(SM_MIQS[i][i]);
+		score_vector.emplace_back(SM_MIQS[i][i]);
 		for(int j = 0; j < NO_AMINOACIDS; ++j)
-			score_matrix[i].push_back(SM_MIQS[i][j]);
+			score_matrix[i].emplace_back(SM_MIQS[i][j]);
 	}
 #else
 	for(int i = 0; i < NO_AMINOACIDS; ++i)
 	{
-		score_vector.push_back((score_t) round(SM_MIQS[i][i] * cost_cast_factor));
+		score_vector.emplace_back((score_t) round(SM_MIQS[i][i] * cost_cast_factor));
 		for(int j = 0; j < NO_AMINOACIDS; ++j)
-			score_matrix[i].push_back((score_t) round(SM_MIQS[i][j] * cost_cast_factor));
+			score_matrix[i].emplace_back((score_t) round(SM_MIQS[i][j] * cost_cast_factor));
 	}
 #endif
 }
@@ -180,7 +208,7 @@ bool CFAMSA::ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree)
 
 	final_profile->Clear();
 
-	CProfileQueue pq(&gapped_sequences, &profiles, &guide_tree);
+	CProfileQueue pq(&gapped_sequences, &profiles, &guide_tree, params.n_threads);
 
 	vector<thread *> workers(n_threads, nullptr);
 
@@ -196,8 +224,12 @@ bool CFAMSA::ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree)
 			CProfile *prof2;
 			CProfile *prof_sol;
 			size_t prof_id;
+			bool only_task;
+			uint32_t no_threads;
+			uint32_t no_rows_per_box;
 
-			while(pq.GetTask(prof_id, gs, prof1, prof2))
+//			while(pq.GetTask(prof_id, gs, prof1, prof2, only_task))
+			while(pq.GetTask(prof_id, gs, prof1, prof2, no_threads, no_rows_per_box))
 			{
 				if(gs != nullptr)
 				{
@@ -214,7 +246,7 @@ bool CFAMSA::ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree)
 							RefineAlignment(prof2);
 					}
 
-					prof_sol = new CProfile(prof1, prof2, &params);
+					prof_sol = new CProfile(prof1, prof2, &params, no_threads, no_rows_per_box);
 
 					delete prof1;
 					delete prof2;
@@ -254,7 +286,7 @@ bool CFAMSA::ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree)
 void CFAMSA::RefineRandom(CProfile* profile_to_refine, vector<size_t> &dest_prof_id)
 {
 	for(size_t i = 0; i < profile_to_refine->data.size(); ++i)
-		dest_prof_id.push_back(rnd_rfn() % 2);
+		dest_prof_id.emplace_back(rnd_rfn() % 2);
 
 	if(count(dest_prof_id.begin(), dest_prof_id.end(), 0) == 0 ||
 		count(dest_prof_id.begin(), dest_prof_id.end(), 1) == 0)		// Both profiles must contain at least 1 sequence
@@ -281,7 +313,7 @@ void CFAMSA::RefineMostEmptyAndFullColumn(CProfile *profile_to_refine, vector<si
 	{
 		int x = min(gap_stats[i], card - gap_stats[i]);
 		if(x > 0)
-			tmp.push_back(make_pair(i, x));
+			tmp.emplace_back(i, x);
 	}
 
 	sort(tmp.begin(), tmp.end(), [](const pair<size_t, size_t> &x, const pair<size_t, size_t> &y){
@@ -307,9 +339,9 @@ void CFAMSA::RefineMostEmptyAndFullColumn(CProfile *profile_to_refine, vector<si
 
 	for(size_t j = 0; j < card; ++j)
 		if(profile_to_refine->data[j]->GetSymbol(col_id) == GAP)
-			dest_prof_id.push_back(first_prof_id);
+			dest_prof_id.emplace_back(first_prof_id);
 		else
-			dest_prof_id.push_back(second_prof_id);
+			dest_prof_id.emplace_back(second_prof_id);
 }
 
 // *******************************************************************
@@ -408,10 +440,11 @@ bool CFAMSA::RefineAlignment(CProfile *&profile_to_refine)
 
 			CProfile* prof = new CProfile(&params);
 
-			prof->Align(&profile1, &profile2, &column_mapping1, &column_mapping2);
+			// TODO: Enable parallelization here!
+			prof->Align(&profile1, &profile2, 1, 0, &column_mapping1, &column_mapping2);
 			sort(prof->data.begin(), prof->data.end(), [](CGappedSequence *p, CGappedSequence *q){return p->id < q->id; });
 
-			if (*prof != *profile_to_refine)		// if the new profile is the same as previous do not score it
+			if (!(*prof == *profile_to_refine))		// if the new profile is the same as previous do not score it
 			{
 				prof->CalculateTotalScore();
 #ifdef DEBUG_MODE
@@ -434,7 +467,7 @@ bool CFAMSA::RefineAlignment(CProfile *&profile_to_refine)
 
 			delete prof;
 
-			old_dest_prof_ids.push_back(dest_prof_id);
+			old_dest_prof_ids.emplace_back(dest_prof_id);
 			i_succ_ref++;
 
 #ifdef DEBUG_MODE

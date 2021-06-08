@@ -46,7 +46,6 @@ size_t IOService::loadFasta(const std::string& file_name, std::vector<CSequence>
 			if (!id.empty() && !seq.empty())
 			{
 				sequences.emplace_back(id, seq);
-				//	sequences.push_back(CSequence(id, seq));
 				seq.clear();
 			}
 			id = s;

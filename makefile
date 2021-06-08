@@ -4,6 +4,7 @@ all: famsa
 STATIC_LINK = false
 NO_AVX = false
 NO_AVX2 = false
+USE_CPP20 = true
 
 ####################
 
@@ -16,15 +17,24 @@ ifeq ($(UNAME_S),Darwin)
 	ABI_FLAG =
 endif
 
+ifeq ($(USE_CPP20), true)
+	NO_ATOMIC_WAIT = false
+	CPP_STD=c++2a
+	ATOMIC_FLAGS = 
+else
+	NO_ATOMIC_WAIT = false
+	CPP_STD=c++14
+	ATOMIC_FLAGS = -DNO_ATOMIC_WAIT
+endif
  
 CC 	= g++
 
 ifeq ($(STATIC_LINK), true) 
-	CFLAGS	= -Wall -O3 -msse4 -m64 -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=c++11 -I $(LIBS_DIR) -I $(LIBS_LINUX_DIR) 
-	CLINK	= -lm -static -O3 -msse4 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=c++11 
+	CFLAGS	= -Wall -O3 -msse4 -m64 $(ATOMIC_FLAGS) -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD) -I $(LIBS_DIR) -I $(LIBS_LINUX_DIR) 
+	CLINK	= -lm -static -O3 -msse4 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD)
 else
-	CFLAGS	= -Wall -O3 -msse4 -m64 -std=c++11 -pthread -I $(LIBS_DIR) -I $(LIBS_LINUX_DIR)
-	CLINK	= -lm -O3 -msse4 -std=c++11 -pthread 
+	CFLAGS	= -Wall -O3 -msse4 -m64 $(ATOMIC_FLAGS) -std=$(CPP_STD) -pthread -I $(LIBS_DIR) -I $(LIBS_LINUX_DIR)
+	CLINK	= -lm -O3 -msse4 -std=$(CPP_STD) -pthread 
 endif
  
 CFLAGS_AVX = $(CFLAGS) -mavx ${ABI_FLAG} -mpopcnt -funroll-loops
@@ -40,10 +50,13 @@ COMMON_OBJS := src/msa.o \
 	src/tree/FastTree.o \
 	src/tree/SingleLinkage.o \
 	src/tree/UPGMA.o \
+	src/utils/pooled_threads.o \
 	src/utils/timer.o \
 	src/utils/log.o \
 	src/core/io_service.o \
 	src/core/profile.o \
+	src/core/profile_par.o \
+	src/core/profile_seq.o \
 	src/core/sequence.o \
 	src/core/queues.o 
 	

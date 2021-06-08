@@ -75,7 +75,6 @@ public:
     ~CGappedSequence();
 
 	bool operator==(const CGappedSequence &gs);
-	bool operator!=(const CGappedSequence &gs);
 
 	void InitialiseDPS();
 

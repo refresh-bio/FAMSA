@@ -327,6 +327,7 @@ class CProfile {
 
 	struct dp_row_elem_t {
 		score_t D, H, V;
+//		score_t padding;
 
 		dp_row_elem_t(score_t _D = 0.0, score_t _H = 0.0, score_t _V = 0.0) :
 			D(_D), H(_H), V(_V)
@@ -350,7 +351,7 @@ class CProfile {
 		size_t n_gap_cont_ext, n_gap_cont_term_ext;
 
 		dp_gap_corrections() : n_gap_start_open(0), n_gap_start_ext(0), n_gap_start_term_open(0), n_gap_start_term_ext(0),
-			n_gap_cont_ext(0), n_gap_cont_term_ext()
+			n_gap_cont_ext(0), n_gap_cont_term_ext(0)
 		{};
 	};
 
@@ -369,12 +370,18 @@ class CProfile {
 	void AlignSeqProf(CProfile *profile1, CProfile *profile2, vector<int> *column_mapping1, vector<int> *column_mapping2);
 	void AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int> *column_mapping1, vector<int> *column_mapping2);
 	
-	
-	void ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatrix &matrix, dp_row_elem_t &last_row);
+#ifndef NO_ATOMIC_WAIT
+	// parallel variant of profile alignment
+//	bool CheckAlignInParallel(uint32_t prof1_width, uint32_t prof1_card, uint32_t prof2_width, uint32_t prof2_card, uint32_t& no_threads, uint32_t& no_rows_per_box);
+	void ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t no_threads, uint32_t rows_per_box);
+	void ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t no_threads, uint32_t rows_per_box);
+#endif
+
+	void ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatrix &matrix, dp_row_elem_t &last_row, uint32_t no_threads = 1);
 	
 	void InsertGaps(size_t prof_col_id, CProfile *profile, size_t col_id, size_t n_gap_open, size_t n_gap_ext, size_t n_gap_term_open, size_t n_gap_term_ext, vector<pair<uint32_t, uint32_t>> &v_gaps_prof);
 	void InsertColumn(size_t prof_col_id, CProfile *profile, size_t col_id);
-	void FinalizeGaps(CProfile* profile, vector<pair<uint32_t, uint32_t>>& v_gaps_prof);
+	void FinalizeGaps(CProfile* profile, vector<pair<uint32_t, uint32_t>>& v_gaps_prof, uint32_t no_threads = 1);
 
 	void CalculateCounters(CGappedSequence *gs);
     void CalculateScores();
@@ -396,13 +403,13 @@ public:
 	CProfile(CParams *_params = nullptr);
 	CProfile(const CGappedSequence &gapped_sequence, CParams *_params);
 	CProfile(const CProfile &profile);
-	CProfile(CProfile *profile1, CProfile *profile2, CParams *_params);
+	CProfile(CProfile *profile1, CProfile *profile2, CParams *_params, uint32_t no_threads, uint32_t no_rows_per_box);
 	~CProfile();
 
 	bool operator==(const CProfile &profile);
-	bool operator!=(const CProfile &profile);
+	//bool operator!=(const CProfile &profile);
 
-	void Align(CProfile *profile1, CProfile *profile2, vector<int> *column_mapping1 = nullptr, vector<int> *column_mapping2 = nullptr);
+	void Align(CProfile *profile1, CProfile *profile2, uint32_t no_threads, uint32_t no_rows_per_box, vector<int> *column_mapping1 = nullptr, vector<int> *column_mapping2 = nullptr);
 
 	void AppendRawSequence(const CGappedSequence &gs);
 	bool Condense(vector<int> &column_mapping);

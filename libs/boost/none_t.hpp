@@ -1,5 +1,5 @@
 // Copyright (C) 2003, Fernando Luis Cacciola Carballal.
-// Copyright (C) 2014 Andrzej Krzemienski.
+// Copyright (C) 2014, 2015 Andrzej Krzemienski.
 //
 // Use, modification, and distribution is subject to the Boost Software
 // License, Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
@@ -12,6 +12,8 @@
 //
 #ifndef BOOST_NONE_T_17SEP2003_HPP
 #define BOOST_NONE_T_17SEP2003_HPP
+
+#include <boost/config.hpp>
 
 namespace boost {
 
@@ -29,7 +31,7 @@ class none_t {};
 struct none_t
 {
   struct init_tag{};
-  explicit none_t(init_tag){} // to prevent default constructor
+  explicit BOOST_CONSTEXPR none_t(init_tag){} // to disable default constructor
 };
 
 #endif // old implementation workarounds
@@ -37,4 +39,3 @@ struct none_t
 } // namespace boost
 
 #endif // header guard
-

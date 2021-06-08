@@ -1,6 +1,6 @@
 // Copyright Kevlin Henney, 2000-2005.
 // Copyright Alexander Nasonov, 2006-2010.
-// Copyright Antony Polukhin, 2011-2014.
+// Copyright Antony Polukhin, 2011-2021.
 //
 // Distributed under the Boost Software License, Version 1.0. (See
 // accompanying file LICENSE_1_0.txt or copy at
@@ -13,7 +13,7 @@
 //        Beman Dawes, Dave Abrahams, Daryle Walker, Peter Dimov,
 //        Alexander Nasonov, Antony Polukhin, Justin Viiret, Michael Hofmann,
 //        Cheng Yang, Matthew Bradbury, David W. Birdsall, Pavel Korzh and other Boosters
-// when:  November 2000, March 2003, June 2005, June 2006, March 2011 - 2014
+// when:  November 2000, March 2003, June 2005, June 2006, March 2011 - 2014, Nowember 2016
 
 #ifndef BOOST_LEXICAL_CAST_DETAIL_CONVERTER_LEXICAL_STREAMS_HPP
 #define BOOST_LEXICAL_CAST_DETAIL_CONVERTER_LEXICAL_STREAMS_HPP
@@ -33,11 +33,11 @@
 #include <cstring>
 #include <cstdio>
 #include <boost/limits.hpp>
-#include <boost/mpl/if.hpp>
+#include <boost/type_traits/conditional.hpp>
 #include <boost/type_traits/is_pointer.hpp>
 #include <boost/static_assert.hpp>
+#include <boost/detail/lcast_precision.hpp>
 #include <boost/detail/workaround.hpp>
-
 
 #ifndef BOOST_NO_STD_LOCALE
 #   include <locale>
@@ -107,23 +107,26 @@ namespace boost {
 
     namespace detail
     {
-        struct do_not_construct_out_stream_t{};
-        
+        struct do_not_construct_out_buffer_t{};
+        struct do_not_construct_out_stream_t{
+            do_not_construct_out_stream_t(do_not_construct_out_buffer_t*){}
+        };
+
         template <class CharT, class Traits>
         struct out_stream_helper_trait {
 #if defined(BOOST_NO_STRINGSTREAM)
-            typedef std::ostrstream                                 out_stream_t;
-            typedef void                                            buffer_t;
+            typedef std::ostream                                                    out_stream_t;
+            typedef basic_unlockedbuf<std::strstreambuf, char>                      stringbuffer_t;
 #elif defined(BOOST_NO_STD_LOCALE)
-            typedef std::ostringstream                              out_stream_t;
-            typedef basic_unlockedbuf<std::streambuf, char>         buffer_t;
+            typedef std::ostream                                                    out_stream_t;
+            typedef basic_unlockedbuf<std::stringbuf, char>                         stringbuffer_t;
+            typedef basic_unlockedbuf<std::streambuf, char>                         buffer_t;
 #else
-            typedef std::basic_ostringstream<CharT, Traits> 
-                out_stream_t;
-            typedef basic_unlockedbuf<std::basic_streambuf<CharT, Traits>, CharT>  
-                buffer_t;
+            typedef std::basic_ostream<CharT, Traits>                               out_stream_t;
+            typedef basic_unlockedbuf<std::basic_stringbuf<CharT, Traits>, CharT>   stringbuffer_t;
+            typedef basic_unlockedbuf<std::basic_streambuf<CharT, Traits>, CharT>   buffer_t;
 #endif
-        };   
+        };
     }
 
     namespace detail // optimized stream wrappers
@@ -134,33 +137,35 @@ namespace boost {
                 , std::size_t CharacterBufferSize
                 >
         class lexical_istream_limited_src: boost::noncopyable {
-            typedef BOOST_DEDUCED_TYPENAME out_stream_helper_trait<CharT, Traits>::buffer_t
-                buffer_t;
-
-            typedef BOOST_DEDUCED_TYPENAME out_stream_helper_trait<CharT, Traits>::out_stream_t
-                out_stream_t;
-    
-            typedef BOOST_DEDUCED_TYPENAME boost::mpl::if_c<
+            typedef BOOST_DEDUCED_TYPENAME boost::conditional<
                 RequiresStringbuffer,
-                out_stream_t,
+                BOOST_DEDUCED_TYPENAME out_stream_helper_trait<CharT, Traits>::out_stream_t,
                 do_not_construct_out_stream_t
             >::type deduced_out_stream_t;
 
-            // A string representation of Source is written to `buffer`.
+            typedef BOOST_DEDUCED_TYPENAME boost::conditional<
+                RequiresStringbuffer,
+                BOOST_DEDUCED_TYPENAME out_stream_helper_trait<CharT, Traits>::stringbuffer_t,
+                do_not_construct_out_buffer_t
+            >::type deduced_out_buffer_t;
+
+            deduced_out_buffer_t out_buffer;
             deduced_out_stream_t out_stream;
             CharT   buffer[CharacterBufferSize];
 
             // After the `operator <<`  finishes, `[start, finish)` is
-            // the range to output by `operator >>` 
+            // the range to output by `operator >>`
             const CharT*  start;
             const CharT*  finish;
 
         public:
             lexical_istream_limited_src() BOOST_NOEXCEPT
-              : start(buffer)
+              : out_buffer()
+              , out_stream(&out_buffer)
+              , start(buffer)
               , finish(buffer + CharacterBufferSize)
             {}
-    
+
             const CharT* cbegin() const BOOST_NOEXCEPT {
                 return start;
             }
@@ -170,10 +175,6 @@ namespace boost {
             }
 
         private:
-            // Undefined:
-            lexical_istream_limited_src(lexical_istream_limited_src const&);
-            void operator=(lexical_istream_limited_src const&);
-
 /************************************ HELPER FUNCTIONS FOR OPERATORS << ( ... ) ********************************/
             bool shl_char(CharT ch) BOOST_NOEXCEPT {
                 Traits::assign(buffer[0], ch);
@@ -199,20 +200,20 @@ namespace boost {
             }
 #endif
 
-            bool shl_char_array(CharT const* str) BOOST_NOEXCEPT {
-                start = str;
-                finish = start + Traits::length(str);
+            bool shl_char_array(CharT const* str_value) BOOST_NOEXCEPT {
+                start = str_value;
+                finish = start + Traits::length(str_value);
                 return true;
             }
 
             template <class T>
-            bool shl_char_array(T const* str) {
+            bool shl_char_array(T const* str_value) {
                 BOOST_STATIC_ASSERT_MSG(( sizeof(T) <= sizeof(CharT)),
                     "boost::lexical_cast does not support narrowing of char types."
                     "Use boost::locale instead" );
-                return shl_input_streamable(str);
+                return shl_input_streamable(str_value);
             }
-            
+
             bool shl_char_array_limited(CharT const* str, std::size_t max_size) BOOST_NOEXCEPT {
                 start = str;
                 finish = std::find(start, start + max_size, Traits::to_char_type(0));
@@ -232,8 +233,8 @@ namespace boost {
                 try {
 #endif
                 bool const result = !(out_stream << input).fail();
-                const buffer_t* const p = static_cast<buffer_t*>(
-                    static_cast<std::basic_streambuf<CharT, Traits>*>(out_stream.rdbuf())
+                const deduced_out_buffer_t* const p = static_cast<deduced_out_buffer_t*>(
+                    out_stream.rdbuf()
                 );
                 start = p->pbase();
                 finish = p->pptr();
@@ -281,7 +282,7 @@ namespace boost {
 #if defined(_MSC_VER) && (_MSC_VER >= 1400) && !defined(__SGI_STL_PORT) && !defined(_STLPORT_VERSION)
                     sprintf_s(begin, CharacterBufferSize,
 #else
-                    sprintf(begin, 
+                    sprintf(begin,
 #endif
                     "%.*g", static_cast<int>(boost::detail::lcast_get_precision<float>()), val_as_double);
                 return finish > start;
@@ -293,7 +294,7 @@ namespace boost {
 #if defined(_MSC_VER) && (_MSC_VER >= 1400) && !defined(__SGI_STL_PORT) && !defined(_STLPORT_VERSION)
                     sprintf_s(begin, CharacterBufferSize,
 #else
-                    sprintf(begin, 
+                    sprintf(begin,
 #endif
                     "%.*g", static_cast<int>(boost::detail::lcast_get_precision<double>()), val);
                 return finish > start;
@@ -306,7 +307,7 @@ namespace boost {
 #if defined(_MSC_VER) && (_MSC_VER >= 1400) && !defined(__SGI_STL_PORT) && !defined(_STLPORT_VERSION)
                     sprintf_s(begin, CharacterBufferSize,
 #else
-                    sprintf(begin, 
+                    sprintf(begin,
 #endif
                     "%.*Lg", static_cast<int>(boost::detail::lcast_get_precision<long double>()), val );
                 return finish > start;
@@ -374,15 +375,15 @@ namespace boost {
             }
 
             template <class C>
-            BOOST_DEDUCED_TYPENAME boost::disable_if<boost::is_const<C>, bool>::type 
+            BOOST_DEDUCED_TYPENAME boost::disable_if<boost::is_const<C>, bool>::type
             operator<<(const iterator_range<C*>& rng) BOOST_NOEXCEPT {
                 return (*this) << iterator_range<const C*>(rng.begin(), rng.end());
             }
-            
+
             bool operator<<(const iterator_range<const CharT*>& rng) BOOST_NOEXCEPT {
                 start = rng.begin();
                 finish = rng.end();
-                return true; 
+                return true;
             }
 
             bool operator<<(const iterator_range<const signed char*>& rng) BOOST_NOEXCEPT {
@@ -423,8 +424,8 @@ namespace boost {
             bool operator<<(unsigned char * ch)         { return ((*this) << reinterpret_cast<char *>(ch)); }
             bool operator<<(signed char const* ch)      { return ((*this) << reinterpret_cast<char const*>(ch)); }
             bool operator<<(signed char * ch)           { return ((*this) << reinterpret_cast<char *>(ch)); }
-            bool operator<<(char const* str)            { return shl_char_array(str); }
-            bool operator<<(char* str)                  { return shl_char_array(str); }
+            bool operator<<(char const* str_value)      { return shl_char_array(str_value); }
+            bool operator<<(char* str_value)            { return shl_char_array(str_value); }
             bool operator<<(short n)                    { return shl_signed(n); }
             bool operator<<(int n)                      { return shl_signed(n); }
             bool operator<<(long n)                     { return shl_signed(n); }
@@ -453,43 +454,43 @@ namespace boost {
                 return shl_real(static_cast<double>(val));
 #endif
             }
-            
+
             // Adding constness to characters. Constness does not change layout
             template <class C, std::size_t N>
             BOOST_DEDUCED_TYPENAME boost::disable_if<boost::is_const<C>, bool>::type
-            operator<<(boost::array<C, N> const& input) BOOST_NOEXCEPT { 
+            operator<<(boost::array<C, N> const& input) BOOST_NOEXCEPT {
                 BOOST_STATIC_ASSERT_MSG(
                     (sizeof(boost::array<const C, N>) == sizeof(boost::array<C, N>)),
                     "boost::array<C, N> and boost::array<const C, N> must have exactly the same layout."
                 );
-                return ((*this) << reinterpret_cast<boost::array<const C, N> const& >(input)); 
+                return ((*this) << reinterpret_cast<boost::array<const C, N> const& >(input));
             }
 
             template <std::size_t N>
-            bool operator<<(boost::array<const CharT, N> const& input) BOOST_NOEXCEPT { 
-                return shl_char_array_limited(input.begin(), N); 
+            bool operator<<(boost::array<const CharT, N> const& input) BOOST_NOEXCEPT {
+                return shl_char_array_limited(input.data(), N);
             }
 
             template <std::size_t N>
-            bool operator<<(boost::array<const unsigned char, N> const& input) BOOST_NOEXCEPT { 
-                return ((*this) << reinterpret_cast<boost::array<const char, N> const& >(input)); 
+            bool operator<<(boost::array<const unsigned char, N> const& input) BOOST_NOEXCEPT {
+                return ((*this) << reinterpret_cast<boost::array<const char, N> const& >(input));
             }
 
             template <std::size_t N>
-            bool operator<<(boost::array<const signed char, N> const& input) BOOST_NOEXCEPT { 
-                return ((*this) << reinterpret_cast<boost::array<const char, N> const& >(input)); 
+            bool operator<<(boost::array<const signed char, N> const& input) BOOST_NOEXCEPT {
+                return ((*this) << reinterpret_cast<boost::array<const char, N> const& >(input));
             }
- 
+
 #ifndef BOOST_NO_CXX11_HDR_ARRAY
             // Making a Boost.Array from std::array
             template <class C, std::size_t N>
-            bool operator<<(std::array<C, N> const& input) BOOST_NOEXCEPT { 
+            bool operator<<(std::array<C, N> const& input) BOOST_NOEXCEPT {
                 BOOST_STATIC_ASSERT_MSG(
                     (sizeof(std::array<C, N>) == sizeof(boost::array<C, N>)),
                     "std::array and boost::array must have exactly the same layout. "
                     "Bug in implementation of std::array or boost::array."
                 );
-                return ((*this) << reinterpret_cast<boost::array<C, N> const& >(input)); 
+                return ((*this) << reinterpret_cast<boost::array<C, N> const& >(input));
             }
 #endif
             template <class InStreamable>
@@ -499,7 +500,7 @@ namespace boost {
 
         template <class CharT, class Traits>
         class lexical_ostream_limited_src: boost::noncopyable {
-            //`[start, finish)` is the range to output by `operator >>` 
+            //`[start, finish)` is the range to output by `operator >>`
             const CharT*        start;
             const CharT* const  finish;
 
@@ -573,17 +574,15 @@ namespace boost {
                     "support such conversions. Try updating it."
                 );
 #endif
-                typedef BOOST_DEDUCED_TYPENAME out_stream_helper_trait<CharT, Traits>::buffer_t
-                    buffer_t;
 
 #if defined(BOOST_NO_STRINGSTREAM)
-                std::istrstream stream(start, finish - start);
+                std::istrstream stream(start, static_cast<std::istrstream::streamsize>(finish - start));
 #else
-
+                typedef BOOST_DEDUCED_TYPENAME out_stream_helper_trait<CharT, Traits>::buffer_t buffer_t;
                 buffer_t buf;
-                // Usually `istream` and `basic_istream` do not modify 
+                // Usually `istream` and `basic_istream` do not modify
                 // content of buffer; `buffer_t` assures that this is true
-                buf.setbuf(const_cast<CharT*>(start), finish - start);
+                buf.setbuf(const_cast<CharT*>(start), static_cast<typename buffer_t::streamsize>(finish - start));
 #if defined(BOOST_NO_STD_LOCALE)
                 std::istream stream(&buf);
 #else
@@ -598,7 +597,7 @@ namespace boost {
                 stream.unsetf(std::ios::skipws);
                 lcast_set_precision(stream, static_cast<InputStreamable*>(0));
 
-                return (stream >> output) 
+                return (stream >> output)
                     && (stream.get() == Traits::eof());
 
 #ifndef BOOST_NO_EXCEPTIONS
@@ -626,7 +625,7 @@ namespace boost {
             bool shr_std_array(ArrayT& output) BOOST_NOEXCEPT {
                 using namespace std;
                 const std::size_t size = static_cast<std::size_t>(finish - start);
-                if (size > N - 1) { // `-1` because we need to store \0 at the end 
+                if (size > N - 1) { // `-1` because we need to store \0 at the end
                     return false;
                 }
 
@@ -669,35 +668,35 @@ namespace boost {
             bool operator>>(char32_t& output)                   { return shr_xchar(output); }
 #endif
             template<class Alloc>
-            bool operator>>(std::basic_string<CharT,Traits,Alloc>& str) { 
-                str.assign(start, finish); return true; 
+            bool operator>>(std::basic_string<CharT,Traits,Alloc>& str) {
+                str.assign(start, finish); return true;
             }
 
             template<class Alloc>
-            bool operator>>(boost::container::basic_string<CharT,Traits,Alloc>& str) { 
-                str.assign(start, finish); return true; 
+            bool operator>>(boost::container::basic_string<CharT,Traits,Alloc>& str) {
+                str.assign(start, finish); return true;
             }
 
             template <std::size_t N>
-            bool operator>>(boost::array<CharT, N>& output) BOOST_NOEXCEPT { 
-                return shr_std_array<N>(output); 
+            bool operator>>(boost::array<CharT, N>& output) BOOST_NOEXCEPT {
+                return shr_std_array<N>(output);
             }
 
             template <std::size_t N>
-            bool operator>>(boost::array<unsigned char, N>& output) BOOST_NOEXCEPT { 
-                return ((*this) >> reinterpret_cast<boost::array<char, N>& >(output)); 
+            bool operator>>(boost::array<unsigned char, N>& output) BOOST_NOEXCEPT {
+                return ((*this) >> reinterpret_cast<boost::array<char, N>& >(output));
             }
 
             template <std::size_t N>
-            bool operator>>(boost::array<signed char, N>& output) BOOST_NOEXCEPT { 
-                return ((*this) >> reinterpret_cast<boost::array<char, N>& >(output)); 
+            bool operator>>(boost::array<signed char, N>& output) BOOST_NOEXCEPT {
+                return ((*this) >> reinterpret_cast<boost::array<char, N>& >(output));
             }
- 
+
 #ifndef BOOST_NO_CXX11_HDR_ARRAY
             template <class C, std::size_t N>
-            bool operator>>(std::array<C, N>& output) BOOST_NOEXCEPT { 
+            bool operator>>(std::array<C, N>& output) BOOST_NOEXCEPT {
                 BOOST_STATIC_ASSERT_MSG(
-                    (sizeof(boost::array<C, N>) == sizeof(boost::array<C, N>)),
+                    (sizeof(std::array<C, N>) == sizeof(boost::array<C, N>)),
                     "std::array<C, N> and boost::array<C, N> must have exactly the same layout."
                 );
                 return ((*this) >> reinterpret_cast<boost::array<C, N>& >(output));
@@ -774,8 +773,8 @@ namespace boost {
             // Generic istream-based algorithm.
             // lcast_streambuf_for_target<InputStreamable>::value is true.
             template <typename InputStreamable>
-            bool operator>>(InputStreamable& output) { 
-                return shr_using_base_class(output); 
+            bool operator>>(InputStreamable& output) {
+                return shr_using_base_class(output);
             }
         };
     }

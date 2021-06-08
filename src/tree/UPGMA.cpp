@@ -280,7 +280,7 @@ void UPGMA::computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_structure& t
 	}
 
 	for (int i = 0; i < n_seq - 1; ++i)
-		tree.push_back(make_pair(g_uLeft[i], g_uRight[i]));
+		tree.emplace_back(g_uLeft[i], g_uRight[i]);
 
 	delete[] g_uNodeIndex;
 	delete[] g_uNearestNeighbor;

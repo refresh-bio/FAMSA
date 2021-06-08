@@ -179,7 +179,7 @@ void SingleLinkage::run(std::vector<CSequence>& sequences, tree_structure& tree)
 	{
 		int j = elements[i];
 		next = pi[j];
-		tree.push_back(make_pair(index[j], index[next]));
+		tree.emplace_back(index[j], index[next]);
 		index[next] = n_seq + i;
 	}
 }
@@ -311,7 +311,7 @@ void SingleLinkage::runPartial(std::vector<CSequence*>& sequences, tree_structur
 	{
 		int j = elements[i];
 		next = pi[j];
-		tree.push_back(make_pair(index[j], index[next]));
+		tree.emplace_back(index[j], index[next]);
 		index[next] = n_seq + i;
 	}
 }

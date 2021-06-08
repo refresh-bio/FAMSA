@@ -80,6 +80,15 @@
     <ClCompile Include="tree\FastTree.cpp">
       <Filter>tree</Filter>
     </ClCompile>
+    <ClCompile Include="core\profile_par.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="core\profile_seq.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\pooled_threads.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="msa.h" />
@@ -175,6 +184,9 @@
     </ClInclude>
     <ClInclude Include="tree\FastTree.h">
       <Filter>tree</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\pooled_threads.h">
+      <Filter>utils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

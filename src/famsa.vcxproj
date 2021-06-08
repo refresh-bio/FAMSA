@@ -22,7 +22,7 @@
     <ProjectGuid>{CDAA5F75-7B1B-4E32-82E3-1026DDEAFFC5}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>famsa_cpu</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>famsa</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -35,7 +35,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -48,7 +48,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>NotSet</CharacterSet>
     <UseOfMfc>Static</UseOfMfc>
@@ -104,7 +104,7 @@
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Program Files (x86)\Visual Leak Detector\include;$(ProjectDir)/../libs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/D_HAS_STD_BYTE=0 /D_ENABLE_EXTENDED_ALIGNED_STORAGE %(AdditionalOptions)</AdditionalOptions>
-      <LanguageStandard>stdcpp14</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
     </ClCompile>
     <Link>
@@ -146,7 +146,7 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <AdditionalIncludeDirectories>C:\Program Files (x86)\Visual Leak Detector\include;$(ProjectDir)/../libs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
-      <LanguageStandard>Default</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <AdditionalOptions>/D_HAS_STD_BYTE=0 /D_ENABLE_EXTENDED_ALIGNED_STORAGE %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
@@ -158,6 +158,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="core\profile_par.cpp">
+      <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotSet</EnableEnhancedInstructionSet>
+    </ClCompile>
+    <ClCompile Include="core\profile_seq.cpp" />
     <ClCompile Include="lcs\lcsbp_avx2_intr.cpp">
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">AdvancedVectorExtensions2</EnableEnhancedInstructionSet>
     </ClCompile>
@@ -180,6 +184,7 @@
     <ClCompile Include="core\profile.cpp" />
     <ClCompile Include="core\queues.cpp" />
     <ClCompile Include="core\sequence.cpp" />
+    <ClCompile Include="utils\pooled_threads.cpp" />
     <ClCompile Include="utils\timer.cpp" />
     <ClCompile Include="famsa.cpp" />
     <ClCompile Include="utils\utils.cpp" />
@@ -219,6 +224,7 @@
     <ClInclude Include="core\profile.h" />
     <ClInclude Include="core\queues.h" />
     <ClInclude Include="core\sequence.h" />
+    <ClInclude Include="utils\pooled_threads.h" />
     <ClInclude Include="utils\timer.h" />
     <ClInclude Include="tree\TreeGrammar.h" />
     <ClInclude Include="core\version.h" />

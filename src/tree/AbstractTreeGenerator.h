@@ -32,6 +32,8 @@ class AbstractTreeGenerator {
 public:
 
 	AbstractTreeGenerator(double indel_exp, size_t n_threads);
+
+	virtual ~AbstractTreeGenerator() {}
 	
 	void operator()(std::vector<CSequence>& sequences, tree_structure& tree);
 
