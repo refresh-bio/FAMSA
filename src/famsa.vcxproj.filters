@@ -89,6 +89,9 @@
     <ClCompile Include="utils\pooled_threads.cpp">
       <Filter>utils</Filter>
     </ClCompile>
+    <ClCompile Include="tree\MSTPrim.cpp">
+      <Filter>tree</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="msa.h" />
@@ -187,6 +190,9 @@
     </ClInclude>
     <ClInclude Include="utils\pooled_threads.h">
       <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="tree\MSTPrim.h">
+      <Filter>tree</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

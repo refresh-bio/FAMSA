@@ -36,10 +36,10 @@ public:
 	virtual ~AbstractTreeGenerator() {}
 	
 	void operator()(std::vector<CSequence>& sequences, tree_structure& tree);
-
-	
-	template <class seq_type, class similarity_type, Measure measure>
+		
+	template <class seq_type, class similarity_type, typename Transform>
 	void calculateSimilarityVector(
+		Transform& transform,
 		seq_type& ref,
 		seq_type* sequences,
 		size_t n_seqs,
@@ -55,8 +55,9 @@ public:
 		similarity_type* out_vector,
 		CLCSBP& lcsbp);
 
-	template <class seq_type, class similarity_type, Measure measure>
+	template <class seq_type, class similarity_type, typename Transform>
 	void calculateSimilarityMatrix(
+		Transform& transform,
 		seq_type* sequences,
 		size_t n_seq,
 		similarity_type* out_matrix,

@@ -154,16 +154,16 @@ similarity_type can be:
 	- CSequence,
 	- CSequence*,
 */
-template <class seq_type, class similarity_type, Measure measure>
+template <class seq_type, class similarity_type, typename Transform>
 void AbstractTreeGenerator::calculateSimilarityVector(
-	seq_type& ref, 
+	Transform& transform,
+	seq_type& ref,
 	seq_type* sequences, 
 	size_t n_seqs, 
 	similarity_type* out_vector, 
 	CLCSBP& lcsbp)
 {
 	uint32_t lcs_lens[4];
-	Transform<similarity_type, measure> transform;
 	
 	seq_to_ptr(ref)->ComputeBitMasks();
 
@@ -257,9 +257,10 @@ void AbstractTreeGenerator::calculateSimilarityRange(
 
 
 // *******************************************************************
-template <class seq_type, class similarity_type, Measure measure>
+template <class seq_type, class similarity_type, typename Transform>
 void AbstractTreeGenerator::calculateSimilarityMatrix(
-	seq_type* sequences, 
+	Transform& transform,
+	seq_type* sequences,
 	size_t n_seq, 
 	similarity_type *out_matrix, 
 	CLCSBP& lcsbp) {
@@ -268,7 +269,8 @@ void AbstractTreeGenerator::calculateSimilarityMatrix(
 		
 		size_t row_offset = TriangleMatrix::access(row_id, 0);
 		
-		calculateSimilarityVector<seq_type, similarity_type, measure>(
+		calculateSimilarityVector<seq_type, similarity_type, decltype(transform)>(
+			transform,
 			sequences[row_id],
 			sequences,
 			row_id,

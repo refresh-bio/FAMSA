@@ -9,14 +9,19 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"1.7.0"
-#define FAMSA_DATE		"2021-06-08"
+#define FAMSA_VER		"1.8.0"
+#define FAMSA_DATE		"2021-06-09"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+1.8.0 (2021-06-09)
+- Added MST Prim algorithm for single linkage trees.
+- Changed default single linkage similarity measure (LCS by squared indel).
+
 
 1.7.0 (2021-06-08)
 - Parallel profile construction.

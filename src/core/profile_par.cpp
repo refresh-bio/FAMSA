@@ -6,6 +6,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 */
 
+#ifndef NO_PROFILE_PAR
+
 #include "../core/profile.h"
 #include "../core/sequence.h"
 #include "../core/queues.h"
@@ -19,8 +21,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <future>
 
 
-#ifndef NO_ATOMIC_WAIT
-#include "../utils/pooled_threads.h"
+//#include "../utils/pooled_threads.h"
 
 #define max3(x, y, z)	(max((x), max((y), (z))))
 
@@ -31,9 +32,13 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifdef _MSC_VER
 #include <barrier>
 #else
+#ifdef USE_NATIVE_BARRIERS
+#include <barrier>
+#else
 thread_local size_t __barrier_favorite_hash =
 std::hash<std::thread::id>()(std::this_thread::get_id());
 #include "../libs/atomic_wait/barrier"
+#endif
 #endif
 
 // ****************************************************************************
@@ -542,10 +547,8 @@ void CProfile::ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t 
 }
 
 // ****************************************************************************
-// 
 void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t no_threads, uint32_t rows_per_box)
 {
-#if 1
 	uint32_t no_dp_rows = 3 * rows_per_box;
 
 	size_t prof1_width = profile1->width;
@@ -1008,9 +1011,7 @@ void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t
 
 	// Construct alignment
 	ConstructProfile(profile1, profile2, matrix, dp_rows[prof1_width % no_dp_rows].back(), no_threads);
-#endif
 }
-
 
 #endif
 

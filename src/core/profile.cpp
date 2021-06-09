@@ -223,7 +223,7 @@ void CProfile::CalculateCountersScores()
 	CalculateScores();
 }
 
-#ifndef NO_ATOMIC_WAIT
+#ifndef NO_PROFILE_PAR
 #define USE_PAR_SEQ_PROF
 #define USE_PAR_PROF_PROF
 #endif
@@ -269,7 +269,6 @@ void CProfile::Align(CProfile *profile1, CProfile *profile2, uint32_t no_threads
 	else
 	{
 #ifdef USE_PAR_PROF_PROF
-
 		if (profile1->counters.get_num_of_non_zeros() * profile2->width < profile2->counters.get_num_of_non_zeros() * profile1->width)
 		{
 			if (no_threads > 1)

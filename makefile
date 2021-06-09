@@ -4,7 +4,9 @@ all: famsa
 STATIC_LINK = false
 NO_AVX = false
 NO_AVX2 = false
-USE_CPP20 = true
+
+# Valid values: 5, 6, 7, 8, 9, 10, 11
+GCC_VERSION = 8
 
 ####################
 
@@ -17,14 +19,38 @@ ifeq ($(UNAME_S),Darwin)
 	ABI_FLAG =
 endif
 
-ifeq ($(USE_CPP20), true)
-	NO_ATOMIC_WAIT = false
-	CPP_STD=c++2a
-	ATOMIC_FLAGS = 
-else
-	NO_ATOMIC_WAIT = false
+ifeq ($(GCC_VERSION), 5)
+	CPP_STD=c++11
+	ATOMIC_FLAGS = -DNO_PROFILE_PAR -DOLD_ATOMIC_FLAG
+endif
+ifeq ($(GCC_VERSION), 6)
+	CPP_STD=c++11
+	ATOMIC_FLAGS = -DNO_PROFILE_PAR -DOLD_ATOMIC_FLAG
+endif
+ifeq ($(GCC_VERSION), 7)
 	CPP_STD=c++14
-	ATOMIC_FLAGS = -DNO_ATOMIC_WAIT
+	ATOMIC_FLAGS = -DNO_PROFILE_PAR -DOLD_ATOMIC_FLAG
+endif
+ifeq ($(GCC_VERSION), 8)
+	CPP_STD=c++2a
+	ATOMIC_FLAGS = -DOLD_ATOMIC_FLAG
+endif
+ifeq ($(GCC_VERSION), 9)
+	CPP_STD=c++2a
+	ATOMIC_FLAGS =  -DOLD_ATOMIC_FLAG
+endif
+ifeq ($(GCC_VERSION), 10)
+	CPP_STD=c++2a
+	ATOMIC_FLAGS =
+endif
+ifeq ($(GCC_VERSION), 11)
+	CPP_STD=c++20
+	ATOMIC_FLAGS = 
+endif
+ifeq ($(GCC_VERSION), 12)
+	CPP_STD=c++20
+#	ATOMIC_FLAGS = -DUSE_NATIVE_BARRIERS
+	ATOMIC_FLAGS = 
 endif
  
 CC 	= g++
@@ -40,17 +66,18 @@ endif
 CFLAGS_AVX = $(CFLAGS) -mavx ${ABI_FLAG} -mpopcnt -funroll-loops
 CFLAGS_AVX2 = $(CFLAGS) -mavx2 ${ABI_FLAG} -mpopcnt -funroll-loops
 
+# src/utils/pooled_threads.o
 
 COMMON_OBJS := src/msa.o \
 	src/tree/AbstractTreeGenerator.o \
 	src/tree/Clustering.o \
 	src/tree/GuideTree.o \
+	src/tree/MSTPrim.o \
 	src/tree/NeighborJoining.o \
 	src/tree/NewickParser.o \
 	src/tree/FastTree.o \
 	src/tree/SingleLinkage.o \
 	src/tree/UPGMA.o \
-	src/utils/pooled_threads.o \
 	src/utils/timer.o \
 	src/utils/log.o \
 	src/core/io_service.o \

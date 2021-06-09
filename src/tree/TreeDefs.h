@@ -20,12 +20,13 @@ using tree_structure = std::vector<node_t>;
 // Class representing guide tree method
 class GT {
 public:
-	enum Method { SLINK, UPGMA, UPGMA_modified, NJ, chained, imported };
+	enum Method { SLINK, MST_Prim, UPGMA, UPGMA_modified, NJ, chained, imported };
 	enum Heuristic { None, PartTree, ClusterTree };
 
 	static std::string toString(Method v) {
 		switch (v) {
-		case SLINK:				return "sl (single linkage)";
+		case SLINK:				return "sl (single linkage) - SLINK";
+		case MST_Prim:			return "mp (single linkage) - MST+Prim";
 		case UPGMA:				return "upgma";
 		case UPGMA_modified:	return "upgma_modified";
 		case NJ:				return "nj";
@@ -51,6 +52,7 @@ public:
 
 	static Method fromString(const std::string& name) {
 		if (name == "sl") { return SLINK; }
+		if (name == "mp") { return MST_Prim; }
 		if (name == "upgma") { return UPGMA; }
 		if (name == "upgma_modified") { return UPGMA_modified; }
 		if (name == "nj") { return NJ; }

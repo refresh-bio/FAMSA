@@ -94,8 +94,9 @@ void show_usage(bool expert)
 		<< "  -t <value> - no. of threads, 0 means all available (default: " << execution_params.n_threads << ")\n"
 		<< "  -v - verbose mode, show timing information (default: disabled)\n\n"
 
-		<< "  -gt <sl | upgma | import <file>> - guide tree method (default: sl):\n"
-		<< "      * sl - single linkage\n"
+		<< "  -gt <sl | mp | upgma | import <file>> - guide tree method (default: sl):\n"
+		<< "      * sl - single linkage (SLINK)\n"
+		<< "      * mp - single linkage (MST Prim)\n"
 		<< "      * upgma - UPGMA\n"
 		<< "      * import <file> - imported from a Newick file\n"
 		<< "  -medoidtree - use MedoidTree heuristic for speeding up tree construction (default: disabled)\n"

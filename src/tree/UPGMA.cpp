@@ -53,7 +53,9 @@ void UPGMA::run(std::vector<CSequence>& sequences, tree_structure& tree) {
 void UPGMA::runPartial(std::vector<CSequence*>& sequences, tree_structure& tree) {
 	UPGMA_dist_t* distances = TriangleMatrix::allocate<UPGMA_dist_t>(sequences.size());
 	CLCSBP lcsbp(instruction_set);
-	calculateSimilarityMatrix<CSequence*, UPGMA_dist_t, Measure::DistanceReciprocal>(sequences.data(), sequences.size(), distances, lcsbp);
+
+	Transform< UPGMA_dist_t, Measure::DistanceReciprocal> transform;
+	calculateSimilarityMatrix<CSequence*, UPGMA_dist_t, decltype(transform)>(transform, sequences.data(), sequences.size(), distances, lcsbp);
 	
 	if (is_modified) {
 		computeTree<true>(distances, sequences.size(), tree);
@@ -83,10 +85,12 @@ void UPGMA::computeDistances(std::vector<CSequence>& sequences, UPGMA_dist_t *di
 		int row_id;
 		vector<CSequence> *sequences;
 		UPGMA_dist_t *dist_row;
+		Transform< UPGMA_dist_t, Measure::DistanceReciprocal> transform;
 
 		while (slq.GetTask(row_id, sequences, dist_row))
 		{
-			calculateSimilarityVector<CSequence, UPGMA_dist_t, Measure::DistanceReciprocal>(
+			calculateSimilarityVector<CSequence, UPGMA_dist_t, decltype(transform)>(
+				transform,
 				(*sequences)[row_id],
 				sequences->data(),
 				row_id,

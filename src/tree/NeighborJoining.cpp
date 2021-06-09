@@ -9,7 +9,9 @@
 void NeighborJoining::run(std::vector<CSequence>& sequences, tree_structure& tree) {
 	float* distances = TriangleMatrix::allocate<float>(sequences.size());
 	CLCSBP lcsbp(instruction_set);
-	calculateSimilarityMatrix<CSequence, float, Measure::DistanceReciprocal>(sequences.data(), sequences.size(), distances, lcsbp);
+
+	Transform<float, Measure::DistanceReciprocal> transform;
+	calculateSimilarityMatrix<CSequence, float, decltype(transform)>(transform, sequences.data(), sequences.size(), distances, lcsbp);
 
 	computeTree(distances, sequences.size(), tree);
 
@@ -20,7 +22,9 @@ void NeighborJoining::run(std::vector<CSequence>& sequences, tree_structure& tre
 void NeighborJoining::runPartial(std::vector<CSequence*>& sequences, tree_structure& tree) {
 	float* distances = TriangleMatrix::allocate<float>(sequences.size());
 	CLCSBP lcsbp(instruction_set);
-	calculateSimilarityMatrix<CSequence*, float, Measure::DistanceReciprocal>(sequences.data(), sequences.size(), distances, lcsbp);
+
+	Transform<float, Measure::DistanceReciprocal> transform;
+	calculateSimilarityMatrix<CSequence*, float, decltype(transform)>(transform, sequences.data(), sequences.size(), distances, lcsbp);
 	
 	computeTree(distances, sequences.size(), tree);
 

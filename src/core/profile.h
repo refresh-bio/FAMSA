@@ -370,9 +370,8 @@ class CProfile {
 	void AlignSeqProf(CProfile *profile1, CProfile *profile2, vector<int> *column_mapping1, vector<int> *column_mapping2);
 	void AlignProfProf(CProfile *profile1, CProfile *profile2, vector<int> *column_mapping1, vector<int> *column_mapping2);
 	
-#ifndef NO_ATOMIC_WAIT
+#ifndef NO_PROFILE_PAR
 	// parallel variant of profile alignment
-//	bool CheckAlignInParallel(uint32_t prof1_width, uint32_t prof1_card, uint32_t prof2_width, uint32_t prof2_card, uint32_t& no_threads, uint32_t& no_rows_per_box);
 	void ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t no_threads, uint32_t rows_per_box);
 	void ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t no_threads, uint32_t rows_per_box);
 #endif
@@ -407,7 +406,6 @@ public:
 	~CProfile();
 
 	bool operator==(const CProfile &profile);
-	//bool operator!=(const CProfile &profile);
 
 	void Align(CProfile *profile1, CProfile *profile2, uint32_t no_threads, uint32_t no_rows_per_box, vector<int> *column_mapping1 = nullptr, vector<int> *column_mapping2 = nullptr);
 
@@ -427,6 +425,5 @@ public:
 
 	void Swap(CProfile &profile);
 };
-
 
 #endif

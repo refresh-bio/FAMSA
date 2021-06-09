@@ -10,6 +10,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "./tree/GuideTree.h"
 #include "./tree/SingleLinkage.h"
 #include "./tree/FastTree.h"
+#include "./tree/MSTPrim.h"
 #include "./tree/UPGMA.h"
 #include "./tree/NeighborJoining.h"
 #include "./core/io_service.h"
@@ -614,6 +615,9 @@ bool CFAMSA::ComputeMSA()
 			switch (params.gt_method) {
 			case GT::SLINK:
 				gen = make_shared<SingleLinkage>(params.indel_exp, this->n_threads);
+				break;
+			case GT::MST_Prim:
+				gen = make_shared<MSTPrim>(params.indel_exp, this->n_threads);
 				break;
 			case GT::UPGMA:
 				gen = make_shared<UPGMA>(params.indel_exp, this->n_threads, false);

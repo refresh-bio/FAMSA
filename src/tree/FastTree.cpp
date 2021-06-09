@@ -53,6 +53,7 @@ void FastTree::doStep(std::vector<CSequence*>& sequences, tree_structure& tree)
 {
 	size_t n_seqs = sequences.size();
 	CLCSBP lcsbp(instruction_set);
+	Transform<float, DIST_MEASURE> transform;
 
 	if ((!clustering && n_seqs > subtreeSize) || (clustering && n_seqs > clusteringThreshold)) {
 		
@@ -83,7 +84,7 @@ void FastTree::doStep(std::vector<CSequence*>& sequences, tree_structure& tree)
 		seeds[0] = sequences[seed_ids[0]];
 		for (int k = 1; k < seeds.size(); ++k) {
 			seeds[k] = sequences[seed_ids[k]];
-			calculateSimilarityVector<CSequence*, float, DIST_MEASURE>(seeds[k], sequences.data(), n_seqs, current_row, lcsbp);
+			calculateSimilarityVector<CSequence*, float, decltype(transform)>(transform, seeds[k], sequences.data(), n_seqs, current_row, lcsbp);
 
 			for (size_t j = 0; j < n_seqs; ++j) {
 				if (current_row[j] < dist_row[j]) { 	// use dist_row for storing smallest distances 
@@ -181,8 +182,10 @@ size_t FastTree::randomSeeds(
 	CLCSBP lcsbp(instruction_set);
 	size_t n_seqs = sequences.size();
 
+	Transform<float, DIST_MEASURE> transform;
+
 	// calculate distances 0'th (longest) vs all (first row)
-	calculateSimilarityVector<CSequence*, float, DIST_MEASURE>(sequences[0], sequences.data(), n_seqs, dist_row, lcsbp);
+	calculateSimilarityVector<CSequence*, float, decltype(transform)>(transform, sequences[0], sequences.data(), n_seqs, dist_row, lcsbp);
 
 	std::mt19937 mt;
 	std::iota(randomIds.begin(), randomIds.begin() + n_seqs, 0);
@@ -211,8 +214,10 @@ size_t FastTree::clusterSeeds(
 	CSequence** samples = nullptr;
 	int * sample_ids = nullptr;
 
+	Transform<float, DIST_MEASURE> transform;
+
 	// calculate distances 0'th (longest) vs all (first row)
-	calculateSimilarityVector<CSequence*, float, DIST_MEASURE>(sequences[0], sequences.data(), n_seqs, dist_row, lcsbp);
+	calculateSimilarityVector<CSequence*, float, decltype(transform)>(transform, sequences[0], sequences.data(), n_seqs, dist_row, lcsbp);
 
 	if (n_samples >= sequences.size()) {
 		// use all sequences as a sample - don't need to sample anything
@@ -240,7 +245,7 @@ size_t FastTree::clusterSeeds(
 
 	// calculate distance matrix
 	float* distances = TriangleMatrix::allocate<float>(n_samples);
-	this->calculateSimilarityMatrix<CSequence*, float, DIST_MEASURE>(samples, n_samples, distances, lcsbp);
+	this->calculateSimilarityMatrix<CSequence*, float, decltype(transform)>(transform, samples, n_samples, distances, lcsbp);
 	
 	// perform clustering
 	(*clustering)(distances, n_samples, n_seeds, 1, seed_ids);

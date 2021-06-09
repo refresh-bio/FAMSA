@@ -46,6 +46,8 @@ void SingleLinkage::run(std::vector<CSequence>& sequences, tree_structure& tree)
 		int row_id;
 		vector<CSequence> *sequences;
 		vector<slink_similarity_t> *sim_vector;
+		Transform<double, Measure::SimilarityDefault> transform;
+//		Transform<double, Measure::LCS_sqrt_indel> transform;
 
 		vector<double> loc_sim_vector;
 
@@ -53,7 +55,8 @@ void SingleLinkage::run(std::vector<CSequence>& sequences, tree_structure& tree)
 		{
 			loc_sim_vector.resize(sim_vector->size());
 
-			calculateSimilarityVector<CSequence, double, Measure::SimilarityDefault>(
+			calculateSimilarityVector<CSequence, double, decltype(transform)>(
+				transform,
 				(*sequences)[row_id],
 				sequences->data(),
 				row_id,
@@ -197,6 +200,9 @@ void SingleLinkage::runPartial(std::vector<CSequence*>& sequences, tree_structur
 	vector<slink_similarity_t> lambda(n_seq);
 	vector<slink_similarity_t> sim_vector(n_seq);
 	vector<double> loc_sim_vector(sim_vector.size());
+	
+	Transform<double, Measure::SimilarityDefault> transform;
+//	Transform<double, Measure::LCS_sqrt_indel> transform;
 
 	CLCSBP lcsbp(instruction_set);
 
@@ -216,7 +222,8 @@ void SingleLinkage::runPartial(std::vector<CSequence*>& sequences, tree_structur
 				<< 100.0 * ((double)i * (i + 1) / 2) / ((double)n_seq * (n_seq + 1) / 2) << "\%    (" << i << " of " << n_seq << ")  \r";
 		}
 */
-		calculateSimilarityVector<CSequence*, double, Measure::SimilarityDefault>(
+		calculateSimilarityVector<CSequence*, double, decltype(transform)>(
+			transform,
 			sequences[i],
 			sequences.data(),
 			i,
@@ -315,7 +322,6 @@ void SingleLinkage::runPartial(std::vector<CSequence*>& sequences, tree_structur
 		index[next] = n_seq + i;
 	}
 }
-
 
 // *******************************************************************
 // CSingleLinkageQueue
