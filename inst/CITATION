@@ -1,0 +1,19 @@
+citHeader("To cite package 'famsa' in publications use:")
+
+citEntry(entry="Article",
+         title = "FAMSA: Fast and accurate multiple sequence alignment of huge protein families.",
+         author = personList(as.person("Sebastian Deorowicz"),
+                             as.person("Agnieszka Debudaj-Grabysz"),
+                             as.person("Adam Gudyś")),
+         journal="Scientific Reports",
+         volume="6",
+         #number="33964",
+         #pages="33964",
+         year="2016",
+         doi="10.1038/srep33964",
+         textVersion =
+             paste("Deorowicz, S., Debudaj-Grabysz, A. & Gudyś, A.",
+                   "FAMSA: Fast and accurate multiple sequence alignment of huge protein families.",
+                   "Sci Rep 6, 33964 (2016).",
+                   "https://doi.org/10.1038/srep33964.")
+)

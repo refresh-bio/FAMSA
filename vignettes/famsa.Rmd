@@ -1,0 +1,47 @@
+---
+title: "famsa-vignette"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{famsa-vignette}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+### Setup
+First, we must load the `famsa` package into our current `R` session:
+
+```{r setup}
+library(famsa)
+library(Biostrings)
+```
+
+## Usage
+
+### The simpliest call to the `famsa` function:
+Note that umax is a stringset -- available on start (to be moved to examples...).\
+The returned object will be of type `XMultipleAlignment` (eg. `DNA`, `AA` or `RNAMultipleAlignment`).
+ 
+```{r, warning = TRUE, error = TRUE, message = TRUE}
+famsa(stringset=umax)
+```
+
+### Setting output type to a Distance Matrix
+The type of the returned object will be of a simple data.matrix representing a distance matrix.
+```{r}
+famsa(stringset=umax, distance_matrix = TRUE)
+```
+
+## Setting output type to a phylogenetic tree
+The type of the returned object will be of a phylogenetic tree in a Newick format.
+Here it's plotted for better visualisation
+```{r, fig.show='hold'}
+plot(famsa(stringset=umax, tree = TRUE))
+plot(famsa(stringset=umax, tree = TRUE, advanced_settings="-gt upgma"))
+```

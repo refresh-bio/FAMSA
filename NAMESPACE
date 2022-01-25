@@ -1,2 +1,2 @@
-exportPattern("^[[:alpha:]]+")
+exportPattern(famsa)
     useDynLib(famsa, .registration = TRUE, .fixes = ".")

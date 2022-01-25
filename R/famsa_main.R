@@ -1,3 +1,4 @@
+#' @export
 famsa <- function(stringset = NULL, help = FALSE, verbose = FALSE,
                   very_verbose = FALSE, tree = FALSE, distance_matrix = FALSE, advanced_settings = "") {
   # stringset is an object of class 'XStringSet': DNAStringSet, RNAStringSet, or AAStringSet.
@@ -48,7 +49,7 @@ famsa <- function(stringset = NULL, help = FALSE, verbose = FALSE,
     }
 
     tempIn <- tempfile(fileext = ".fasta")
-    writeXStringSet(stringset, filepath = tempIn, format = "fasta")
+    Biostrings::writeXStringSet(stringset, filepath = tempIn, format = "fasta")
 
     # argv <- append(argv,c("famsa", "-gt_export", tempIn, tempOut))
     # argv <- append(argv,c("famsa", "-dist_export", tempIn, tempOut))
@@ -68,9 +69,9 @@ famsa <- function(stringset = NULL, help = FALSE, verbose = FALSE,
   if (!tree && !distance_matrix) {
     ret <- switch(
             class(stringset),
-            AAStringSet = readAAStringSet(tempOut, format = "fasta"),
-            DNAStringSet = readDNAStringSet(tempOut, format = "fasta"),
-            RNAStringSet = readRNAStringSet(tempOut, format = "fasta")
+            AAStringSet = Biostrings::readAAStringSet(tempOut, format = "fasta"),
+            DNAStringSet = Biostrings::readDNAStringSet(tempOut, format = "fasta"),
+            RNAStringSet = Biostrings::readRNAStringSet(tempOut, format = "fasta")
         )
 
     # Re-order and re-name output (alphabetical).
@@ -79,13 +80,13 @@ famsa <- function(stringset = NULL, help = FALSE, verbose = FALSE,
 
     ret <- switch(
             class(stringset),
-            AAStringSet = AAMultipleAlignment(ret),
-            DNAStringSet = DNAMultipleAlignment(ret),
-            RNAStringSet = RNAMultipleAlignment(ret)
+            AAStringSet = Biostrings::AAMultipleAlignment(ret),
+            DNAStringSet = Biostrings::DNAMultipleAlignment(ret),
+            RNAStringSet = Biostrings::RNAMultipleAlignment(ret)
         )
 
   } else if (tree) {
-    ret <- read.newick(tempOut)
+    ret <- phytools::read.newick(tempOut)
   } else {
     ret <- as.dist(
       data.matrix(

@@ -1,23 +1,36 @@
 Package: famsa
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Fast and accurate multiple sequence alignment of huge protein families
 Version: 0.1.0
-Author: Who wrote it
-Maintainer: The package maintainer <yourself@somewhere.net>
-Description: More about what it does (maybe more than one line)
-    Use four spaces when indenting paragraphs within the Description.
-License: What license is it under?
+Author: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz & Adam Gudyś 
+Maintainer: Hubert Przegendza <hp.przegendza@gmail.com>
+Description: Algorithm for large-scale multiple sequence alignments
+    (400k proteins in 2 hours and 8BG of RAM)
+    Its implementation is highly optimized and parallelized 
+    to make the most of modern computer platforms.
+    FAMSA has the ability to import/export alignment 
+    guide trees in Newick format. 
+URL: http://sun.aei.polsl.pl/REFRESH/index.php?page=projects&project=famsa&subpage=about
+BugReports: https://github.com/BebokBebop/FAMSA //to be moved to refresh-bio
+License: GPLv3
 Encoding: UTF-8
-Depends: 
+Copyright: if boost -- See file inst/COPYRIGHT 
+Depends:
+    R (>= 2.10)
+Imports:
+    BH (>= 1.75), 
     Biostrings,
-    R (>= 2.10),
-    treeio
-Imports: 
-    Rcpp (>= 1.0.5),
-    BH,
-    treeio
-LinkingTo: Rcpp, BH, treeio
-SystemRequirements: C++11
+    phytools
+LinkingTo: BH
+SystemRequirements: C++11, GNU make
 LazyLoad: true
 LazyData: true
+biocViews: MultipleSequenceAlignment, Alignment, MultipleComparison,
+        Sequencing, Phylogenetics
+BiocType: Software
 NeedsCompilation: true
+Suggests: 
+    rmarkdown,
+    knitr
+VignetteBuilder: knitr
+RoxygenNote: 7.1.2
