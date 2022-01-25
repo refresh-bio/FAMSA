@@ -3,7 +3,7 @@ Type: Package
 Title: Fast and accurate multiple sequence alignment of huge protein families
 Version: 0.1.0
 Author: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz & Adam Gudyś 
-Maintainer: Hubert Przegendza <hp.przegendza@gmail.com>
+Maintainer: -
 Description: Algorithm for large-scale multiple sequence alignments
     (400k proteins in 2 hours and 8BG of RAM)
     Its implementation is highly optimized and parallelized 
@@ -11,7 +11,7 @@ Description: Algorithm for large-scale multiple sequence alignments
     FAMSA has the ability to import/export alignment 
     guide trees in Newick format. 
 URL: http://sun.aei.polsl.pl/REFRESH/index.php?page=projects&project=famsa&subpage=about
-BugReports: https://github.com/BebokBebop/FAMSA //to be moved to refresh-bio
+BugReports: https://github.com/hprzegendza/FAMSA //to be moved to refresh-bio
 License: GPLv3
 Encoding: UTF-8
 Copyright: if boost -- See file inst/COPYRIGHT 
