@@ -23,18 +23,12 @@ class CUPGMAQueue
 {
 	std::vector<CSequence> *sequences;
 
-	std::vector<std::pair<int, bool>> ready_rows;
-	std::stack<int, std::vector<int>> available_buffers;
-
 	uint32_t lowest_uncomputed_row;
 	uint32_t n_rows;
-	uint32_t max_buffered_rows;
 	UPGMA_dist_t *dist_matrix;
-
 	bool eoq_flag;
-
 	std::mutex mtx;
-	std::condition_variable cv_tasks, cv_rows;
+	
 
 public:
 	CUPGMAQueue(std::vector<CSequence> *_sequences, uint32_t _n_rows, UPGMA_dist_t *_dist_matrix);
@@ -57,8 +51,6 @@ public:
 
 	template <bool is_modified>
 	void computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_structure& tree);
-
-	bool saveDistances(const std::string& file_name, std::vector<CSequence>& sequences);
 
 protected:
 	const UPGMA_dist_t BIG_DIST = (UPGMA_dist_t) 1e29;

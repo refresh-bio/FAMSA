@@ -48,6 +48,8 @@ Options:
 * `-medoid_threshold <n_seqs>` - if specified, medoid trees are used only for sets with `n_seqs` or more
 * `-gt_export` - export a guide tree to output file in the Newick format
 * `-dist_export` - export a distance matrix to output file in CSV format
+* `-square_matrix` - generate a square distance matrix instead of a default triangle
+* `-pid` - generate percent identity instead of distance
 
 Advanced options:
 * `-r <value>` - no. of refinement iterations (default: 100)

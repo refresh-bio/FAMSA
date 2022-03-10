@@ -50,6 +50,8 @@ struct CParams
 	string guide_tree_in_file;
 	bool export_distances;
 	bool export_tree;
+	bool generate_square_matrix;
+	bool calculate_pid;
 	
 	bool test_ref_sequences;
 	string ref_file_name;
@@ -101,6 +103,8 @@ struct CParams
 		heuristic_threshold = 0;
 		export_tree = false;
 		export_distances = false;
+		generate_square_matrix = false;
+		calculate_pid = false;
 		subtree_size = 50;
 		sample_size = 500;
 

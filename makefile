@@ -71,11 +71,12 @@ CFLAGS_AVX2 = $(CFLAGS) -mavx2 ${ABI_FLAG} -mpopcnt -funroll-loops
 COMMON_OBJS := src/msa.o \
 	src/tree/AbstractTreeGenerator.o \
 	src/tree/Clustering.o \
+	src/tree/DistanceCalculator.o \
+	src/tree/FastTree.o \
 	src/tree/GuideTree.o \
 	src/tree/MSTPrim.o \
 	src/tree/NeighborJoining.o \
 	src/tree/NewickParser.o \
-	src/tree/FastTree.o \
 	src/tree/SingleLinkage.o \
 	src/tree/UPGMA.o \
 	src/utils/timer.o \

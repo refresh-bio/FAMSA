@@ -150,7 +150,7 @@ struct Transform<T, Measure::DistanceLCSByLengthCorrected> {
 
 // *******************************************************************
 /*
-similarity_type can be:
+	seq_type can be:
 	- CSequence,
 	- CSequence*,
 */
@@ -202,7 +202,7 @@ void AbstractTreeGenerator::calculateSimilarityVector(
 
 // *******************************************************************
 /*
-similarity_type can be:
+	seq_type can be:
 	- CSequence,
 	- CSequence*,
 */

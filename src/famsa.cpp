@@ -50,6 +50,8 @@ typedef struct {
 	string guide_tree_in_file;
 	bool export_distances;
 	bool export_tree;
+	bool generate_square_matrix;
+	bool calculate_pid;
 	double indel_exp;
 
 	bool test_ref_sequenes;
@@ -100,10 +102,12 @@ void show_usage(bool expert)
 		<< "      * upgma - UPGMA\n"
 		<< "      * import <file> - imported from a Newick file\n"
 		<< "  -medoidtree - use MedoidTree heuristic for speeding up tree construction (default: disabled)\n"
-	//	<< "  -parttree - use PartTree heuristic for speeding up tree construction (default: disabled)\n"
+		//	<< "  -parttree - use PartTree heuristic for speeding up tree construction (default: disabled)\n"
 		<< "  -medoid_threshold <n_seqs> - if specified, medoid trees are used only for sets with <n_seqs> or more\n"
 		<< "  -gt_export - export a guide tree to output file in Newick format\n"
-		<< "  -dist_export - export a distance matrix to output file in CSV format\n\n";
+		<< "  -dist_export - export a distance matrix to output file in CSV format\n"
+		<< "  -square_matrix - generate a square distance matrix instead of a default triangle\n"
+		<< "  -pid - generate percent identity instead of distance\n\n";
 
 	if (expert) {
 		cerr << "Advanced options:\n"
@@ -161,6 +165,8 @@ void init_params()
 	execution_params.guide_tree_in_file				= "";
 	execution_params.export_tree					= false;
 	execution_params.export_distances				= false;
+	execution_params.generate_square_matrix			= false;
+	execution_params.calculate_pid					= false;
 
 	execution_params.test_ref_sequenes				= false;
 	execution_params.ref_file_name					= "";
@@ -264,6 +270,12 @@ bool parse_params(int argc, char **argv, bool& showExpert)
 		else if (cur_par == "-dist_export") {
 			execution_params.export_distances = true;
 		}
+		else if (cur_par == "-square_matrix") {
+			execution_params.generate_square_matrix = true;
+		}
+		else if (cur_par == "-pid") {
+			execution_params.calculate_pid = true;
+		}
 #ifdef DEVELOPER_MODE
 		else if (cur_par == "-shuffle") {
 			execution_params.shuffle = atoi(argv[argno++]);
@@ -330,6 +342,8 @@ void set_famsa_params(CParams &famsa_params)
 	famsa_params.guide_tree_in_file				= execution_params.guide_tree_in_file;
 	famsa_params.export_tree					= execution_params.export_tree;
 	famsa_params.export_distances				= execution_params.export_distances;
+	famsa_params.generate_square_matrix			= execution_params.generate_square_matrix;
+	famsa_params.calculate_pid					= execution_params.calculate_pid;
 	famsa_params.output_file_name				= execution_params.output_file_name;
 
 	famsa_params.test_ref_sequences				= execution_params.test_ref_sequenes;
@@ -341,7 +355,7 @@ void set_famsa_params(CParams &famsa_params)
 // ****************************************************************************
 int main(int argc, char *argv[])
 {
-	cerr << "FAMSA (Fast and Accurate Multiple Sequence Alignment) ver. " << FAMSA_VER << " CPU\n"
+	cerr << "FAMSA (Fast and Accurate Multiple Sequence Alignment) ver. " << FAMSA_VER << "\n"
 		<< "  by " << FAMSA_AUTHORS << " (" << FAMSA_DATE << ")\n\n";
 	
 	bool showExpert = 0;

@@ -92,6 +92,9 @@
     <ClCompile Include="tree\MSTPrim.cpp">
       <Filter>tree</Filter>
     </ClCompile>
+    <ClCompile Include="tree\DistanceCalculator.cpp">
+      <Filter>tree</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="msa.h" />
@@ -192,6 +195,15 @@
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="tree\MSTPrim.h">
+      <Filter>tree</Filter>
+    </ClInclude>
+    <ClInclude Include="tree\DistanceCalculator.h">
+      <Filter>tree</Filter>
+    </ClInclude>
+    <ClInclude Include="utils\conversion.h">
+      <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="tree\SingleLinkageQueue.h">
       <Filter>tree</Filter>
     </ClInclude>
   </ItemGroup>

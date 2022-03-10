@@ -51,7 +51,7 @@
     <PlatformToolset>v142</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>NotSet</CharacterSet>
-    <UseOfMfc>Static</UseOfMfc>
+    <UseOfMfc>false</UseOfMfc>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -170,6 +170,7 @@
     </ClCompile>
     <ClCompile Include="tree\AbstractTreeGenerator.cpp" />
     <ClCompile Include="tree\Clustering.cpp" />
+    <ClCompile Include="tree\DistanceCalculator.cpp" />
     <ClCompile Include="tree\GuideTree.cpp" />
     <ClCompile Include="core\io_service.cpp" />
     <ClCompile Include="lcs\lcsbp.cpp" />
@@ -202,11 +203,13 @@
     <ClInclude Include="tree\AbstractTreeGenerator.h" />
     <ClInclude Include="tree\Chained.h" />
     <ClInclude Include="tree\Clustering.h" />
+    <ClInclude Include="tree\DistanceCalculator.h" />
     <ClInclude Include="tree\IPartialGenerator.h" />
     <ClInclude Include="tree\MSTPrim.h" />
     <ClInclude Include="tree\NeighborJoining.h" />
     <ClInclude Include="tree\FastTree.h" />
     <ClInclude Include="tree\SingleLinkage.h" />
+    <ClInclude Include="tree\SingleLinkageQueue.h" />
     <ClInclude Include="tree\UPGMA.h" />
     <ClInclude Include="utils\array.h" />
     <ClInclude Include="core\defs.h" />
@@ -216,6 +219,7 @@
     <ClInclude Include="core\io_service.h" />
     <ClInclude Include="lcs\lcsbp.h" />
     <ClInclude Include="lcs\lcsbp_classic.h" />
+    <ClInclude Include="utils\conversion.h" />
     <ClInclude Include="utils\cpuid.h" />
     <ClInclude Include="utils\deterministic_random.h" />
     <ClInclude Include="utils\log.h" />

@@ -79,6 +79,26 @@ jobs:
       run: |
         ./famsa -gt import medoid-upgma.dnd ${INPUT} medoid-upgma.fasta
         cmp medoid-upgma.fasta ${REF_DIR}/medoid-upgma.fasta
+        
+    - name: export distance
+      run: |
+        ./famsa -dist_export ${INPUT} dist.csv
+        cmp dist.csv ${REF_DIR}/dist.csv
+        
+    - name: export distance (square)
+      run: |
+        ./famsa -dist_export -square_matrix ${INPUT} dist_sq.csv
+        cmp dist_sq.csv ${REF_DIR}/dist_sq.csv
+        
+    - name: export pid
+      run: |
+        ./famsa -dist_export -pid ${INPUT} pid.csv
+        cmp pid.csv ${REF_DIR}/pid.csv
+        
+    - name: export pid (square)
+      run: |
+        ./famsa -dist_export -square_matrix -pid ${INPUT} pid_sq.csv
+        cmp pid_sq.csv ${REF_DIR}/pid_sq.csv
       
   macos-build:
     name: macOS test

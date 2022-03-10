@@ -11,10 +11,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "IPartialGenerator.h"
 
 #include <vector>
-#include <stack>
 #include <utility>
-#include <mutex>
-#include <condition_variable>
+
 
 #define SLINK_HANDLE_TIES
 
@@ -23,36 +21,6 @@ using slink_similarity_t = pair<double, uint64_t>;
 #else
 using slink_similarity_t = double;
 #endif
-
-class CSingleLinkageQueue
-{
-	std::vector<CSequence> *sequences;
-
-	std::vector<std::vector<slink_similarity_t>> sim_vector_2d;
-	//	vector<vector<uint32_t>> lcs_len_2d;
-
-	std::vector<std::pair<int, bool>> ready_rows;
-	std::stack<int, std::vector<int>> available_buffers;
-
-	uint32_t lowest_uncomputed_row;
-	uint32_t n_rows;
-	uint32_t max_buffered_rows;
-
-	bool eoq_flag;
-
-	std::mutex mtx;
-	std::condition_variable cv_tasks, cv_rows;
-
-public:
-	CSingleLinkageQueue(vector<CSequence> *_sequences, uint32_t _n_rows, uint32_t _max_buffered_rows);
-	~CSingleLinkageQueue();
-
-	bool GetTask(int &row_id, vector<CSequence> *&_sequences, vector<slink_similarity_t> *&sim_vector);
-	void RegisterSolution(int row_id);
-	bool GetSolution(int row_id, vector<slink_similarity_t> *&sim_vector);
-	void ReleaseSolution(int row_id);
-};
-
 
 
 class SingleLinkage : public AbstractTreeGenerator, public IPartialGenerator {

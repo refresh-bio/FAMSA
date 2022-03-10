@@ -13,6 +13,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "./tree/MSTPrim.h"
 #include "./tree/UPGMA.h"
 #include "./tree/NeighborJoining.h"
+#include "./tree/DistanceCalculator.h"
 #include "./core/io_service.h"
 #include "./utils/log.h"
 
@@ -574,8 +575,10 @@ bool CFAMSA::ComputeMSA()
 	// store distance matrix
 	if (params.export_distances) {
 		LOG_VERBOSE << "Calculating distances and storing in: " << params.output_file_name;
-		UPGMA upgma(params.indel_exp, this->n_threads, false);
-		upgma.saveDistances(params.output_file_name, sequences);
+		DistanceCalculator calculator(params.indel_exp, this->n_threads, 
+			params.output_file_name, params.generate_square_matrix, params.calculate_pid);
+		tree_structure tree;
+		calculator(sequences, tree);
 		LOG_VERBOSE << " [OK]" << endl;
 		goOn = false; // break processing at this point
 	}
