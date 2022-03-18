@@ -5,19 +5,20 @@ STATIC_LINK = false
 NO_AVX = false
 NO_AVX2 = false
 
-# Valid values: 5, 6, 7, 8, 9, 10, 11
-#GCC_VERSION = 8
-GCC_VERSION = $(shell $(CXX) -dumpversion | cut -f1 -d.)
+
 
 ####################
 
 LIBS_DIR = libs
 LIBS_LINUX_DIR = libs-linux
-ABI_FLAG = -fabi-version=0 
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
+	GCC_VERSION=8
 	ABI_FLAG =
+else
+	GCC_VERSION = $(shell $(CXX) -dumpversion | cut -f1 -d.)
+	ABI_FLAG = -fabi-version=0 
 endif
 
 
