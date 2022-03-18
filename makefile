@@ -6,7 +6,8 @@ NO_AVX = false
 NO_AVX2 = false
 
 # Valid values: 5, 6, 7, 8, 9, 10, 11
-GCC_VERSION = 8
+#GCC_VERSION = 8
+GCC_VERSION = $(shell $(CXX) -dumpversion | cut -f1 -d.)
 
 ####################
 
@@ -19,42 +20,49 @@ ifeq ($(UNAME_S),Darwin)
 	ABI_FLAG =
 endif
 
+
 ifeq ($(GCC_VERSION), 5)
+$(info *** Detecting g++ version 5 ***)
 	CPP_STD=c++11
 	ATOMIC_FLAGS = -DNO_PROFILE_PAR -DOLD_ATOMIC_FLAG
 endif
 ifeq ($(GCC_VERSION), 6)
+$(info *** Detecting g++ version 6 ***)
 	CPP_STD=c++11
 	ATOMIC_FLAGS = -DNO_PROFILE_PAR -DOLD_ATOMIC_FLAG
 endif
 ifeq ($(GCC_VERSION), 7)
+$(info *** Detecting g++ version 7 ***)
 	CPP_STD=c++14
 	ATOMIC_FLAGS = -DNO_PROFILE_PAR -DOLD_ATOMIC_FLAG
 endif
 ifeq ($(GCC_VERSION), 8)
+$(info *** Detecting g++ version 8 ***)
 	CPP_STD=c++2a
 	ATOMIC_FLAGS = -DOLD_ATOMIC_FLAG
 endif
 ifeq ($(GCC_VERSION), 9)
+$(info *** Detecting g++ version 9 ***)
 	CPP_STD=c++2a
 	ATOMIC_FLAGS =  -DOLD_ATOMIC_FLAG
 endif
 ifeq ($(GCC_VERSION), 10)
+$(info *** Detecting g++ version 10 ***)
 	CPP_STD=c++2a
-	ATOMIC_FLAGS =
+	ATOMIC_FLAGS = -DOLD_ATOMIC_FLAG
 endif
 ifeq ($(GCC_VERSION), 11)
+$(info *** Detecting g++ version 11 ***)
 	CPP_STD=c++20
 	ATOMIC_FLAGS = 
 endif
 ifeq ($(GCC_VERSION), 12)
+$(info *** Detecting g++ version 12 ***)
 	CPP_STD=c++20
 #	ATOMIC_FLAGS = -DUSE_NATIVE_BARRIERS
 	ATOMIC_FLAGS = 
 endif
  
-CC 	= g++
-
 ifeq ($(STATIC_LINK), true) 
 	CFLAGS	= -Wall -O3 -msse4 -m64 $(ATOMIC_FLAGS) -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD) -I $(LIBS_DIR) -I $(LIBS_LINUX_DIR) 
 	CLINK	= -lm -static -O3 -msse4 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD)
@@ -89,7 +97,7 @@ COMMON_OBJS := src/msa.o \
 	src/core/queues.o 
 	
 src/lcs/lcsbp_classic.o : src/lcs/lcsbp_classic.cpp
-	$(CC) $(CFLAGS) -c src/lcs/lcsbp_classic.cpp -o $@
+	$(CXX) $(CFLAGS) -c src/lcs/lcsbp_classic.cpp -o $@
 
 ifeq ($(NO_AVX), true) 
 LCS_OBJS := src/lcs/lcsbp.o \
@@ -98,9 +106,9 @@ UTILS_OBJS := src/utils/utils.o \
 	src/utils/utils.o
 
 src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
-	$(CC) $(CFLAGS) -DNO_AVX -c src/lcs/lcsbp.cpp -o $@
+	$(CXX) $(CFLAGS) -DNO_AVX -c src/lcs/lcsbp.cpp -o $@
 src/utils/utils.o : src/utils/utils.cpp
-	$(CC) $(CFLAGS) -DNO_AVX -c src/utils/utils.cpp -o $@
+	$(CXX) $(CFLAGS) -DNO_AVX -c src/utils/utils.cpp -o $@
 
 else 
 ifeq ($(NO_AVX2), true)
@@ -112,14 +120,14 @@ UTILS_OBJS := src/utils/utils.o \
 	src/utils/utils_avx.o 
 
 src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
-	$(CC) $(CFLAGS) -DNO_AVX2 -c src/lcs/lcsbp.cpp -o $@
+	$(CXX) $(CFLAGS) -DNO_AVX2 -c src/lcs/lcsbp.cpp -o $@
 src/lcs/lcsbp_avx_intr.o : src/lcs/lcsbp_avx_intr.cpp
-	$(CC) $(CFLAGS_AVX) -c src/lcs/lcsbp_avx_intr.cpp -o $@
+	$(CXX) $(CFLAGS_AVX) -c src/lcs/lcsbp_avx_intr.cpp -o $@
 
 src/utils/utils.o : src/utils/utils.cpp
-	$(CC) $(CFLAGS_AVX) -c src/utils/utils.cpp -o $@
+	$(CXX) $(CFLAGS_AVX) -c src/utils/utils.cpp -o $@
 src/utils/utils_avx.o : src/utils/utils_avx.cpp
-	$(CC) $(CFLAGS_AVX) -c src/utils/utils_avx.cpp -o $@
+	$(CXX) $(CFLAGS_AVX) -c src/utils/utils_avx.cpp -o $@
 else
 LCS_OBJS := src/lcs/lcsbp.o \
 	src/lcs/lcsbp_classic.o \
@@ -131,26 +139,26 @@ UTILS_OBJS := src/utils/utils.o \
 	src/utils/utils_avx2.o
 
 src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
-	$(CC) $(CFLAGS) -c src/lcs/lcsbp.cpp -o $@
+	$(CXX) $(CFLAGS) -c src/lcs/lcsbp.cpp -o $@
 src/lcs/lcsbp_avx_intr.o : src/lcs/lcsbp_avx_intr.cpp
-	$(CC) $(CFLAGS_AVX) -c src/lcs/lcsbp_avx_intr.cpp -o $@
+	$(CXX) $(CFLAGS_AVX) -c src/lcs/lcsbp_avx_intr.cpp -o $@
 src/lcs/lcsbp_avx2_intr.o : src/lcs/lcsbp_avx2_intr.cpp
-	$(CC) $(CFLAGS_AVX2) -c src/lcs/lcsbp_avx2_intr.cpp -o $@
+	$(CXX) $(CFLAGS_AVX2) -c src/lcs/lcsbp_avx2_intr.cpp -o $@
 
 src/utils/utils.o : src/utils/utils.cpp
-	$(CC) $(CFLAGS) -c src/utils/utils.cpp -o $@
+	$(CXX) $(CFLAGS) -c src/utils/utils.cpp -o $@
 src/utils/utils_avx.o : src/utils/utils_avx.cpp
-	$(CC) $(CFLAGS_AVX) -c src/utils/utils_avx.cpp -o $@
+	$(CXX) $(CFLAGS_AVX) -c src/utils/utils_avx.cpp -o $@
 src/utils/utils_avx2.o : src/utils/utils_avx2.cpp
-	$(CC) $(CFLAGS_AVX2) -c src/utils/utils_avx2.cpp -o $@
+	$(CXX) $(CFLAGS_AVX2) -c src/utils/utils_avx2.cpp -o $@
 endif
 endif
 
 .cpp.o:
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CXX) $(CFLAGS) -c $< -o $@
 
 famsa: src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS)
-	$(CC) $(CLINK) -o $@ src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS)
+	$(CXX) $(CLINK) -o $@ src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS)
 
 clean:
 	-rm src/core/*.o

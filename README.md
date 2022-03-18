@@ -2,27 +2,34 @@
 
 [![GitHub downloads](https://img.shields.io/github/downloads/refresh-bio/famsa/total.svg?style=flag&label=GitHub%20downloads)](https://github.com/refresh-bio/FAMSA/releases)
 [![Bioconda downloads](https://img.shields.io/conda/dn/bioconda/famsa.svg?style=flag&label=Bioconda%20downloads)](https://anaconda.org/bioconda/famsa)
-[![C/C++ CI](https://github.com/refresh-bio/FAMSA-dev/workflows/C/C++%20CI/badge.svg)](https://github.com/refresh-bio/FAMSA-dev/actions)
+[![GitHub Actions CI](../../actions/workflows/main.yml/badge.svg)](../../actions/workflows/main.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-Algorithm for large-scale multiple sequence alignments (400k proteins in 2 hours and 8BG of RAM)
+Algorithm for large-scale multiple sequence alignments (400k proteins in 2 hours and 8GB of RAM)
 
 
 ## Installation and configuration
 
-FAMSA comes with a set of precompiled binaries for Windows, Linux, and OS X. They can be found under Releases tab. 
-Starting from 1.5.0 version there is no support of GPU in FAMSA. Use one of the previous releases if you need that feature.
-
-The software can be also built from the sources distributed as:
+FAMSA comes with a set of [precompiled binaries](https://github.com/refresh-bio/FAMSA/releases) for Windows, Linux, and OS X. They can be found under Releases tab. 
+The software is also available on [Bioconda](https://anaconda.org/bioconda/famsa):
+```
+conda install -c bioconda famsa
+```
+For detailed instructions how to set up Bioconda, please refer to the [Bioconda manual](https://bioconda.github.io/user/install.html#install-conda).
+FAMSA can be also built from the sources distributed as:
 
 * Visual Studio 2015 solution for Windows,
-* MAKE project (G++ 4.8 required) for Linux and OS X.
+* MAKE project (G++ 5 required) for Linux and OS X.
 
 At the top of the makefile there are several switches controlling building process. These are:
 * STATIC_LINK - enable static linking (default: false); may be helpful when binary portability is desired,
 * NO_AVX - prevent from using AVX and AVX2 extensions (default: false),
 * NO_AVX2 - prevent from using AVX2 extensions (default: false),
 
-Note, that FAMSA by default takes advantage of AVX and AVX2 CPU extensions. Pre-built binary detetermines supported instructions at runtime, thus it is multiplatform. However, one may encounter a problem when building FAMSA version on a CPU without AVX and/or AVX2. For this purpose NO_AVX and NO_AVX2 switches are provided.
+Note, that FAMSA by default takes advantage of AVX and AVX2 CPU extensions. Pre-built binary detetermines supported instructions at runtime, thus it is multiplatform. However, one may encounter a problem when building FAMSA version on a CPU without AVX and/or AVX2. For this purpose NO_AVX and NO_AVX2 switches are provided. 
+
+The latest speed improvements in FAMSA limited the usefullness of the GPU mode. Thus, starting from the 1.5.0 version, there is no support of GPU in FAMSA. If maximum throughput is required, we encourage using new medoid trees feature (`-medoidtree` switch) which allows processing gigantic data sets in a reasonable time (e.g., a familiy of 3 millions ABC transporters was analyzed in three hours) . 
+
 
 ## Usage
 
@@ -87,12 +94,17 @@ Note, that when importing the tree, the branch lengths are not taken into accoun
 ```
 (A:1.0,(B:1.0,C:1.0):1.0);
 ```
+## Algorithms
+The major algorithmic features in FAMSA are:
+* Pairwise distances based on the longest common subsequence (LCS). Thanks to the bit-level parallelism and utilization of SIMD extensions, LCS can be computed very fast. 
+* Single-linkage guide trees. While being very accurate, single-linkage trees can be established without storing entire distance matrix, which makes them suitable for large alignments. Although, alternative guide tree algorithms like UPGMA and neigbour joining ale also provided.
+* The new heuristic based on K-Medoid clustering for generating fast guide trees. Medoid trees can be calculated in O(NlogN) time and work with all types of subtrees (single linkage, UPGMA, NJ). The heuristic can be enabled with `-medoidtree` switch. Medoid trees allows ultra-scale alignments (e.g., the family of 3 million ABC transporters was processed in 3 hours).
+
+
+## Experimental results
+
 
 
 ## Citing
 [Deorowicz, S., Debudaj-Grabysz, A., Gudyś, A. (2016) FAMSA: Fast and accurate multiple sequence alignment of huge protein families. 
 Scientific Reports, 6, 33964](https://www.nature.com/articles/srep33964)
-
-
-
-

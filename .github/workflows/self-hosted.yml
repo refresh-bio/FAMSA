@@ -1,16 +1,23 @@
-name: C/C++ CI
+name: Self-hosted CI
 
 on:
-  push:
-    branches: [ master, experimental, develop, feature/test-ci ]
   pull_request:
-    branches: [ master, experimental, develop, feature/test-ci ]
+    branches: [ master, develop ]
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+
 
 jobs:
   
-  linux-test:
-    name: Linux test
-    runs-on: ubuntu-latest
+  small-test:
+    name: Small test - adeno_fiber
+    runs-on: [self-hosted, famsa]
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++-9, g++-10, g++-11]
+        
     env: 
       REF_DIR: ./test/adeno_fiber
       INPUT: ./test/adeno_fiber/adeno_fiber
@@ -18,7 +25,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: make
-      run: make
+      run: make -j32 CXX=${{matrix.compiler}}
+      
+      ########################################################################################    
     
     - name: single linkage (tree only)
       run: |
@@ -34,7 +43,27 @@ jobs:
       run: |
         ./famsa -gt import sl.dnd ${INPUT} sl.dnd.fasta
         cmp sl.dnd.fasta ${REF_DIR}/sl.fasta
-   
+        
+    ########################################################################################        
+      
+    - name: prim (tree only)
+      run: |
+        ./famsa -gt mp -gt_export ${INPUT} mp.dnd
+        cmp sl.dnd ${REF_DIR}/sl.dnd
+    
+    - name: prim (complete alignment)
+      run: |
+        ./famsa -gt mp ${INPUT} mp.fasta
+        cmp mp.fasta ${REF_DIR}/sl.fasta
+     
+    - name: prim (from tree)
+      run: |
+        ./famsa -gt import mp.dnd ${INPUT} mp.dnd.fasta
+        cmp mp.dnd.fasta ${REF_DIR}/sl.fasta    
+    
+    ########################################################################################    
+        
+ 
     - name: upgma (tree only)
       run: |
         ./famsa -gt upgma -gt_export ${INPUT} upgma.dnd
@@ -49,6 +78,8 @@ jobs:
       run: |
         ./famsa -gt import upgma.dnd ${INPUT} upgma.dnd.fasta
         cmp upgma.dnd.fasta ${REF_DIR}/upgma.fasta
+        
+    ########################################################################################    
         
     - name: medoid + single linkage (tree only)
       run: |
@@ -65,6 +96,8 @@ jobs:
         ./famsa -gt import medoid-sl.dnd ${INPUT} medoid-sl.fasta
         cmp medoid-sl.fasta ${REF_DIR}/medoid-sl.fasta
         
+    ########################################################################################        
+        
     - name: medoid + upgma (tree only)
       run: |
         ./famsa -gt upgma -medoidtree -gt_export ${INPUT} medoid-upgma.dnd
@@ -79,6 +112,9 @@ jobs:
       run: |
         ./famsa -gt import medoid-upgma.dnd ${INPUT} medoid-upgma.fasta
         cmp medoid-upgma.fasta ${REF_DIR}/medoid-upgma.fasta
+        
+        
+    ########################################################################################    
         
     - name: export distance
       run: |
@@ -100,12 +136,5 @@ jobs:
         ./famsa -dist_export -square_matrix -pid ${INPUT} pid_sq.csv
         cmp pid_sq.csv ${REF_DIR}/pid_sq.csv
       
-  macos-build:
-    name: macOS test
-    runs-on: macOS-latest
 
-    steps:
-    - uses: actions/checkout@v2
-    - name: make
-      run: make
 
