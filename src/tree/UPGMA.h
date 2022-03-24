@@ -19,6 +19,9 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 // UPGMA defines and consts
 typedef float UPGMA_dist_t;
 
+// *******************************************************************
+// Queue for UPGMA
+// *******************************************************************
 class CUPGMAQueue
 {
 	std::vector<CSequence> *sequences;
@@ -31,17 +34,40 @@ class CUPGMAQueue
 	
 
 public:
-	CUPGMAQueue(std::vector<CSequence> *_sequences, uint32_t _n_rows, UPGMA_dist_t *_dist_matrix);
-	~CUPGMAQueue();
+	CUPGMAQueue(std::vector<CSequence> *_sequences, uint32_t _n_rows, UPGMA_dist_t *_dist_matrix) : 
+		sequences(_sequences), n_rows(_n_rows), dist_matrix(_dist_matrix), 
+		lowest_uncomputed_row(0), eoq_flag(false) 
+	{}
 
-	bool GetTask(int &row_id, std::vector<CSequence> *&_sequences, UPGMA_dist_t *&dist_row);
+	~CUPGMAQueue() {}
+
+	bool GetTask(int& row_id, std::vector<CSequence>*& _sequences, UPGMA_dist_t*& dist_row) {
+		unique_lock<mutex> lck(mtx);
+
+		if (eoq_flag)
+			return false;	// End of data in the profiles queue
+
+		row_id = lowest_uncomputed_row++;
+
+		if (lowest_uncomputed_row >= n_rows)
+			eoq_flag = true;
+
+		_sequences = sequences;
+		dist_row = dist_matrix + TriangleMatrix::access(row_id, 0);
+
+		return true;
+	}
 };
 
+// *******************************************************************
+// UPGMA algo
+// *******************************************************************
+template <Distance _distance>
 class UPGMA : public AbstractTreeGenerator, public IPartialGenerator {
 public:
 	
-	UPGMA(double indel_exp, size_t n_threads, bool is_modified) 
-		: AbstractTreeGenerator(indel_exp, n_threads), is_modified(is_modified) {}
+	UPGMA(size_t n_threads, bool is_modified) 
+		: AbstractTreeGenerator(n_threads), is_modified(is_modified) {}
 
 	void run(std::vector<CSequence>& sequences, tree_structure& tree) override;
 

@@ -103,6 +103,7 @@ public:
 	}
 };
 
+template <Distance _distance>
 class MSTPrim : public AbstractTreeGenerator, public IPartialGenerator {
 #ifdef MANY_CAND
 	static const int N_CAND = MANY_CAND;
@@ -307,7 +308,7 @@ class MSTPrim : public AbstractTreeGenerator, public IPartialGenerator {
 	}
 
 public:
-	MSTPrim(double indel_exp, size_t n_threads) : AbstractTreeGenerator(indel_exp, n_threads) {
+	MSTPrim(size_t n_threads) : AbstractTreeGenerator(n_threads) {
 #ifdef MANY_CAND
 		fill(sim_value_empty.begin(), sim_value_empty.end(), 0.0);
 #else

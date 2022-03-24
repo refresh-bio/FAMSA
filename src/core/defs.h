@@ -59,7 +59,6 @@ const score_t infty = (1ll << 62);
 const double cost_cast_factor = 1000.0;
 #endif
 
-const double infty_double = 1e30;
 
 const symbol_t GAP			  = 30;			// value representing gap
 const symbol_t GAP_OPEN       = 25;

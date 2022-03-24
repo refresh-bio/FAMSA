@@ -7,7 +7,8 @@
 
 #include <thread>
 
-void DistanceCalculator::run(std::vector<CSequence>& sequences, tree_structure& tree) {
+template <Distance _distance>
+void DistanceCalculator<_distance>::run(std::vector<CSequence>& sequences, tree_structure& tree) {
 	
 	std::ofstream ofs(out_file);
 	// put header line only when full matrix is needed
@@ -29,47 +30,47 @@ void DistanceCalculator::run(std::vector<CSequence>& sequences, tree_structure& 
 			CLCSBP lcsbp(instruction_set);
 			int row_id;
 			std::vector<CSequence>* sequences;
-			vector<float>* sim_vector;
-			vector<float> loc_sim_vector;
+			vector<float>* dist_vector;
+			vector<float> loc_dist_vector;
 
 			if (calculate_pid) {
-				Transform<double, Measure::SimilarityDefault> transform;
+				DistanceToSimilarity<double, _distance> transform;
 
-				while (queue.GetTask(row_id, sequences, sim_vector)) {
-					loc_sim_vector.resize(sim_vector->size());
+				while (queue.GetTask(row_id, sequences, dist_vector)) {
+					loc_dist_vector.resize(dist_vector->size());
 					int to_calculate = generate_square_matrix ? sequences->size() : row_id;
 
-					calculateSimilarityVector<CSequence, float, decltype(transform)>(
+					calculateDistanceVector<CSequence, float, decltype(transform)>(
 						transform,
 						(*sequences)[row_id],
 						sequences->data(),
 						to_calculate,
-						loc_sim_vector.data(),
+						loc_dist_vector.data(),
 						lcsbp);
 
-					//loc_sim_vector[row_id] = 1.0;
-					swap(*sim_vector, loc_sim_vector);
+					//loc_dist_vector[row_id] = 1.0;
+					swap(*dist_vector, loc_dist_vector);
 
 					//cout << "push " << row_id << endl;
 					queue.RegisterSolution(row_id);
 				}
 			}
 			else {
-				Transform<double, Measure::DistanceReciprocal> transform;
+				Transform<double, _distance> transform;
 
-				while (queue.GetTask(row_id, sequences, sim_vector)) {
-					loc_sim_vector.resize(sim_vector->size());
+				while (queue.GetTask(row_id, sequences, dist_vector)) {
+					loc_dist_vector.resize(dist_vector->size());
 					int to_calculate = generate_square_matrix ? sequences->size() : row_id;
 
-					calculateSimilarityVector<CSequence, float, decltype(transform)>(
+					calculateDistanceVector<CSequence, float, decltype(transform)>(
 						transform,
 						(*sequences)[row_id],
 						sequences->data(),
 						to_calculate,
-						loc_sim_vector.data(),
+						loc_dist_vector.data(),
 						lcsbp);
 
-					swap(*sim_vector, loc_sim_vector);
+					swap(*dist_vector, loc_dist_vector);
 
 					//cout << "push " << row_id << endl;
 					queue.RegisterSolution(row_id);
@@ -87,9 +88,9 @@ void DistanceCalculator::run(std::vector<CSequence>& sequences, tree_structure& 
 	// Gather results in one thread
 	for (int row_id = 0; row_id < sequences.size(); ++row_id) {
 
-		vector<float>* sim_vector;
+		vector<float>* dist_vector;
 
-		queue.GetSolution(row_id, sim_vector);
+		queue.GetSolution(row_id, dist_vector);
 		//cout << "pop " << row_id << endl;
 		//if ((row_id + 1) % 100 == 0) {
 		//	cout << "\r" << row_id + 1 << "...                      " << std::flush;
@@ -99,10 +100,10 @@ void DistanceCalculator::run(std::vector<CSequence>& sequences, tree_structure& 
 		ptr += sprintf(ptr, "%s,", sequences[row_id].id.c_str() + 1);
 
 		if (generate_square_matrix) {
-			ptr += num2str(sim_vector->data(), sim_vector->size(), ',', ptr);
+			ptr += num2str(dist_vector->data(), dist_vector->size(), ',', ptr);
 		}
 		else {
-			ptr += num2str(sim_vector->data(), row_id, ',', ptr);
+			ptr += num2str(dist_vector->data(), row_id, ',', ptr);
 		}
 
 		queue.ReleaseSolution(row_id);
@@ -120,3 +121,11 @@ void DistanceCalculator::run(std::vector<CSequence>& sequences, tree_structure& 
 	}
 
 }
+
+
+
+// *******************************************************************
+// Explicit template specializations for specified distance measures
+
+template class DistanceCalculator<Distance::indel_div_lcs>;
+template class DistanceCalculator<Distance::sqrt_indel_div_lcs>;

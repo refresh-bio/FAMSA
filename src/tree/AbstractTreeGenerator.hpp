@@ -10,15 +10,18 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 #include "../lcs/lcsbp.h"
 
+#undef min
+#undef max
 #include <cmath>
 #include <type_traits>
+#include <algorithm>
 
 // overloads for converting sequence type to pointer
 inline CSequence* seq_to_ptr(CSequence* x) { return x; }
 inline CSequence* seq_to_ptr(CSequence& x) { return &x; }
 
 // dummy implementation
-template <class T, Measure measure>
+template <class T, Distance measure>
 struct Transform {
 	//static_assert(0, "Cannot use dummy implementation");
 	
@@ -27,57 +30,10 @@ struct Transform {
 	}
 };
 
-template <class T>
-struct Transform<T, Measure::SimilarityDefault>{
-	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) { 
-		T indel = len1 + len2 - 2 * lcs;
-		return indel == 0 ? ((T)lcs * 1000) : ((T)lcs / indel); 
-	}
-};
+
 
 template <class T>
-struct Transform<T, Measure::LCS2_AB>{
-	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) { 
-		return (T)lcs * (T)(lcs) / ((T)len1 * (T)len2);
-	}
-};
-
-template <class T>
-struct Transform<T, Measure::LCS2_indel_ApB>{
-	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) { 
-		T indel = len1 + len2 - 2 * lcs;
-		T s = len1 + len2;
-		T l = lcs;
-		if (indel == 0)
-			return 100000000;
-//		return l * l / (4*s*s + 4*l*l);*/
-
-/*		double m = log2(log2(min(len1, len2)));
-		double M = log2(log2(max(len1, len2)));
-
-		return (l / indel) * (m / M);*/
-
-/*		T s_geo = sqrt((T)len1 * (T)len2);
-		T indel_geo = 2 * s_geo - 2 * lcs;
-		if (indel_geo < 0.0001)
-			indel_geo = 0.0001;
-
-		return l / sqrt(indel_geo);*/
-
-		T s_harm = 1.0 / (1.0 / (T)len1 + 1.0 / (T)len2);
-		T indel_harm = 2 * s_harm - 2 * lcs;
-		if (indel_harm < 0.0001)
-			indel_harm = 0.0001;
-
-		return l / sqrt(indel_harm);
-
-//		return l / sqrt(indel);
-//		return sqrt(l) / log2(indel);
-	}
-};
-
-template <class T>
-struct Transform<T, Measure::LCS_sqrt_indel>{
+struct Transform<T, Distance::sqrt_indel_div_lcs>{
 private:
 	std::vector<T> pp_sqrt_rec;
 	uint32_t cur_pp_size = 0;
@@ -86,8 +42,8 @@ private:
 	{
 		pp_sqrt_rec.resize(val + 1);
 		for (; cur_pp_size <= val; ++cur_pp_size)
-			pp_sqrt_rec[cur_pp_size] = 1.0 / sqrt(cur_pp_size);
-//			pp_sqrt_rec[cur_pp_size] = 1.0 / pow(cur_pp_size, 1.0 / 3.0);
+			pp_sqrt_rec[cur_pp_size] = sqrt(cur_pp_size);
+
 	}
 
 public:
@@ -95,23 +51,15 @@ public:
 		T indel = len1 + len2 - 2 * lcs;
 		T l = lcs;
 
-		if (indel == 0)
-			return 100000000;
-
 		if (indel >= cur_pp_size)
 			pp_extend(indel);
 
-/*		T m = min(len1, len2);
-		T M = max(len1, len2);
-		T f = pow(m / M, 0.01);
-
-		return l * pp_sqrt_rec[indel] * f;*/
-		return l * pp_sqrt_rec[indel];
+		return pp_sqrt_rec[indel] / l;
 	}
 };
 
 template <class T>
-struct Transform<T, Measure::DistanceReciprocal> {
+struct Transform<T, Distance::indel_div_lcs> {
 	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) {
 		T indel = len1 + len2 - 2 * lcs;
 		return (T)indel / lcs; 
@@ -119,7 +67,7 @@ struct Transform<T, Measure::DistanceReciprocal> {
 };
 
 template <class T>
-struct Transform<T, Measure::DistanceInverse> {
+struct Transform<T, Distance::neg_lcs_div_indel> {
 	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) {
 		T indel = len1 + len2 - 2 * lcs;
 		return indel == 0 ? (-(T)lcs * 1000) : (-(T)lcs / indel); 
@@ -127,14 +75,14 @@ struct Transform<T, Measure::DistanceInverse> {
 };
 
 template <class T>
-struct Transform<T, Measure::DistanceLCSByLength> {
+struct Transform<T, Distance::neg_lcs_div_minlen> {
 	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) {
 		return 1.0 - (T)lcs / std::min(len1, len2);
 	}
 };
 
 template <class T>
-struct Transform<T, Measure::DistanceLCSByLengthCorrected> {
+struct Transform<T, Distance::neg_lcs_div_len_corrected> {
 	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) {
 		// make len1 the longer 
 		if (len1 < len2) { std::swap(len1, len2);  }
@@ -148,19 +96,30 @@ struct Transform<T, Measure::DistanceLCSByLengthCorrected> {
 	}
 };
 
+template<class T, Distance measure>
+struct DistanceToSimilarity {
+	Transform<T, measure> transform;
+		
+	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) {
+		auto val = transform(lcs, len1, len2);
+		return (val == 0) ? (lcs * 1000) : (1.0 / val);
+	}
+
+};
+
 // *******************************************************************
 /*
 	seq_type can be:
 	- CSequence,
 	- CSequence*,
 */
-template <class seq_type, class similarity_type, typename Transform>
-void AbstractTreeGenerator::calculateSimilarityVector(
+template <class seq_type, class distance_type, typename Transform>
+void AbstractTreeGenerator::calculateDistanceVector(
 	Transform& transform,
 	seq_type& ref,
 	seq_type* sequences, 
 	size_t n_seqs, 
-	similarity_type* out_vector, 
+	distance_type* out_vector, 
 	CLCSBP& lcsbp)
 {
 	uint32_t lcs_lens[4];
@@ -206,13 +165,13 @@ void AbstractTreeGenerator::calculateSimilarityVector(
 	- CSequence,
 	- CSequence*,
 */
-template <class seq_type, class similarity_type, typename Iter, typename Transform>
-void AbstractTreeGenerator::calculateSimilarityRange(
+template <class seq_type, class distance_type, typename Iter, typename Transform>
+void AbstractTreeGenerator::calculateDistanceRange(
 	Transform &transform,
 	seq_type& ref, 
 	seq_type* sequences, 
 	pair<Iter, Iter> ids_range,
-	similarity_type* out_vector,
+	distance_type* out_vector,
 	CLCSBP& lcsbp)
 {
 	uint32_t lcs_lens[4];
@@ -257,19 +216,19 @@ void AbstractTreeGenerator::calculateSimilarityRange(
 
 
 // *******************************************************************
-template <class seq_type, class similarity_type, typename Transform>
-void AbstractTreeGenerator::calculateSimilarityMatrix(
+template <class seq_type, class distance_type, typename Transform>
+void AbstractTreeGenerator::calculateDistanceMatrix(
 	Transform& transform,
 	seq_type* sequences,
 	size_t n_seq, 
-	similarity_type *out_matrix, 
+	distance_type *out_matrix, 
 	CLCSBP& lcsbp) {
 
 	for (size_t row_id = 0; row_id < n_seq; ++row_id) {
 		
 		size_t row_offset = TriangleMatrix::access(row_id, 0);
 		
-		calculateSimilarityVector<seq_type, similarity_type, decltype(transform)>(
+		calculateDistanceVector<seq_type, distance_type, decltype(transform)>(
 			transform,
 			sequences[row_id],
 			sequences,

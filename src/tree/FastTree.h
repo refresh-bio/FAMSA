@@ -13,11 +13,11 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 #include <memory>
 
+template <Distance _distance>
 class FastTree : public AbstractTreeGenerator {
 public:
 
 	FastTree(
-		double indel_exp, 
 		size_t n_threads, 
 		std::shared_ptr<IPartialGenerator> partialGenerator, 
 		int subtreeSize,

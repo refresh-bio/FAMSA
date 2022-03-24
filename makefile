@@ -96,7 +96,8 @@ COMMON_OBJS := src/msa.o \
 	src/core/profile_seq.o \
 	src/core/sequence.o \
 	src/core/queues.o 
-	
+
+		
 src/lcs/lcsbp_classic.o : src/lcs/lcsbp_classic.cpp
 	$(CXX) $(CFLAGS) -c src/lcs/lcsbp_classic.cpp -o $@
 

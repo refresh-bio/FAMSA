@@ -8,12 +8,12 @@
 #include <mutex>
 #include <condition_variable>
 
-template <class similarity_type>
+template <class distance_type>
 class CSingleLinkageQueue
 {
 	std::vector<CSequence>* sequences;
 
-	std::vector<std::vector<similarity_type>> sim_vector_2d;
+	std::vector<std::vector<distance_type>> sim_vector_2d;
 	//	vector<vector<uint32_t>> lcs_len_2d;
 
 	std::vector<std::pair<int, bool>> ready_rows;
@@ -59,7 +59,7 @@ public:
 	}
 
 	// *******************************************************************
-	bool GetTask(int& row_id, vector<CSequence>*& _sequences, vector<similarity_type>*& sim_vector)
+	bool GetTask(int& row_id, vector<CSequence>*& _sequences, vector<distance_type>*& sim_vector)
 	{
 		unique_lock<mutex> lck(mtx);
 		cv_tasks.wait(lck, [this] {return !this->available_buffers.empty() || this->eoq_flag; });
@@ -105,7 +105,7 @@ public:
 	}
 
 	// *******************************************************************
-	bool GetSolution(int row_id, vector<similarity_type>*& sim_vector)
+	bool GetSolution(int row_id, vector<distance_type>*& sim_vector)
 	{
 		unique_lock<mutex> lck(mtx);
 		cv_rows.wait(lck, [this, row_id] {return this->ready_rows[row_id].second; });

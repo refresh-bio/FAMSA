@@ -38,7 +38,8 @@ using namespace std;
 #if 1
 //#pragma GCC optimize("align-loops=16")
 // *******************************************************************
-void MSTPrim::run(std::vector<CSequence>& sequences, tree_structure& tree)
+template <Distance _distance>
+void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& tree)
 {
 	int n_seq = (int)sequences.size();
 	int c_seq = 0;
@@ -116,9 +117,8 @@ void MSTPrim::run(std::vector<CSequence>& sequences, tree_structure& tree)
 		workers.push_back(thread([&, i] {
 			auto id_worker = i;
 			CLCSBP lcsbp(instruction_set);
-//			Transform<double, Measure::LCS_sqrt_indel> transform;
-			Transform<double, Measure::SimilarityDefault> transform;
-
+			DistanceToSimilarity<double, _distance> transform;
+		
 			auto sequences_data = sequences.data();
 			auto v_similarities_data = v_similarities.data();
 			CSequence* cur_sequence_ptr = nullptr;
@@ -278,8 +278,7 @@ void MSTPrim::run(std::vector<CSequence>& sequences, tree_structure& tree)
 				{
 					part_sim.resize(distance(ids_sub_range.begin(), ids_sub_range.end()));
 
-//					calculateSimilarityRange<CSequence, double, vector<int>::iterator, Measure::SimilarityDefault>(
-					calculateSimilarityRange<CSequence, double, vector<int>::iterator, decltype(transform)>(
+					calculateDistanceRange<CSequence, double, vector<int>::iterator, decltype(transform)>(
 						transform,
 						*cur_sequence_ptr,
 						sequences_data,
@@ -364,7 +363,8 @@ void MSTPrim::run(std::vector<CSequence>& sequences, tree_structure& tree)
 #endif
 
 // *******************************************************************
-void MSTPrim::mst_to_dendogram(vector<mst_edge_t>& mst_edges, vector<int>& v_prim_orders, tree_structure& tree)
+template <Distance _distance>
+void MSTPrim<_distance>::mst_to_dendogram(vector<mst_edge_t>& mst_edges, vector<int>& v_prim_orders, tree_structure& tree)
 {
 	vector<int> v_rev_prim_orders(v_prim_orders.size());
 
@@ -420,7 +420,8 @@ void MSTPrim::mst_to_dendogram(vector<mst_edge_t>& mst_edges, vector<int>& v_pri
 }
 
 // *******************************************************************
-void MSTPrim::runPartial(std::vector<CSequence*>& sequences, tree_structure& tree)
+template <Distance _distance>
+void MSTPrim<_distance>::runPartial(std::vector<CSequence*>& sequences, tree_structure& tree)
 {
 	int next;
 	int n_seq = sequences.size();
@@ -429,13 +430,11 @@ void MSTPrim::runPartial(std::vector<CSequence*>& sequences, tree_structure& tre
 	int prefetch_offset_2nd = 128 * 2;
 
 	vector<int> pi(n_seq + max(prefetch_offset, prefetch_offset_2nd), 0);
-	vector<slink_similarity_t> lambda(n_seq);
-	vector<slink_similarity_t> sim_vector(n_seq);
-	vector<double> loc_sim_vector(sim_vector.size());
+	vector<slink_dist_t> lambda(n_seq);
+	vector<slink_dist_t> dist_vector(n_seq);
+	vector<double> loc_dist_vector(dist_vector.size());
 
-	Transform<double, Measure::SimilarityDefault> transform;
-	//	Transform<double, Measure::LCS_sqrt_indel> transform;
-
+	Transform<double, _distance> transform;
 	CLCSBP lcsbp(instruction_set);
 
 	// Single linkage algorithm is here
@@ -444,9 +443,9 @@ void MSTPrim::runPartial(std::vector<CSequence*>& sequences, tree_structure& tre
 		pi[i] = i;
 
 #ifdef SLINK_HANDLE_TIES
-		lambda[i] = make_pair(-infty_double, 0);
+		lambda[i] = slink_dist_t{ std::numeric_limits<double>::max(), 0 };
 #else
-		lambda[i] = -infty_double;
+		lambda[i] = std::numeric_limits<double>::max();
 #endif
 
 		/*		if (i % (100) == 0) {
@@ -454,26 +453,26 @@ void MSTPrim::runPartial(std::vector<CSequence*>& sequences, tree_structure& tre
 						<< 100.0 * ((double)i * (i + 1) / 2) / ((double)n_seq * (n_seq + 1) / 2) << "\%    (" << i << " of " << n_seq << ")  \r";
 				}
 		*/
-		calculateSimilarityVector<CSequence*, double, decltype(transform)>(
+		calculateDistanceVector<CSequence*, double, decltype(transform)>(
 			transform,
 			sequences[i],
 			sequences.data(),
 			i,
-			loc_sim_vector.data(),
+			loc_dist_vector.data(),
 			lcsbp);
 
 #ifdef SLINK_HANDLE_TIES
-		for (size_t j = 0; j < loc_sim_vector.size(); ++j)
+		for (size_t j = 0; j < loc_dist_vector.size(); ++j)
 		{
-			sim_vector[j].first = loc_sim_vector[j];
-			sim_vector[j].second = ids_to_uint64(j, i);
+			dist_vector[j].first = loc_dist_vector[j];
+			dist_vector[j].second = ids_to_uint64(j, i);
 		}
 #else
-		swap(*sim_vector, loc_sim_vector);
+		swap(*dist_vector, loc_dist_vector);
 #endif
 
 		auto p_lambda = lambda.begin();
-		auto p_sim_vector = sim_vector.begin();
+		auto p_sim_vector = dist_vector.begin();
 		auto p_pi = pi.begin();
 
 		for (int j = 0; j < i; ++j)
@@ -481,23 +480,23 @@ void MSTPrim::runPartial(std::vector<CSequence*>& sequences, tree_structure& tre
 			next = pi[j];
 
 #ifdef _MSC_VER					// Visual C++
-			_mm_prefetch((const char*)&(sim_vector)[*(p_pi + prefetch_offset)], 2);
+			_mm_prefetch((const char*)&(dist_vector)[*(p_pi + prefetch_offset)], 2);
 #endif
 #ifdef __GNUC__
-			//			__builtin_prefetch((&(*sim_vector)[pi[j + prefetch_offset]]), 1, 2);
-			__builtin_prefetch((&(sim_vector)[*(p_pi + prefetch_offset)]), 1, 2);
+			//			__builtin_prefetch((&(*dist_vector)[pi[j + prefetch_offset]]), 1, 2);
+			__builtin_prefetch((&(dist_vector)[*(p_pi + prefetch_offset)]), 1, 2);
 #endif
 
-			auto& x = (sim_vector)[next];
+			auto& x = (dist_vector)[next];
 
 			//			if (isgreater(*p_lambda, *p_sim_vector))
-			if (*p_lambda > *p_sim_vector)
+			if (*p_lambda < *p_sim_vector)
 			{
-				x = max(x, *p_sim_vector);
+				x = min(x, *p_sim_vector);
 			}
 			else
 			{
-				x = max(x, *p_lambda);
+				x = min(x, *p_lambda);
 				*p_pi = i;
 				*p_lambda = *p_sim_vector;
 			}
@@ -520,7 +519,7 @@ void MSTPrim::runPartial(std::vector<CSequence*>& sequences, tree_structure& tre
 
 			next = *p_pi;
 			//			if (isgreaterequal(lambda[next], *p_lambda))
-			if (lambda[next] >= *p_lambda)
+			if (lambda[next] <= *p_lambda)
 				*p_pi = i;
 
 			++p_pi;
@@ -539,7 +538,7 @@ void MSTPrim::runPartial(std::vector<CSequence*>& sequences, tree_structure& tre
 #endif
 
 	stable_sort(elements.begin(), elements.end(), [&](int x, int y) {
-		return lambda[x] > lambda[y];
+		return lambda[x] < lambda[y];
 		});
 
 	vector<int> index(n_seq);
@@ -773,5 +772,14 @@ bool MSTPartitioner::IsAlmostEmpty()
 
 	return vd_parts.front().i_begin + 1 >= vd_parts.front().i_end;
 }
+
+
+// *******************************************************************
+// Explicit template specializations for specified distance measures
+
+template class MSTPrim<Distance::indel_div_lcs>;
+template class MSTPrim<Distance::sqrt_indel_div_lcs>;
+
+
 
 // EOF

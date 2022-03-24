@@ -26,6 +26,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "./lcs/lcsbp.h"
 #include "./lcs/lcsbp_classic.h"
 
+class AbstractTreeGenerator;
+
 class CFAMSA 
 {
 protected:
@@ -71,6 +73,8 @@ protected:
 
 	void RefineRandom(CProfile* profile_to_refine, vector<size_t> &dest_prof_id);
 	void RefineMostEmptyAndFullColumn(CProfile *profile_to_refine, vector<size_t> &dest_prof_id, vector<size_t> &gap_stats, bool valid_gap_stats);
+
+	std::shared_ptr<AbstractTreeGenerator> createTreeGenerator(const CParams& params);
 
 public:
 	CFAMSA();

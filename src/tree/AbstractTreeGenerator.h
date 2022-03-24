@@ -16,51 +16,40 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 class CLCSBP;
 
-enum class Measure {
-	SimilarityDefault,
-	DistanceReciprocal,
-	DistanceInverse,
-	DistanceLCSByLength,
-	DistanceLCSByLengthCorrected,
-	LCS2_AB,
-	LCS2_indel_ApB,
-	LCS_sqrt_indel
-};
-
 
 class AbstractTreeGenerator {
 public:
 
-	AbstractTreeGenerator(double indel_exp, size_t n_threads);
+	AbstractTreeGenerator(size_t n_threads);
 
 	virtual ~AbstractTreeGenerator() {}
 	
 	void operator()(std::vector<CSequence>& sequences, tree_structure& tree);
 		
-	template <class seq_type, class similarity_type, typename Transform>
-	void calculateSimilarityVector(
+	template <class seq_type, class distance_type, typename Transform>
+	void calculateDistanceVector(
 		Transform& transform,
 		seq_type& ref,
 		seq_type* sequences,
 		size_t n_seqs,
-		similarity_type* out_vector,
+		distance_type* out_vector,
 		CLCSBP& lcsbp);
 
-	template <class seq_type, class similarity_type, typename Iter, typename Transform>
-	void calculateSimilarityRange(
+	template <class seq_type, class distance_type, typename Iter, typename Transform>
+	void calculateDistanceRange(
 		Transform& transform, 
 		seq_type& ref,
 		seq_type* sequences,
 		pair<Iter, Iter> ids_range,
-		similarity_type* out_vector,
+		distance_type* out_vector,
 		CLCSBP& lcsbp);
 
-	template <class seq_type, class similarity_type, typename Transform>
-	void calculateSimilarityMatrix(
+	template <class seq_type, class distance_type, typename Transform>
+	void calculateDistanceMatrix(
 		Transform& transform,
 		seq_type* sequences,
 		size_t n_seq,
-		similarity_type* out_matrix,
+		distance_type* out_matrix,
 		CLCSBP& lcsbp);
 
 
@@ -73,7 +62,6 @@ public:
 #endif
 
 protected:
-	double indel_exp;
 	size_t n_threads;
 	instruction_set_t instruction_set;
 	

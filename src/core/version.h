@@ -9,8 +9,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"1.9.0"
-#define FAMSA_DATE		"2022-03-10"
+#define FAMSA_VER		"1.10.0"
+#define FAMSA_DATE		"2022-03-24"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
@@ -18,7 +18,10 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 /*
 Version history:
 
-1.9.0 (2021-06-09)
+1.10.0 (2022-03-24)
+- Uniform distance measures.
+
+1.9.0 (2022-03-11)
 - Export of distance matrix significantly improved.
 
 1.8.0 (2021-06-09)

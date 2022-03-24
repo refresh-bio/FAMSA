@@ -15,18 +15,16 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <random>
 #include <numeric>
 
-#define DIST_MEASURE Measure::DistanceReciprocal
-
 // *******************************************************************
-FastTree::FastTree(
-	double indel_exp, 
+template <Distance _distance>
+FastTree<_distance>::FastTree(
 	size_t n_threads, 
 	std::shared_ptr<IPartialGenerator> partialGenerator, 
 	int subtreeSize, 
 	std::shared_ptr<IClustering> clustering,
 	int sampleSize)
 	: 
-		AbstractTreeGenerator(indel_exp, n_threads),
+		AbstractTreeGenerator(n_threads),
 		partialGenerator(partialGenerator),
 		subtreeSize(subtreeSize),
 		clustering(clustering),
@@ -36,7 +34,8 @@ FastTree::FastTree(
 
 
 // *******************************************************************
-void FastTree::run(std::vector<CSequence>& sequences, tree_structure& tree)
+template <Distance _distance>
+void FastTree<_distance>::run(std::vector<CSequence>& sequences, tree_structure& tree)
 {
 	// create vector of pointers to be passed to the recursion
 	std::vector<CSequence*> sequencePtrs(sequences.size());
@@ -49,11 +48,12 @@ void FastTree::run(std::vector<CSequence>& sequences, tree_structure& tree)
 
 
 // *******************************************************************
-void FastTree::doStep(std::vector<CSequence*>& sequences, tree_structure& tree)
+template <Distance _distance>
+void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_structure& tree)
 {
 	size_t n_seqs = sequences.size();
 	CLCSBP lcsbp(instruction_set);
-	Transform<float, DIST_MEASURE> transform;
+	Transform<float, _distance> transform;
 
 	if ((!clustering && n_seqs > subtreeSize) || (clustering && n_seqs > clusteringThreshold)) {
 		
@@ -84,7 +84,7 @@ void FastTree::doStep(std::vector<CSequence*>& sequences, tree_structure& tree)
 		seeds[0] = sequences[seed_ids[0]];
 		for (int k = 1; k < seeds.size(); ++k) {
 			seeds[k] = sequences[seed_ids[k]];
-			calculateSimilarityVector<CSequence*, float, decltype(transform)>(transform, seeds[k], sequences.data(), n_seqs, current_row, lcsbp);
+			calculateDistanceVector<CSequence*, float, decltype(transform)>(transform, seeds[k], sequences.data(), n_seqs, current_row, lcsbp);
 
 			for (size_t j = 0; j < n_seqs; ++j) {
 				if (current_row[j] < dist_row[j]) { 	// use dist_row for storing smallest distances 
@@ -173,7 +173,8 @@ void FastTree::doStep(std::vector<CSequence*>& sequences, tree_structure& tree)
 
 
 // *******************************************************************
-size_t FastTree::randomSeeds(
+template <Distance _distance>
+size_t FastTree<_distance>::randomSeeds(
 	std::vector<CSequence*>& sequences,
 	size_t n_seeds,
 	int * seed_ids,
@@ -182,10 +183,10 @@ size_t FastTree::randomSeeds(
 	CLCSBP lcsbp(instruction_set);
 	size_t n_seqs = sequences.size();
 
-	Transform<float, DIST_MEASURE> transform;
+	Transform<float, _distance> transform;
 
 	// calculate distances 0'th (longest) vs all (first row)
-	calculateSimilarityVector<CSequence*, float, decltype(transform)>(transform, sequences[0], sequences.data(), n_seqs, dist_row, lcsbp);
+	calculateDistanceVector<CSequence*, float, decltype(transform)>(transform, sequences[0], sequences.data(), n_seqs, dist_row, lcsbp);
 
 	std::mt19937 mt;
 	std::iota(randomIds.begin(), randomIds.begin() + n_seqs, 0);
@@ -201,7 +202,8 @@ size_t FastTree::randomSeeds(
 }
 
 // *******************************************************************
-size_t FastTree::clusterSeeds(
+template <Distance _distance>
+size_t FastTree<_distance>::clusterSeeds(
 	std::vector<CSequence*>& sequences,
 	size_t n_seeds,
 	size_t n_samples,
@@ -214,10 +216,10 @@ size_t FastTree::clusterSeeds(
 	CSequence** samples = nullptr;
 	int * sample_ids = nullptr;
 
-	Transform<float, DIST_MEASURE> transform;
+	Transform<float, _distance> transform;
 
 	// calculate distances 0'th (longest) vs all (first row)
-	calculateSimilarityVector<CSequence*, float, decltype(transform)>(transform, sequences[0], sequences.data(), n_seqs, dist_row, lcsbp);
+	calculateDistanceVector<CSequence*, float, decltype(transform)>(transform, sequences[0], sequences.data(), n_seqs, dist_row, lcsbp);
 
 	if (n_samples >= sequences.size()) {
 		// use all sequences as a sample - don't need to sample anything
@@ -245,7 +247,7 @@ size_t FastTree::clusterSeeds(
 
 	// calculate distance matrix
 	float* distances = TriangleMatrix::allocate<float>(n_samples);
-	this->calculateSimilarityMatrix<CSequence*, float, decltype(transform)>(transform, samples, n_samples, distances, lcsbp);
+	this->calculateDistanceMatrix<CSequence*, float, decltype(transform)>(transform, samples, n_samples, distances, lcsbp);
 	
 	// perform clustering
 	(*clustering)(distances, n_samples, n_seeds, 1, seed_ids);
@@ -267,3 +269,10 @@ size_t FastTree::clusterSeeds(
 
 	return n_seeds;
 }
+
+// *******************************************************************
+// Explicit template specializations for specified distance measures
+
+template class FastTree<Distance::indel_div_lcs>;
+template class FastTree<Distance::sqrt_indel_div_lcs>;
+

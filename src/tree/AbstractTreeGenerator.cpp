@@ -17,7 +17,7 @@ using namespace std;
 
 
 // *******************************************************************
-AbstractTreeGenerator::AbstractTreeGenerator(double indel_exp, size_t n_threads) : indel_exp(indel_exp), n_threads(n_threads) {
+AbstractTreeGenerator::AbstractTreeGenerator(size_t n_threads) : n_threads(n_threads) {
 //	int x = instrset_detect();
 	
 	instruction_set = instruction_set_t::none;

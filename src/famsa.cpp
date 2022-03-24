@@ -39,6 +39,7 @@ typedef struct {
 
 	GT::Method gt_method;
 	GT::Heuristic gt_heuristic;
+	Distance distance;
 	int heuristic_threshold;
 
 	int guide_tree_seed;
@@ -101,6 +102,10 @@ void show_usage(bool expert)
 		<< "      * mp - single linkage (MST Prim)\n"
 		<< "      * upgma - UPGMA\n"
 		<< "      * import <file> - imported from a Newick file\n"
+		<< "  -dist <measure> - pairwise distance measure:\n"
+		<< "      * indel_div_lcs (default)\n" 
+		<< "      * sqrt_indel_div_lcs\n\n"	
+		
 		<< "  -medoidtree - use MedoidTree heuristic for speeding up tree construction (default: disabled)\n"
 		//	<< "  -parttree - use PartTree heuristic for speeding up tree construction (default: disabled)\n"
 		<< "  -medoid_threshold <n_seqs> - if specified, medoid trees are used only for sets with <n_seqs> or more\n"
@@ -154,6 +159,7 @@ void init_params()
 
 	execution_params.gt_method						= GT::SLINK;
 	execution_params.gt_heuristic					= GT::None;
+	execution_params.distance						= Distance::indel_div_lcs;
 	execution_params.heuristic_threshold			= 0;
 
 	execution_params.guide_tree_seed				= 0;
@@ -242,6 +248,9 @@ bool parse_params(int argc, char **argv, bool& showExpert)
 			else if (execution_params.gt_method == GT::chained) {
 				execution_params.guide_tree_seed = atoi(argv[argno++]);
 			}
+		}
+		else if (cur_par == "-dist") {
+			execution_params.distance = str2dist(argv[argno++]);
 		}
 		else if (cur_par == "-parttree") {
 			execution_params.gt_heuristic = GT::PartTree;
@@ -333,6 +342,8 @@ void set_famsa_params(CParams &famsa_params)
 
 	famsa_params.gt_method						= execution_params.gt_method;
 	famsa_params.gt_heuristic					= execution_params.gt_heuristic;
+	famsa_params.distance						= execution_params.distance;
+
 	famsa_params.heuristic_threshold			= execution_params.heuristic_threshold;
 	famsa_params.subtree_size					= execution_params.subtree_size;
 	famsa_params.sample_size					= execution_params.sample_size;

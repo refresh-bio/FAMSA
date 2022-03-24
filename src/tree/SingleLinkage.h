@@ -13,16 +13,38 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <vector>
 #include <utility>
 
-
 #define SLINK_HANDLE_TIES
 
 #ifdef SLINK_HANDLE_TIES
-using slink_similarity_t = pair<double, uint64_t>;
+struct slink_dist_t {
+	double first;
+	uint64_t second;
+
+	// this is to preserve consistency with smilarity variant
+	// - increasingly by distance
+	// - decreasingly by id
+	bool operator<(const slink_dist_t& rhs) const {
+		return (this->first == rhs.first)
+			? (this->second > rhs.second)
+			: (this->first < rhs.first);
+	}
+
+	bool operator<=(const slink_dist_t& rhs) const {
+		return (this->first == rhs.first)
+			? (this->second >= rhs.second)
+			: (this->first <= rhs.first);
+	}
+
+};
+
+//using slink_similarity_t = pair<double, uint64_t>;
 #else
 using slink_similarity_t = double;
 #endif
 
 
+
+template <Distance measure>
 class SingleLinkage : public AbstractTreeGenerator, public IPartialGenerator {
 	uint64_t ids_to_uint64(int id1, int id2)
 	{
@@ -35,7 +57,7 @@ class SingleLinkage : public AbstractTreeGenerator, public IPartialGenerator {
 
 public:
 
-	SingleLinkage(double indel_exp, size_t n_threads) : AbstractTreeGenerator(indel_exp, n_threads) {}
+	SingleLinkage(size_t n_threads) : AbstractTreeGenerator(n_threads) {}
 
 	void run(std::vector<CSequence>& sequences, tree_structure& tree) override;
 

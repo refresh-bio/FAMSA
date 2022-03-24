@@ -35,7 +35,8 @@ struct Average<T, true> {
 
 
 // *******************************************************************
-void UPGMA::run(std::vector<CSequence>& sequences, tree_structure& tree) {
+template <Distance _distance>
+void UPGMA<_distance>::run(std::vector<CSequence>& sequences, tree_structure& tree) {
 	UPGMA_dist_t* distances = TriangleMatrix::allocate<UPGMA_dist_t>(sequences.size());
 	computeDistances(sequences, distances);
 	
@@ -50,12 +51,13 @@ void UPGMA::run(std::vector<CSequence>& sequences, tree_structure& tree) {
 }
 
 // *******************************************************************
-void UPGMA::runPartial(std::vector<CSequence*>& sequences, tree_structure& tree) {
+template <Distance _distance>
+void UPGMA<_distance>::runPartial(std::vector<CSequence*>& sequences, tree_structure& tree) {
 	UPGMA_dist_t* distances = TriangleMatrix::allocate<UPGMA_dist_t>(sequences.size());
 	CLCSBP lcsbp(instruction_set);
 
-	Transform< UPGMA_dist_t, Measure::DistanceReciprocal> transform;
-	calculateSimilarityMatrix<CSequence*, UPGMA_dist_t, decltype(transform)>(transform, sequences.data(), sequences.size(), distances, lcsbp);
+	Transform< UPGMA_dist_t, _distance> transform;
+	calculateDistanceMatrix<CSequence*, UPGMA_dist_t, decltype(transform)>(transform, sequences.data(), sequences.size(), distances, lcsbp);
 	
 	if (is_modified) {
 		computeTree<true>(distances, sequences.size(), tree);
@@ -69,14 +71,13 @@ void UPGMA::runPartial(std::vector<CSequence*>& sequences, tree_structure& tree)
 
 
 // *******************************************************************
-void UPGMA::computeDistances(std::vector<CSequence>& sequences, UPGMA_dist_t *dist_matrix)
+template <Distance _distance>
+void UPGMA<_distance>::computeDistances(std::vector<CSequence>& sequences, UPGMA_dist_t *dist_matrix)
 {
 	size_t n_seq = sequences.size();
 
 	CUPGMAQueue slq(&sequences, n_seq, dist_matrix);
 	vector<thread *> workers(n_threads, nullptr);
-
-	mutex mtx;
 
 	// Calculation of similarities is made in working threads
 	for (uint32_t i = 0; i < n_threads; ++i)
@@ -85,11 +86,11 @@ void UPGMA::computeDistances(std::vector<CSequence>& sequences, UPGMA_dist_t *di
 		int row_id;
 		vector<CSequence> *sequences;
 		UPGMA_dist_t *dist_row;
-		Transform< UPGMA_dist_t, Measure::DistanceReciprocal> transform;
+		Transform< UPGMA_dist_t, _distance> transform;
 
 		while (slq.GetTask(row_id, sequences, dist_row))
 		{
-			calculateSimilarityVector<CSequence, UPGMA_dist_t, decltype(transform)>(
+			calculateDistanceVector<CSequence, UPGMA_dist_t, decltype(transform)>(
 				transform,
 				(*sequences)[row_id],
 				sequences->data(),
@@ -108,8 +109,9 @@ void UPGMA::computeDistances(std::vector<CSequence>& sequences, UPGMA_dist_t *di
 }
 
 // *******************************************************************
+template <Distance _distance>
 template <bool MODIFIED>
-void UPGMA::computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_structure& tree)
+void UPGMA<_distance>::computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_structure& tree)
 {
 	Average<UPGMA_dist_t, MODIFIED> average;
 	
@@ -297,41 +299,8 @@ void UPGMA::computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_structure& t
 	delete[] g_RightLength;
 }
 
-
-
-
 // *******************************************************************
-// Queue for UPGMA
-// *******************************************************************
-CUPGMAQueue::CUPGMAQueue(vector<CSequence> *_sequences, uint32_t _n_rows, UPGMA_dist_t *_dist_matrix)
-{
-	sequences = _sequences;
-	n_rows = _n_rows;
-	lowest_uncomputed_row = 0;
-	eoq_flag = false;
-	dist_matrix = _dist_matrix;
-}
+// Explicit template specializations for specified distance measures
 
-CUPGMAQueue::~CUPGMAQueue()
-{
-}
-
-bool CUPGMAQueue::GetTask(int &row_id, vector<CSequence> *&_sequences, UPGMA_dist_t *&dist_row)
-{
-	unique_lock<mutex> lck(mtx);
-
-	if (eoq_flag)
-		return false;	// End of data in the profiles queue
-
-	row_id = lowest_uncomputed_row++;
-
-	if (lowest_uncomputed_row >= n_rows)
-		eoq_flag = true;
-
-	_sequences = sequences;
-
-	dist_row = dist_matrix + TriangleMatrix::access(row_id, 0);
-
-	return true;
-}
-
+template class UPGMA<Distance::indel_div_lcs>;
+template class UPGMA<Distance::sqrt_indel_div_lcs>;

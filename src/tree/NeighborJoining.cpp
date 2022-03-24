@@ -6,12 +6,14 @@
 #include <limits>
 
 // *******************************************************************
-void NeighborJoining::run(std::vector<CSequence>& sequences, tree_structure& tree) {
+template <Distance _distance>
+void NeighborJoining<_distance>::run(std::vector<CSequence>& sequences, tree_structure& tree) {
+	
 	float* distances = TriangleMatrix::allocate<float>(sequences.size());
 	CLCSBP lcsbp(instruction_set);
 
-	Transform<float, Measure::DistanceReciprocal> transform;
-	calculateSimilarityMatrix<CSequence, float, decltype(transform)>(transform, sequences.data(), sequences.size(), distances, lcsbp);
+	Transform<float, _distance> transform;
+	calculateDistanceMatrix<CSequence, float, decltype(transform)>(transform, sequences.data(), sequences.size(), distances, lcsbp);
 
 	computeTree(distances, sequences.size(), tree);
 
@@ -19,12 +21,14 @@ void NeighborJoining::run(std::vector<CSequence>& sequences, tree_structure& tre
 }
 
 // *******************************************************************
-void NeighborJoining::runPartial(std::vector<CSequence*>& sequences, tree_structure& tree) {
+template <Distance _distance>
+void NeighborJoining<_distance>::runPartial(std::vector<CSequence*>& sequences, tree_structure& tree) {
+	
 	float* distances = TriangleMatrix::allocate<float>(sequences.size());
 	CLCSBP lcsbp(instruction_set);
 
-	Transform<float, Measure::DistanceReciprocal> transform;
-	calculateSimilarityMatrix<CSequence*, float, decltype(transform)>(transform, sequences.data(), sequences.size(), distances, lcsbp);
+	Transform<float, _distance> transform;
+	calculateDistanceMatrix<CSequence*, float, decltype(transform)>(transform, sequences.data(), sequences.size(), distances, lcsbp);
 	
 	computeTree(distances, sequences.size(), tree);
 
@@ -33,7 +37,8 @@ void NeighborJoining::runPartial(std::vector<CSequence*>& sequences, tree_struct
 
 
 // *******************************************************************
-void NeighborJoining::computeTree(float* distances, size_t n_seq, tree_structure& tree) {
+template <Distance _distance>
+void NeighborJoining<_distance>::computeTree(float* distances, size_t n_seq, tree_structure& tree) {
 
 	struct cluster {
 		float sum_of_dists;
@@ -119,3 +124,10 @@ void NeighborJoining::computeTree(float* distances, size_t n_seq, tree_structure
 	// join two remanining clusters
 	tree.push_back(node_t(clusters[0].node_id, clusters[1].node_id));
 }
+
+
+// *******************************************************************
+// Explicit template specializations for specified distance measures
+
+template class NeighborJoining<Distance::indel_div_lcs>;
+template class NeighborJoining<Distance::sqrt_indel_div_lcs>;

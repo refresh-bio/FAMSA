@@ -2,10 +2,11 @@
 #include "IPartialGenerator.h"
 #include "AbstractTreeGenerator.h"
 
+template <Distance _distance>
 class NeighborJoining : public AbstractTreeGenerator, public IPartialGenerator {
 public:
 	
-	NeighborJoining(double indel_exp, size_t n_threads) : AbstractTreeGenerator(indel_exp, n_threads) {}
+	NeighborJoining(size_t n_threads) : AbstractTreeGenerator(n_threads) {}
 
 	void run(std::vector<CSequence>& sequences, tree_structure& tree) override;
 	

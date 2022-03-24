@@ -16,13 +16,48 @@ using node_t = std::pair<int, int>;
 using tree_structure = std::vector<node_t>;
 
 
+// class representing distance
+enum class Distance {
+	indel_div_lcs,
+	sqrt_indel_div_lcs,
+	neg_lcs_div_indel,
+	neg_lcs_div_minlen,
+	neg_lcs_div_len_corrected,
+
+	similarity_lcs2_div_AB,
+	similarity_lcs2_indel_ApB,
+	similarity_lcs_div_sqrt_indel
+};
+
+inline static Distance str2dist(const std::string& s) {
+	if (s == "indel_div_lcs") { return Distance::indel_div_lcs; }
+	else if (s == "sqrt_indel_div_lcs") { return Distance::sqrt_indel_div_lcs; }
+	else if (s == "neg_lcs_div_indel") { return Distance::neg_lcs_div_indel; }
+	else if (s == "neg_lcs_div_minlen") { return Distance::neg_lcs_div_minlen; }
+	else if (s == "neg_lcs_div_len_corrected") { return Distance::neg_lcs_div_len_corrected; }
+	else {
+		throw new std::runtime_error("Error: Illegal pairwise distance measure.");
+	}
+
+	return Distance::indel_div_lcs;
+}
+
+inline static std::string dist2str(Distance d) {
+	switch (d) {
+	case Distance::indel_div_lcs:				return "indel_div_lcs";
+	case Distance::sqrt_indel_div_lcs:			return "sqrt_indel_div_lcs";
+	}
+
+	throw new std::runtime_error("Error: Illegal guide tree method.");
+	return "Unknown";
+}
 
 // Class representing guide tree method
 class GT {
 public:
 	enum Method { SLINK, MST_Prim, UPGMA, UPGMA_modified, NJ, chained, imported };
 	enum Heuristic { None, PartTree, ClusterTree };
-
+	
 	static std::string toString(Method v) {
 		switch (v) {
 		case SLINK:				return "sl (single linkage) - SLINK";

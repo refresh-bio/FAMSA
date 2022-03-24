@@ -49,7 +49,7 @@ jobs:
     - name: prim (tree only)
       run: |
         ./famsa -gt mp -gt_export ${INPUT} mp.dnd
-        cmp sl.dnd ${REF_DIR}/sl.dnd
+        cmp mp.dnd ${REF_DIR}/mp.dnd
     
     - name: prim (complete alignment)
       run: |
@@ -93,8 +93,25 @@ jobs:
      
     - name: medoid + single linkage (from tree)
       run: |
-        ./famsa -gt import medoid-sl.dnd ${INPUT} medoid-sl.fasta
-        cmp medoid-sl.fasta ${REF_DIR}/medoid-sl.fasta
+        ./famsa -gt import medoid-sl.dnd ${INPUT} medoid-sl.dnd.fasta
+        cmp medoid-sl.dnd.fasta ${REF_DIR}/medoid-sl.fasta
+        
+    ########################################################################################    
+        
+    - name: medoid + prim (tree only)
+      run: |
+        ./famsa -gt mp -medoidtree -gt_export ${INPUT} medoid-mp.dnd
+        cmp  medoid-mp.dnd ${REF_DIR}/medoid-mp.dnd
+    
+    - name: medoid + prim (complete alignment)
+      run: |
+        ./famsa -gt mp -medoidtree ${INPUT} medoid-mp.fasta
+        cmp medoid-mp.fasta ${REF_DIR}/medoid-sl.fasta
+     
+    - name: medoid + prim (from tree)
+      run: |
+        ./famsa -gt import medoid-mp.dnd ${INPUT} medoid-mp.dnd.fasta
+        cmp medoid-mp.dnd.fasta ${REF_DIR}/medoid-sl.fasta
         
     ########################################################################################        
         
@@ -110,8 +127,8 @@ jobs:
      
     - name: medoid + upgma (from tree)
       run: |
-        ./famsa -gt import medoid-upgma.dnd ${INPUT} medoid-upgma.fasta
-        cmp medoid-upgma.fasta ${REF_DIR}/medoid-upgma.fasta
+        ./famsa -gt import medoid-upgma.dnd ${INPUT} medoid-upgma.dnd.fasta
+        cmp medoid-upgma.dnd.fasta ${REF_DIR}/medoid-upgma.fasta
         
         
     ########################################################################################    
