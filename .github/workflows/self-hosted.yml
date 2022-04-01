@@ -9,148 +9,144 @@ on:
 
 
 jobs:
-  
-  small-test:
-    name: Small test - adeno_fiber
+
+ ########################################################################################
+  checkout:
+    name: checkout
     runs-on: [self-hosted, famsa]
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: copy sl->mp references
+      run: |
+        cp ./test/adeno_fiber/sl.fasta ./test/adeno_fiber/mp.fasta
+        cp ./test/adeno_fiber/medoid-sl.fasta ./test/adeno_fiber/medoid-mp.fasta
+      
+          
+  ########################################################################################
+  make-tests:
+    name: make
+    runs-on: [self-hosted, famsa]
+    needs: checkout
     strategy:
       fail-fast: false
       matrix:
-        compiler: [g++-9, g++-10, g++-11]
+        compiler: [9, 10, 11]
+        
+    steps:
+    - name: make (g++-${{matrix.compiler}})
+      run: | 
+        make -j32 CXX=g++-${{matrix.compiler}}
+        cp ./famsa ./famsa-${{matrix.compiler}}
+        make clean
+      
+  ########################################################################################    
+    
+  full-tree:
+    name: adeno-fiber - full tree
+    runs-on: [self-hosted, famsa]
+    needs: make-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [9, 10, 11]
+        tree: [sl, upgma, mp]
         
     env: 
       REF_DIR: ./test/adeno_fiber
       INPUT: ./test/adeno_fiber/adeno_fiber
  
-    steps:
-    - uses: actions/checkout@v2
-    - name: make
-      run: make -j32 CXX=${{matrix.compiler}}
-      
-      ########################################################################################    
-    
-    - name: single linkage (tree only)
+    steps:  
+
+    - name: ${{matrix.tree}} (tree only)
       run: |
-        ./famsa -gt_export ${INPUT} sl.dnd
-        cmp sl.dnd ${REF_DIR}/sl.dnd
+        ./famsa-${{matrix.compiler}} -gt ${{matrix.tree}} -gt_export ${INPUT} ${{matrix.tree}}.dnd
+        cmp ${{matrix.tree}}.dnd ${REF_DIR}/${{matrix.tree}}.dnd
     
-    - name: single linkage (complete alignment)
+    - name: ${{matrix.tree}} (complete alignment)
       run: |
-        ./famsa ${INPUT} sl.fasta
-        cmp sl.fasta ${REF_DIR}/sl.fasta
+        ./famsa-${{matrix.compiler}} -gt ${{matrix.tree}} ${INPUT} ${{matrix.tree}}.fasta
+        cmp ${{matrix.tree}}.fasta ${REF_DIR}/${{matrix.tree}}.fasta
      
-    - name: single linkage (from tree)
+    - name: ${{matrix.tree}} (from tree)
       run: |
-        ./famsa -gt import sl.dnd ${INPUT} sl.dnd.fasta
-        cmp sl.dnd.fasta ${REF_DIR}/sl.fasta
+        ./famsa-${{matrix.compiler}} -gt import ${{matrix.tree}}.dnd ${INPUT} ${{matrix.tree}}.dnd.fasta
+        cmp ${{matrix.tree}}.dnd.fasta ${REF_DIR}/${{matrix.tree}}.fasta
         
-    ########################################################################################        
-      
-    - name: prim (tree only)
+    - name: ${{matrix.tree}} (gzip)
       run: |
-        ./famsa -gt mp -gt_export ${INPUT} mp.dnd
-        cmp mp.dnd ${REF_DIR}/mp.dnd
-    
-    - name: prim (complete alignment)
-      run: |
-        ./famsa -gt mp ${INPUT} mp.fasta
-        cmp mp.fasta ${REF_DIR}/sl.fasta
-     
-    - name: prim (from tree)
-      run: |
-        ./famsa -gt import mp.dnd ${INPUT} mp.dnd.fasta
-        cmp mp.dnd.fasta ${REF_DIR}/sl.fasta    
-    
-    ########################################################################################    
+        ./famsa-${{matrix.compiler}} -gz -gt ${{matrix.tree}} ${INPUT} ${{matrix.tree}}.fasta.gz
+        pigz -f -d ${{matrix.tree}}.fasta.gz
+        cmp ${{matrix.tree}}.fasta ${REF_DIR}/${{matrix.tree}}.fasta
         
+ ########################################################################################    
+    
+  medoid-tree:
+    name: adeno-fiber - medoid tree
+    runs-on: [self-hosted, famsa]
+    needs: full-tree
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [9, 10, 11]
+        tree: [sl, upgma, mp]
+        
+    env: 
+      REF_DIR: ./test/adeno_fiber
+      INPUT: ./test/adeno_fiber/adeno_fiber
  
-    - name: upgma (tree only)
+    steps:  
+
+    - name: medoid + ${{matrix.tree}}  (tree only)
       run: |
-        ./famsa -gt upgma -gt_export ${INPUT} upgma.dnd
-        cmp upgma.dnd ${REF_DIR}/upgma.dnd
+        ./famsa-${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} -gt_export ${INPUT} medoid-${{matrix.tree}}.dnd
+        cmp  medoid-${{matrix.tree}}.dnd ${REF_DIR}/medoid-${{matrix.tree}}.dnd
     
-    - name: upgma (complete alignment)
+    - name: medoid + ${{matrix.tree}}  (complete alignment)
       run: |
-        ./famsa -gt upgma ${INPUT} upgma.fasta
-        cmp upgma.fasta ${REF_DIR}/upgma.fasta
+        ./famsa-${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} ${INPUT} medoid-${{matrix.tree}}.fasta
+        cmp medoid-${{matrix.tree}}.fasta ${REF_DIR}/medoid-${{matrix.tree}}.fasta
      
-    - name: upgma (from tree)
+    - name: medoid + ${{matrix.tree}}  (from tree)
       run: |
-        ./famsa -gt import upgma.dnd ${INPUT} upgma.dnd.fasta
-        cmp upgma.dnd.fasta ${REF_DIR}/upgma.fasta
+        ./famsa-${{matrix.compiler}} -gt import medoid-${{matrix.tree}}.dnd ${INPUT} medoid-${{matrix.tree}}.dnd.fasta
+        cmp medoid-${{matrix.tree}}.dnd.fasta ${REF_DIR}/medoid-${{matrix.tree}}.fasta
         
-    ########################################################################################    
+  ########################################################################################        
+         
+  other-tests:
+    name: adeno-fiber - other tests
+    runs-on: [self-hosted, famsa]
+    needs: medoid-tree
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [9, 10, 11]
         
-    - name: medoid + single linkage (tree only)
-      run: |
-        ./famsa -medoidtree -gt_export ${INPUT} medoid-sl.dnd
-        cmp  medoid-sl.dnd ${REF_DIR}/medoid-sl.dnd
-    
-    - name: medoid + single linkage (complete alignment)
-      run: |
-        ./famsa -medoidtree ${INPUT} medoid-sl.fasta
-        cmp medoid-sl.fasta ${REF_DIR}/medoid-sl.fasta
-     
-    - name: medoid + single linkage (from tree)
-      run: |
-        ./famsa -gt import medoid-sl.dnd ${INPUT} medoid-sl.dnd.fasta
-        cmp medoid-sl.dnd.fasta ${REF_DIR}/medoid-sl.fasta
-        
-    ########################################################################################    
-        
-    - name: medoid + prim (tree only)
-      run: |
-        ./famsa -gt mp -medoidtree -gt_export ${INPUT} medoid-mp.dnd
-        cmp  medoid-mp.dnd ${REF_DIR}/medoid-mp.dnd
-    
-    - name: medoid + prim (complete alignment)
-      run: |
-        ./famsa -gt mp -medoidtree ${INPUT} medoid-mp.fasta
-        cmp medoid-mp.fasta ${REF_DIR}/medoid-sl.fasta
-     
-    - name: medoid + prim (from tree)
-      run: |
-        ./famsa -gt import medoid-mp.dnd ${INPUT} medoid-mp.dnd.fasta
-        cmp medoid-mp.dnd.fasta ${REF_DIR}/medoid-sl.fasta
-        
-    ########################################################################################        
-        
-    - name: medoid + upgma (tree only)
-      run: |
-        ./famsa -gt upgma -medoidtree -gt_export ${INPUT} medoid-upgma.dnd
-        cmp medoid-upgma.dnd ${REF_DIR}/medoid-upgma.dnd
-    
-    - name: medoid + upgma (complete alignment)
-      run: |
-        ./famsa -gt upgma -medoidtree ${INPUT} medoid-upgma.fasta
-        cmp medoid-upgma.fasta ${REF_DIR}/medoid-upgma.fasta
-     
-    - name: medoid + upgma (from tree)
-      run: |
-        ./famsa -gt import medoid-upgma.dnd ${INPUT} medoid-upgma.dnd.fasta
-        cmp medoid-upgma.dnd.fasta ${REF_DIR}/medoid-upgma.fasta
-        
-        
-    ########################################################################################    
-        
+    env: 
+      REF_DIR: ./test/adeno_fiber
+      INPUT: ./test/adeno_fiber/adeno_fiber
+ 
+    steps:       
     - name: export distance
       run: |
-        ./famsa -dist_export ${INPUT} dist.csv
+        ./famsa-${{matrix.compiler}} -dist_export ${INPUT} dist.csv
         cmp dist.csv ${REF_DIR}/dist.csv
         
     - name: export distance (square)
       run: |
-        ./famsa -dist_export -square_matrix ${INPUT} dist_sq.csv
+        ./famsa-${{matrix.compiler}} -dist_export -square_matrix ${INPUT} dist_sq.csv
         cmp dist_sq.csv ${REF_DIR}/dist_sq.csv
         
     - name: export pid
       run: |
-        ./famsa -dist_export -pid ${INPUT} pid.csv
+        ./famsa-${{matrix.compiler}} -dist_export -pid ${INPUT} pid.csv
         cmp pid.csv ${REF_DIR}/pid.csv
         
     - name: export pid (square)
       run: |
-        ./famsa -dist_export -square_matrix -pid ${INPUT} pid_sq.csv
+        ./famsa-${{matrix.compiler}} -dist_export -square_matrix -pid ${INPUT} pid_sq.csv
         cmp pid_sq.csv ${REF_DIR}/pid_sq.csv
       
 

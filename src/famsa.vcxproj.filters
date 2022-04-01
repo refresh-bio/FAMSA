@@ -13,6 +13,9 @@
     <Filter Include="lcs">
       <UniqueIdentifier>{263818da-dcee-49b9-9610-b54e00e4d18b}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libraries">
+      <UniqueIdentifier>{142c24dd-1f53-42a6-b0e5-a9aa8ea15d80}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="famsa.cpp" />
@@ -206,5 +209,13 @@
     <ClInclude Include="tree\SingleLinkageQueue.h">
       <Filter>tree</Filter>
     </ClInclude>
+    <ClInclude Include="..\libs\libdeflate\libdeflate.h">
+      <Filter>libraries</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Library Include="..\libs\libdeflate\windows\libdeflatestatic.lib">
+      <Filter>libraries</Filter>
+    </Library>
   </ItemGroup>
 </Project>

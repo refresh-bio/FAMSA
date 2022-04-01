@@ -89,6 +89,8 @@ public:
     void DecodeRaw(symbol_t *seq);
     string Decode();
 	uint32_t NoSymbols();
+
+	void Clear();
 };
 
 #endif

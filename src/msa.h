@@ -52,7 +52,6 @@ protected:
 	CProfile *final_profile;
 
 	mt19937 rnd_rfn;
-	uint32_t n_threads;
 
 	set<int> already_refined;
 

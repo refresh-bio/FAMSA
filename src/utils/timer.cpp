@@ -54,6 +54,12 @@ double CStopWatch::GetElapsedTime()
 
 
 #else
+// **********************************************************
+CStopWatch::CStopWatch()
+{
+	gettimeofday(&(timer.start), NULL);
+	timer.stop = timer.start;
+}
 
 // **********************************************************
 void CStopWatch::StartTimer( ) 

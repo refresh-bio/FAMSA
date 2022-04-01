@@ -99,8 +99,6 @@ CFAMSA::CFAMSA()
 	DetermineInstructionSet();
 
 	params.instruction_set = instruction_set;
-
-	n_threads = 1;
 	final_profile = nullptr;
 
 	init_sm();
@@ -178,15 +176,6 @@ bool CFAMSA::SetParams(CParams &_params)
 	params.score_matrix = score_matrix;
 	params.score_vector = score_vector;
 
-	n_threads = params.n_threads;
-	// adjust automatically
-	if (n_threads == 0) {
-		n_threads = std::thread::hardware_concurrency();
-		// if hardware_concurrency fails
-		if (n_threads == 0) {
-			n_threads = 8;
-		}
-	}
 
 	return true;
 }
@@ -215,12 +204,12 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 
 		if (params.distance == Distance::indel_div_lcs) {
 			gen = make_shared<DistanceCalculator<Distance::indel_div_lcs>>(
-				this->n_threads, params.output_file_name, params.generate_square_matrix, params.calculate_pid);
+				params.n_threads, params.output_file_name, params.generate_square_matrix, params.calculate_pid);
 
 		}
 		else if (params.distance == Distance::sqrt_indel_div_lcs) {
 			gen = make_shared<DistanceCalculator<Distance::sqrt_indel_div_lcs>>(
-				this->n_threads, params.output_file_name, params.generate_square_matrix, params.calculate_pid);
+				this->params.n_threads, params.output_file_name, params.generate_square_matrix, params.calculate_pid);
 		}
 	
 		return gen;
@@ -232,20 +221,20 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 	// single linkage
 	case GT::SLINK:
 		if (params.distance == Distance::indel_div_lcs) {
-			gen = make_shared<SingleLinkage<Distance::indel_div_lcs>>(this->n_threads);
+			gen = make_shared<SingleLinkage<Distance::indel_div_lcs>>(params.n_threads);
 		}
 		else if (params.distance == Distance::sqrt_indel_div_lcs) {
-			gen = make_shared<SingleLinkage<Distance::sqrt_indel_div_lcs>>(this->n_threads);
+			gen = make_shared<SingleLinkage<Distance::sqrt_indel_div_lcs>>(params.n_threads);
 		}
 		break;
 	
 	// Prim's minimum spanning tree 
 	case GT::MST_Prim:
 		if (params.distance == Distance::indel_div_lcs) {
-			gen = make_shared<MSTPrim<Distance::indel_div_lcs>>(this->n_threads);
+			gen = make_shared<MSTPrim<Distance::indel_div_lcs>>(params.n_threads);
 		}
 		else if (params.distance == Distance::sqrt_indel_div_lcs) {
-			gen = make_shared<MSTPrim<Distance::sqrt_indel_div_lcs>>(this->n_threads);
+			gen = make_shared<MSTPrim<Distance::sqrt_indel_div_lcs>>(params.n_threads);
 		}
 		break;
 		break;
@@ -255,11 +244,11 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 	case GT::UPGMA_modified:
 		
 		if (params.distance == Distance::indel_div_lcs) {
-			gen = make_shared<UPGMA<Distance::indel_div_lcs>>(this->n_threads, 
+			gen = make_shared<UPGMA<Distance::indel_div_lcs>>(params.n_threads,
 				(params.gt_method == GT::UPGMA_modified));
 		}
 		else if (params.distance == Distance::sqrt_indel_div_lcs) {
-			gen = make_shared<UPGMA<Distance::sqrt_indel_div_lcs>>(this->n_threads, 
+			gen = make_shared<UPGMA<Distance::sqrt_indel_div_lcs>>(params.n_threads,
 				(params.gt_method == GT::UPGMA_modified));
 		}
 		break;
@@ -267,10 +256,10 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 	// neighbour joining
 	case GT::NJ:
 		if (params.distance == Distance::indel_div_lcs) {
-			gen = make_shared<NeighborJoining<Distance::indel_div_lcs>>(this->n_threads);
+			gen = make_shared<NeighborJoining<Distance::indel_div_lcs>>(params.n_threads);
 		}
 		else if (params.distance == Distance::sqrt_indel_div_lcs) {
-			gen = make_shared<NeighborJoining<Distance::sqrt_indel_div_lcs>>(this->n_threads);
+			gen = make_shared<NeighborJoining<Distance::sqrt_indel_div_lcs>>(params.n_threads);
 		}
 		break;
 	}
@@ -286,7 +275,7 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 		// verify distance measure
 		if (params.distance == Distance::indel_div_lcs) {
 			gen = make_shared<FastTree<Distance::indel_div_lcs>>(
-				this->n_threads,
+				params.n_threads,
 				dynamic_pointer_cast<IPartialGenerator>(gen),
 				params.subtree_size,
 				clustering,
@@ -294,7 +283,7 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 		}
 		else if (params.distance == Distance::sqrt_indel_div_lcs) {
 			gen = make_shared<FastTree<Distance::sqrt_indel_div_lcs>>(
-				this->n_threads,
+				params.n_threads,
 				dynamic_pointer_cast<IPartialGenerator>(gen),
 				params.subtree_size,
 				clustering,
@@ -315,14 +304,14 @@ bool CFAMSA::ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree)
 
 	CProfileQueue pq(&gapped_sequences, &profiles, &guide_tree, params.n_threads);
 
-	vector<thread *> workers(n_threads, nullptr);
+	vector<thread *> workers(params.n_threads, nullptr);
 
 	uint32_t computed_prof = 0;
 	mutex mtx;
 
 	size_t ref_thr = params.thr_internal_refinement;
 
-	for(uint32_t i = 0; i < n_threads; ++i)
+	for(uint32_t i = 0; i < params.n_threads; ++i)
 		workers[i] = new thread([&]{
 			CGappedSequence *gs;
 			CProfile *prof1;
@@ -367,7 +356,7 @@ bool CFAMSA::ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree)
 					if (computed_prof % 100 == 0 || 
 						(computed_prof % 10 == 0 && (double) computed_prof / (2 * sequences.size() - 1) > 0.95))
 					{
-						cout << "Computing alignment - " << fixed << setprecision(1) << 100.0 * computed_prof / (2 * sequences.size()-1) << 
+						cerr << "Computing alignment - " << fixed << setprecision(1) << 100.0 * computed_prof / (2 * sequences.size()-1) << 
 							"\%    (" << computed_prof << " of " << (2 * sequences.size() - 1) << ")\r";
 						fflush(stdout);
 					}
@@ -668,7 +657,7 @@ bool CFAMSA::ComputeMSA()
 
 	string instr_names[] = { "None", "SSE", "SSE2", "SSE3", "SSE3S", "SSE41", "SSE42", "AVX", "AVX2" };
 	LOG_VERBOSE << "Hardware configuration: " << endl
-		<< " Number of threads: " << n_threads << endl
+		<< " Number of threads: " << params.n_threads << endl
 		<< " Instruction set: " << instr_names[(int)instruction_set] << endl << endl;
 
 

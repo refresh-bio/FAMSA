@@ -56,6 +56,255 @@ public:
 	void AddSolution(size_t prof_id, CProfile *prof);
 };
 
+// *******************************************************************************************
+// Multithreading queue with registering mechanism:
+//   * The queue can report whether it is in wainitng for new data state or there will be no new data
+template<typename T> class CPriorityQueue
+{
+	typedef map<size_t, T> queue_t;
+
+	queue_t q;
+	bool is_completed;
+	int n_producers;
+	uint32_t n_elements;
+	size_t current_priority;
+
+	mutable mutex mtx;								// The mutex to synchronise on
+	condition_variable cv_queue_empty;
+
+public:
+	typename queue_t::iterator q_it;
+
+	// *******************************************************************************************
+	CPriorityQueue(const int _n_producers)
+	{
+		current_priority = 0;
+
+		Restart(_n_producers);
+	};
+
+	// *******************************************************************************************
+	~CPriorityQueue()
+	{};
+
+	// *******************************************************************************************
+	void Restart(const int _n_producers)
+	{
+		unique_lock<mutex> lck(mtx);
+
+		is_completed = false;
+		n_producers = _n_producers;
+		n_elements = 0;
+		current_priority = 0;
+	}
+
+	// *******************************************************************************************
+	bool IsEmpty()
+	{
+		lock_guard<mutex> lck(mtx);
+		return n_elements == 0;
+	}
+
+	// *******************************************************************************************
+	bool IsCompleted()
+	{
+		lock_guard<mutex> lck(mtx);
+
+		return n_elements == 0 && n_producers == 0;
+	}
+
+	// *******************************************************************************************
+	void MarkCompleted()
+	{
+		lock_guard<mutex> lck(mtx);
+		n_producers--;
+
+		if (!n_producers)
+			cv_queue_empty.notify_all();
+	}
+
+	// *******************************************************************************************
+	void Push(const T data, const size_t priority)
+	{
+		unique_lock<mutex> lck(mtx);
+
+		bool was_empty = n_elements == 0;
+		q.emplace(priority, data);
+		++n_elements;
+
+		//		if (was_empty)
+		cv_queue_empty.notify_all();
+	}
+
+	// *******************************************************************************************
+	void Emplace(const size_t priority, T&& data)
+	{
+		unique_lock<mutex> lck(mtx);
+
+		//		bool was_empty = n_elements == 0;
+		q.emplace(priority, move(data));
+		++n_elements;
+
+		cv_queue_empty.notify_all();
+	}
+
+	// *******************************************************************************************
+	bool Pop(T& data)
+	{
+		unique_lock<mutex> lck(mtx);
+		cv_queue_empty.wait(lck, [this] {return (!this->q.empty() && current_priority == q.begin()->first) || !this->n_producers; });
+
+		if (n_elements == 0)
+			return false;
+
+		data = move(q.begin()->second);
+
+		q.erase(q.begin());
+		--n_elements;
+		++current_priority;
+
+		cv_queue_empty.notify_all();
+
+		return true;
+	}
+
+	// *******************************************************************************************
+	size_t GetSize()
+	{
+		unique_lock<mutex> lck(mtx);
+
+		return n_elements;
+	}
+};
+
+// *******************************************************************************************
+// Multithreading queue with registering mechanism:
+//   * The queue can report whether it is in wainitng for new data state or there will be no new data
+template<typename T> class CLimitedPriorityQueue
+{
+	typedef map<size_t, T> queue_t;
+
+	queue_t q;
+	bool is_completed;
+	int n_producers;
+	uint32_t n_elements;
+	size_t current_priority;
+	size_t size_limit;
+
+	mutable mutex mtx;								// The mutex to synchronise on
+	condition_variable cv_queue_empty;
+	condition_variable cv_queue_full;
+
+public:
+	typename queue_t::iterator q_it;
+
+	// *******************************************************************************************
+	CLimitedPriorityQueue(const int _n_producers, const size_t _size_limit)
+	{
+		current_priority = 0;
+
+		Restart(_n_producers, _size_limit);
+	};
+
+	// *******************************************************************************************
+	~CLimitedPriorityQueue()
+	{};
+
+	// *******************************************************************************************
+	void Restart(const int _n_producers, size_t _size_limit)
+	{
+		unique_lock<mutex> lck(mtx);
+
+		is_completed = false;
+		n_producers = _n_producers;
+		size_limit = _size_limit;
+		n_elements = 0;
+		current_priority = 0;
+	}
+
+	// *******************************************************************************************
+	bool IsEmpty()
+	{
+		lock_guard<mutex> lck(mtx);
+		return n_elements == 0;
+	}
+
+	// *******************************************************************************************
+	bool IsCompleted()
+	{
+		lock_guard<mutex> lck(mtx);
+
+		return n_elements == 0 && n_producers == 0;
+	}
+
+	// *******************************************************************************************
+	void MarkCompleted()
+	{
+		lock_guard<mutex> lck(mtx);
+		n_producers--;
+
+		if (!n_producers)
+			cv_queue_empty.notify_all();
+	}
+
+	// *******************************************************************************************
+	void Push(const T data, const size_t priority)
+	{
+		unique_lock<mutex> lck(mtx);
+		cv_queue_full.wait(lck, [this, &priority] {return this->q.size() < this->size_limit || priority == this->current_priority; });
+
+		bool was_empty = n_elements == 0;
+		q.emplace(priority, data);
+		++n_elements;
+
+		//		if (was_empty)
+		cv_queue_empty.notify_all();
+		cv_queue_full.notify_all();
+	}
+
+	// *******************************************************************************************
+	void Emplace(const size_t priority, T&& data)
+	{
+		unique_lock<mutex> lck(mtx);
+		cv_queue_full.wait(lck, [this, &priority] {return this->q.size() < this->size_limit || priority == this->current_priority; });
+
+		//		bool was_empty = n_elements == 0;
+		q.emplace(priority, move(data));
+		++n_elements;
+
+		cv_queue_empty.notify_all();
+		cv_queue_full.notify_all();
+	}
+
+	// *******************************************************************************************
+	bool Pop(T& data)
+	{
+		unique_lock<mutex> lck(mtx);
+		cv_queue_empty.wait(lck, [this] {return (!this->q.empty() && current_priority == q.begin()->first) || !this->n_producers; });
+
+		if (n_elements == 0)
+			return false;
+
+		data = move(q.begin()->second);
+
+		q.erase(q.begin());
+		--n_elements;
+		++current_priority;
+
+		cv_queue_empty.notify_all();
+		cv_queue_full.notify_all();
+
+		return true;
+	}
+
+	// *******************************************************************************************
+	size_t GetSize()
+	{
+		unique_lock<mutex> lck(mtx);
+
+		return n_elements;
+	}
+};
 
 // *****************************************************************************************
 //

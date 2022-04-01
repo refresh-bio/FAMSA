@@ -16,9 +16,11 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
 	GCC_VERSION=8
 	ABI_FLAG =
+	LIB_FILES := libs/libdeflate/macos/libdeflate.a
 else
 	GCC_VERSION = $(shell $(CXX) -dumpversion | cut -f1 -d.)
 	ABI_FLAG = -fabi-version=0 
+	LIB_FILES := libs/libdeflate/linux/libdeflate.a
 endif
 
 
@@ -96,7 +98,6 @@ COMMON_OBJS := src/msa.o \
 	src/core/profile_seq.o \
 	src/core/sequence.o \
 	src/core/queues.o 
-
 		
 src/lcs/lcsbp_classic.o : src/lcs/lcsbp_classic.cpp
 	$(CXX) $(CFLAGS) -c src/lcs/lcsbp_classic.cpp -o $@
@@ -160,7 +161,7 @@ endif
 	$(CXX) $(CFLAGS) -c $< -o $@
 
 famsa: src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS)
-	$(CXX) $(CLINK) -o $@ src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS)
+	$(CXX) $(CLINK) -o $@ src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS) $(LIB_FILES)
 
 clean:
 	-rm src/core/*.o

@@ -34,7 +34,7 @@ void NewickParser::parse(
 	}
 
 	if (verbose) {
-		cout << "Parsing guide tree..." << endl
+		cerr << "Parsing guide tree..." << endl
 			<< "Description length: " << description.length() << endl;
 	}
 
@@ -56,7 +56,7 @@ void NewickParser::parse(
 	if (verbose) {
 		string unparsed(info.stop, std::min((::size_t)50, strlen(info.stop)));
 
-		cout << "Unparsed characters: " << strlen(info.stop) << endl
+		cerr << "Unparsed characters: " << strlen(info.stop) << endl
 			<< "Unparsed context: " << unparsed << endl
 			<< "Parsed anything: " << info.hit << endl
 			<< "Parsed everything: " << info.full << endl;

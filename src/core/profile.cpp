@@ -66,8 +66,9 @@ CProfile::CProfile(CProfile *profile1, CProfile *profile2, CParams *_params, uin
 // ****************************************************************************
 CProfile::~CProfile()
 {
-	for (auto &p : data)
-		delete p;
+	for (auto& p : data)
+		if (p)
+			delete p;
 }
 
 // ****************************************************************************

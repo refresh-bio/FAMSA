@@ -512,3 +512,17 @@ symbol_t CGappedSequence::GetSymbol(size_t pos)
 	else
 		return GAP;
 }
+
+// *******************************************************************
+void CGappedSequence::Clear()
+{
+	symbols.clear();
+	uppercase.clear();
+	n_gaps.clear();
+	dps.clear();
+
+	symbols.shrink_to_fit();
+	uppercase.shrink_to_fit();
+	n_gaps.shrink_to_fit();
+	dps.shrink_to_fit();
+}

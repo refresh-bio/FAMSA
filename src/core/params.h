@@ -62,6 +62,9 @@ struct CParams
 	int guided_alignment_radius;
 	uint32_t n_threads;
 
+	bool gzippd_output;
+	int gzip_level;
+
 	int64_t shuffle;
 
 	instruction_set_t instruction_set;
@@ -72,7 +75,8 @@ struct CParams
 	CParams(double _gap_open = -13.683, double _gap_ext = -1.246, double _gap_term_open = -0.619, double _gap_term_ext = -0.618, uint32_t _n_refinements = 100,
 		uint32_t _scaler_log = 49, uint32_t _scaler_div = 18, uint32_t _thr_refinement = 1000,
 		bool _enable_gap_rescaling = true, bool _enable_gap_optimization = true, bool _enable_total_score_calculation = true, bool _enable_auto_refinement = true,
-		bool _verbose_mode = false, bool _very_verbose_mode = false) : 
+		bool _verbose_mode = false, bool _very_verbose_mode = false,
+		bool _gzipped_output = false, int _gzip_level = 6) : 
 		guided_alignment_radius(50), n_threads(0)
 	{
 #ifdef HUGE_ALIGNMENTS
@@ -120,6 +124,9 @@ struct CParams
 
 		indel_exp = 1.0;
 		shuffle = -1;
+
+		gzippd_output = _gzipped_output;
+		gzip_level = _gzip_level;
 
 		instruction_set = instruction_set_t::none;
 	};

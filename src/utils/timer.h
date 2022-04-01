@@ -58,7 +58,7 @@ class CStopWatch
 	stop_watch_t timer;
 
 public:
-	CStopWatch() {};
+	CStopWatch();
 	void StartTimer( );
 	void StopTimer( );
 	double GetElapsedTime();

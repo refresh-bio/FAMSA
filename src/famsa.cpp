@@ -62,6 +62,9 @@ typedef struct {
 	string input_file_name;
 	string output_file_name;
 
+	bool gzippd_output;
+	int gzip_level;
+
 	int64_t shuffle;
 
 } execution_params_t;
@@ -112,7 +115,11 @@ void show_usage(bool expert)
 		<< "  -gt_export - export a guide tree to output file in Newick format\n"
 		<< "  -dist_export - export a distance matrix to output file in CSV format\n"
 		<< "  -square_matrix - generate a square distance matrix instead of a default triangle\n"
-		<< "  -pid - generate percent identity instead of distance\n\n";
+		<< "  -pid - generate percent identity instead of distance\n\n"
+
+		<< "  -gz - enable gzipped output (default:" << boolalpha << execution_params.gzippd_output << ")\n"
+		<< "  -gz-lev <value> - gzip compression level [0-9] (default: " << execution_params.gzip_level << ")\n\n";
+
 
 	if (expert) {
 		cerr << "Advanced options:\n"
@@ -185,6 +192,9 @@ void init_params()
 
 	execution_params.indel_exp						= 1.0;
 	execution_params.shuffle						= -1;
+
+	execution_params.gzippd_output					= false;
+	execution_params.gzip_level						= 7;
 }
 
 // ****************************************************************************
@@ -285,6 +295,21 @@ bool parse_params(int argc, char **argv, bool& showExpert)
 		else if (cur_par == "-pid") {
 			execution_params.calculate_pid = true;
 		}
+		else if (cur_par == "-gz")
+		{
+			execution_params.gzippd_output = true;
+		}
+		else if (cur_par == "-gz-lev")
+		{
+			int g_lev = atof(argv[argno++]);
+			if (g_lev < 0 || g_lev > 12)
+			{
+				cerr << "Incorrect gzip level: " << g_lev << " was changed to default value: " << execution_params.gzip_level << endl;
+				g_lev = execution_params.gzip_level;
+			}
+
+			execution_params.gzip_level = g_lev;
+		}
 #ifdef DEVELOPER_MODE
 		else if (cur_par == "-shuffle") {
 			execution_params.shuffle = atoi(argv[argno++]);
@@ -300,14 +325,14 @@ bool parse_params(int argc, char **argv, bool& showExpert)
 			execution_params.very_verbose_mode = true;
 		else
 		{
-			cout << "Unknown parameter: " << cur_par << "\n";
+			cerr << "Unknown parameter: " << cur_par << "\n";
 			return false;
 		}
 	}
 
 	if(argno + 2 > argc)
 	{
-		cout << "No file name gives\n";
+		cerr << "No file name gives\n";
 		return false;
 	}
 
@@ -361,6 +386,19 @@ void set_famsa_params(CParams &famsa_params)
 	famsa_params.ref_file_name					= execution_params.ref_file_name;
 
 	famsa_params.shuffle						= execution_params.shuffle;
+
+	famsa_params.gzippd_output					= execution_params.gzippd_output;
+	famsa_params.gzip_level						= execution_params.gzip_level;
+
+	famsa_params.n_threads = execution_params.n_threads;
+	// adjust automatically
+	if (famsa_params.n_threads == 0) {
+		famsa_params.n_threads = std::thread::hardware_concurrency();
+		// if hardware_concurrency fails
+		if (famsa_params.n_threads == 0) {
+			famsa_params.n_threads = 8;
+		}
+	}
 }
 
 // ****************************************************************************
@@ -377,7 +415,7 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 	
-	CStopWatch timer;
+	CStopWatch timer, timer_saving;
 
 	timer.StartTimer();
 
@@ -408,7 +446,7 @@ int main(int argc, char *argv[])
 	} else if (input_seq_cnt == 1){
         CGappedSequence resultSeq(sequences[0]);
 		result.push_back(&resultSeq);
-		return IOService::saveAlignment(execution_params.output_file_name, result);
+		return IOService::saveAlignment(execution_params.output_file_name, result, params.n_threads, -1);
 	}
 
 	// ***** Load sequences to FAMSA
@@ -427,13 +465,22 @@ int main(int argc, char *argv[])
 		return -1;
 	}
 
+	timer_saving.StartTimer();
+
 	if (famsa.GetAlignment(result)) {
 		LOG_VERBOSE << "Saving alignment in " << execution_params.output_file_name;		
-		IOService::saveAlignment(execution_params.output_file_name, result);
+		if(params.gzippd_output)
+			IOService::saveAlignment(execution_params.output_file_name, result, params.n_threads, params.gzip_level);
+		else
+			IOService::saveAlignment(execution_params.output_file_name, result, params.n_threads, -1);
+	//		IOService::saveAlignment(execution_params.output_file_name, result);
 		LOG_VERBOSE << " [OK]" << endl;		
 	}
 
+	timer_saving.StopTimer();
 	timer.StopTimer();
+
+	LOG_VERBOSE << " Alignment saving                                 : " << timer_saving.GetElapsedTime() << "s\n";
 
 	LOG_VERBOSE << "Total computation time: " << timer.GetElapsedTime() << "s\n";
 	LOG_NORMAL << "Done!\n";

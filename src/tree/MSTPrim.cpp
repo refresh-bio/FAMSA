@@ -343,7 +343,7 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 			}));
 	}
 
-	cout << endl;
+	cerr << endl;
 
 	auto c1 = chrono::high_resolution_clock::now();
 
@@ -354,9 +354,9 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 	auto t2 = chrono::high_resolution_clock::now();
 	auto dur = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
 
-	cout << "No. filtered pos.   : " << n_filtered_pos << endl;
-	cout << "No. filtered neg.   : " << n_filtered_neg << endl;
-	cout << "Fract. filtered neg.: " << (double)n_filtered_neg / (n_filtered_pos + n_filtered_neg) << endl;
+	cerr << "No. filtered pos.   : " << n_filtered_pos << endl;
+	cerr << "No. filtered neg.   : " << n_filtered_neg << endl;
+	cerr << "Fract. filtered neg.: " << (double)n_filtered_neg / (n_filtered_pos + n_filtered_neg) << endl;
 
 	mst_to_dendogram(mst_edges, v_prim_orders, tree);
 }
