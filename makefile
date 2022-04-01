@@ -1,26 +1,25 @@
-all: famsa
+all: deflate famsa 
 
 ## USER'S OPTIONS
 STATIC_LINK = false
 NO_AVX = false
 NO_AVX2 = false
 
+deflate: 
+	$(MAKE) -C libs/libdeflate
 
 
 ####################
-
 LIBS_DIR = libs
-LIBS_LINUX_DIR = libs-linux
+LIB_FILES := libs/libdeflate/libdeflate.a
 
 UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
 	GCC_VERSION=8
 	ABI_FLAG =
-	LIB_FILES := libs/libdeflate/macos/libdeflate.a
 else
 	GCC_VERSION = $(shell $(CXX) -dumpversion | cut -f1 -d.)
 	ABI_FLAG = -fabi-version=0 
-	LIB_FILES := libs/libdeflate/linux/libdeflate.a
 endif
 
 
@@ -67,10 +66,10 @@ $(info *** Detecting g++ version 12 ***)
 endif
  
 ifeq ($(STATIC_LINK), true) 
-	CFLAGS	= -Wall -O3 -msse4 -m64 $(ATOMIC_FLAGS) -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD) -I $(LIBS_DIR) -I $(LIBS_LINUX_DIR) 
+	CFLAGS	= -Wall -O3 -msse4 -m64 $(ATOMIC_FLAGS) -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD) -I $(LIBS_DIR)
 	CLINK	= -lm -static -O3 -msse4 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD)
 else
-	CFLAGS	= -Wall -O3 -msse4 -m64 $(ATOMIC_FLAGS) -std=$(CPP_STD) -pthread -I $(LIBS_DIR) -I $(LIBS_LINUX_DIR)
+	CFLAGS	= -Wall -O3 -msse4 -m64 $(ATOMIC_FLAGS) -std=$(CPP_STD) -pthread -I $(LIBS_DIR)
 	CLINK	= -lm -O3 -msse4 -std=$(CPP_STD) -pthread 
 endif
  
@@ -164,6 +163,7 @@ famsa: src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS)
 	$(CXX) $(CLINK) -o $@ src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS) $(LIB_FILES)
 
 clean:
+	$(MAKE) clean -C libs/libdeflate
 	-rm src/core/*.o
 	-rm src/lcs/*.o
 	-rm src/tree/*.o

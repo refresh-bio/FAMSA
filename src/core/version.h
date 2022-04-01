@@ -9,14 +9,18 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"1.10.0"
-#define FAMSA_DATE		"2022-03-24"
+#define FAMSA_VER		"1.11.0"
+#define FAMSA_DATE		"2022-04-01"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+
+1.11.0 (2022-04-01)
+- Gzipped output.
 
 1.10.0 (2022-03-24)
 - Uniform distance measures.
