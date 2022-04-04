@@ -262,6 +262,9 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 			gen = make_shared<NeighborJoining<Distance::sqrt_indel_div_lcs>>(params.n_threads);
 		}
 		break;
+
+	default:
+		throw std::runtime_error("Error: Illegal guide tree method.");
 	}
 
 	// check if heuristic was specified
@@ -318,7 +321,7 @@ bool CFAMSA::ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree)
 			CProfile *prof2;
 			CProfile *prof_sol;
 			size_t prof_id;
-			bool only_task;
+			//bool only_task;
 			uint32_t no_threads;
 			uint32_t no_rows_per_box;
 
@@ -356,7 +359,7 @@ bool CFAMSA::ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree)
 					if (computed_prof % 100 == 0 || 
 						(computed_prof % 10 == 0 && (double) computed_prof / (2 * sequences.size() - 1) > 0.95))
 					{
-						cerr << "Computing alignment - " << fixed << setprecision(1) << 100.0 * computed_prof / (2 * sequences.size()-1) << 
+						LOG_NORMAL << "Computing alignment - " << fixed << setprecision(1) << 100.0 * computed_prof / (2 * sequences.size()-1) << 
 							"\%    (" << computed_prof << " of " << (2 * sequences.size() - 1) << ")\r";
 						fflush(stdout);
 					}
@@ -622,33 +625,34 @@ bool CFAMSA::LoadRefSequences()
 // *******************************************************************
 bool CFAMSA::ComputeMSA()
 {
-	if (params.verbose_mode)
-	{
-		cerr << "Params:\n";
-		cerr << "  no. of threads: " << params.n_threads << "\n";
-		cerr << "  guide tree method: " << GT::toString(params.gt_method) << "\n";
-		cerr << "  guide tree speeding up heuristic: " << GT::toString(params.gt_heuristic) << "\n";
-		if (params.gt_heuristic == GT::imported) {
-			cerr << "  guide tree file: " << params.guide_tree_in_file << "\n";
-		}
-		cerr << "  distance measure: " << dist2str(params.distance) << "\n";
+	LOG_VERBOSE 
+		<< "Params:\n"
+		<< "  no. of threads: " << params.n_threads << "\n"
+		<< "  guide tree method: " << GT::toString(params.gt_method) << "\n"
+		<< "  guide tree speeding up heuristic: " << GT::toString(params.gt_heuristic) << "\n";
 
-		cerr << "Advanced params:\n";
-		cerr << "  no. of refinements: " << params.n_refinements << "\n";
-		cerr << "  refinement threshold: " << params.thr_refinement << "\n";
-		cerr << "  gap open cost (rescalled): " << params.gap_open << "\n";
-		cerr << "  gap extension cost (rescalled): " << params.gap_ext << "\n";
-		cerr << "  gap terminal open cost (rescalled): " << params.gap_term_open << "\n";
-		cerr << "  gap terminal extension cost (rescalled): " << params.gap_term_ext << "\n";
-		cerr << "  gap cost scaller log-term: " << params.scaler_log << "\n";
-		cerr << "  gap cost scaller div-term: " << params.scaler_div << "\n";
-		cerr << "  enable gap rescaling: " << params.enable_gap_rescaling << "\n";
-		cerr << "  enable gap optimization: " << params.enable_gap_optimization << "\n";
-		cerr << "  enable total score calculation: " << params.enable_total_score_calculation << "\n";
-		cerr << "  enable auto refinement: " << params.enable_auto_refinement << "\n";
-		cerr << "  guided alignment radius: " << params.guided_alignment_radius << "\n\n";
-
+	if (params.gt_method == GT::imported) {
+		LOG_VERBOSE << "  guide tree file: " << params.guide_tree_in_file << "\n";
 	}
+		
+	LOG_VERBOSE
+		<< "  distance measure: " << dist2str(params.distance) << "\n\n"
+
+		<< "Advanced params:\n"
+		<< "  no. of refinements: " << params.n_refinements << "\n"
+		<< "  refinement threshold: " << params.thr_refinement << "\n"
+		<< "  gap open cost (rescalled): " << params.gap_open << "\n"
+		<< "  gap extension cost (rescalled): " << params.gap_ext << "\n"
+		<< "  gap terminal open cost (rescalled): " << params.gap_term_open << "\n"
+		<< "  gap terminal extension cost (rescalled): " << params.gap_term_ext << "\n"
+		<< "  gap cost scaller log-term: " << params.scaler_log << "\n"
+		<< "  gap cost scaller div-term: " << params.scaler_div << "\n"
+		<< "  enable gap rescaling: " << params.enable_gap_rescaling << "\n"
+		<< "  enable gap optimization: " << params.enable_gap_optimization << "\n"
+		<< "  enable total score calculation: " << params.enable_total_score_calculation << "\n"
+		<< "  enable auto refinement: " << params.enable_auto_refinement << "\n"
+		<< "  guided alignment radius: " << params.guided_alignment_radius << "\n\n";
+	
 
 #ifdef DEVELOPER_MODE
 	if (params.test_ref_sequences)

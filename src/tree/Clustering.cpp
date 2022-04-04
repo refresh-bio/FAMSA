@@ -96,7 +96,7 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 			// select non-medoid randomly as a candidate for swap
 			int xx = non_medoid_sampling(gen_positions);
 			int x = candidate[xx];
-			float dx = dists_nearest[x];
+	//		float dx = dists_nearest[x];
 	//		int assign_x = assignments[x];
 
 		//	std::fill_n(deltas, n_medoids, -dx); // gain for making x a new medoid (same for all current medoids)
@@ -116,7 +116,7 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 				int nn = assign_nearest[y];
 				float dn = dists_nearest[y];
 				float ds = dists_second[y];
- 				int n = candidate[nn];
+ 				//int n = candidate[nn];
 				
 				// nn is removed so y will be reassigned
 				deltas[nn] += std::min(dxy, ds) - dn;
@@ -142,7 +142,7 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 				// swap non-medoid with medoid
 				std::swap(candidate[mm_new], candidate[xx]);
 				int m_new = candidate[mm_new];
-				int x_new = candidate[xx];
+				//int x_new = candidate[xx];
 
 				// new medoid no longer contributes to cost
 				current.cost -= dists_nearest[m_new];

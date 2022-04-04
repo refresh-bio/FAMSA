@@ -17,119 +17,89 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 using namespace std;
 
-struct CParams
+class CParams
 {
+private:
+	double gap_open_base					= 14.85;
+	double gap_ext_base						= 1.25;
+	double gap_term_open_base				= 0.66;
+	double gap_term_ext_base				= 0.66;
+	
+public:	
 	score_t gap_open;
 	score_t gap_ext;
 	score_t gap_term_open;
 	score_t gap_term_ext;
-	uint32_t n_refinements;
-	uint32_t scaler_log;
-	uint32_t scaler_div;
-	uint32_t thr_refinement;
-	uint32_t thr_internal_refinement;
-	bool enable_gap_rescaling;
-	bool enable_gap_optimization;
-	bool enable_total_score_calculation;
-	bool enable_auto_refinement;
-	bool verbose_mode;
-	bool very_verbose_mode;
-	uint64_t ref_seq_subtree_size;
-	double indel_exp;
 
-	GT::Method gt_method;
-	GT::Heuristic gt_heuristic;
-	Distance distance;
+	uint32_t scaler_div = 7;
+	uint32_t scaler_log = 45;
+	int guided_alignment_radius = 50;
 
-	int heuristic_threshold;
-	int guide_tree_seed;
-	int subtree_size;
-	int sample_size;
-	float cluster_fraction;
-	int cluster_iters;
-
+	bool enable_gap_rescaling				= true;
+	bool enable_gap_optimization			= true;
+	bool enable_total_score_calculation		= true;
+	bool enable_auto_refinement				= true;
+	
+	uint32_t n_refinements					= 100;
+	uint32_t thr_refinement					= 1000;
+	uint32_t thr_internal_refinement		= 0;
+	
+	GT::Method gt_method			= GT::SLINK;
+	GT::Heuristic gt_heuristic		= GT::None;
+	Distance distance				= Distance::indel_div_lcs;
+	int heuristic_threshold			= 0;
+	
+	int guide_tree_seed				= 0;
+	int subtree_size				= 100;
+	int sample_size					= 2000;
+	float cluster_fraction			= 0.1;
+	int cluster_iters				= 2;
 
 	string guide_tree_in_file;
-	bool export_distances;
-	bool export_tree;
-	bool generate_square_matrix;
-	bool calculate_pid;
+	bool export_distances				= false;
+	bool export_tree					= false;
+	bool generate_square_matrix			= false;
+	bool calculate_pid					= false;
 	
-	bool test_ref_sequences;
+	bool test_ref_sequences				 = false;
+	uint64_t ref_seq_subtree_size = 0;
 	string ref_file_name;
+	
+	int64_t shuffle = -1;
+	uint32_t n_threads					= 0;
+	
+	bool gzippd_output					= false;
+	int gzip_level						= 7;
+	
+	instruction_set_t instruction_set	= instruction_set_t::none;
+
+	bool verbose_mode = false;
+	bool very_verbose_mode = false;
+
+	string input_file_name;
 	string output_file_name;
-
-	int guided_alignment_radius;
-	uint32_t n_threads;
-
-	bool gzippd_output;
-	int gzip_level;
-
-	int64_t shuffle;
-
-	instruction_set_t instruction_set;
 
 	vector<vector<score_t>> score_matrix;
 	vector<score_t> score_vector;
 
-	CParams(double _gap_open = -13.683, double _gap_ext = -1.246, double _gap_term_open = -0.619, double _gap_term_ext = -0.618, uint32_t _n_refinements = 100,
-		uint32_t _scaler_log = 49, uint32_t _scaler_div = 18, uint32_t _thr_refinement = 1000,
-		bool _enable_gap_rescaling = true, bool _enable_gap_optimization = true, bool _enable_total_score_calculation = true, bool _enable_auto_refinement = true,
-		bool _verbose_mode = false, bool _very_verbose_mode = false,
-		bool _gzipped_output = false, int _gzip_level = 6) : 
-		guided_alignment_radius(50), n_threads(0)
-	{
+	
+	CParams()  {
 #ifdef HUGE_ALIGNMENTS
-		gap_open      = _gap_open;
-		gap_ext       = _gap_ext;
-		gap_term_open = _gap_term_open;
-		gap_term_ext  = _gap_term_ext;
+		gap_open = -gap_open_base;
+		gap_ext = -gap_ext_base;
+		gap_term_open = -gap_term_open_base;
+		gap_term_ext = -gap_term_ext_base;
 #else
-		gap_open      = (score_t) round(cost_cast_factor * _gap_open);
-		gap_ext       = (score_t) round(cost_cast_factor * _gap_ext);
-		gap_term_open = (score_t) round(cost_cast_factor * _gap_term_open);
-		gap_term_ext  = (score_t) round(cost_cast_factor * _gap_term_ext);
+		gap_open      = (score_t) round(-cost_cast_factor * gap_open_base);
+		gap_ext       = (score_t) round(-cost_cast_factor * gap_ext_base);
+		gap_term_open = (score_t) round(-cost_cast_factor * gap_term_open_base);
+		gap_term_ext  = (score_t) round(-cost_cast_factor * gap_term_ext_base);
 #endif
 
-		n_refinements  = _n_refinements;
-		scaler_log     = _scaler_log;
-		scaler_div     = _scaler_div;
-		thr_refinement = _thr_refinement;
-		thr_internal_refinement = 0;
-
-		enable_gap_rescaling		   = _enable_gap_rescaling;
-		enable_gap_optimization		   = _enable_gap_optimization;
-		enable_total_score_calculation = _enable_total_score_calculation;
-		enable_auto_refinement		   = _enable_auto_refinement;
-		verbose_mode				   = _verbose_mode;
-		very_verbose_mode			   = _very_verbose_mode;
-
-		gt_method = GT::SLINK;
-		gt_heuristic = GT::None;
-		distance = Distance::indel_div_lcs;
-
-		heuristic_threshold = 0;
-		export_tree = false;
-		export_distances = false;
-		generate_square_matrix = false;
-		calculate_pid = false;
-		subtree_size = 50;
-		sample_size = 500;
-
-		cluster_fraction = 0.2;
-		cluster_iters = 2;
-
-		ref_seq_subtree_size = 0;
-		test_ref_sequences = false;
-
-		indel_exp = 1.0;
-		shuffle = -1;
-
-		gzippd_output = _gzipped_output;
-		gzip_level = _gzip_level;
-
-		instruction_set = instruction_set_t::none;
 	};
+
+	bool parse(int argc, char** argv, bool& showExpert);
+	void show_usage(bool expert);
 };
 
 #endif

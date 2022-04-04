@@ -66,10 +66,10 @@ $(info *** Detecting g++ version 12 ***)
 endif
  
 ifeq ($(STATIC_LINK), true) 
-	CFLAGS	= -Wall -O3 -msse4 -m64 $(ATOMIC_FLAGS) -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD) -I $(LIBS_DIR)
+	CFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 -msse4 -m64 $(ATOMIC_FLAGS) -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD) -I $(LIBS_DIR)
 	CLINK	= -lm -static -O3 -msse4 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD)
 else
-	CFLAGS	= -Wall -O3 -msse4 -m64 $(ATOMIC_FLAGS) -std=$(CPP_STD) -pthread -I $(LIBS_DIR)
+	CFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 -msse4 -m64 $(ATOMIC_FLAGS) -std=$(CPP_STD) -pthread -I $(LIBS_DIR)
 	CLINK	= -lm -O3 -msse4 -std=$(CPP_STD) -pthread 
 endif
  
@@ -92,6 +92,7 @@ COMMON_OBJS := src/msa.o \
 	src/utils/timer.o \
 	src/utils/log.o \
 	src/core/io_service.o \
+	src/core/params.o \
 	src/core/profile.o \
 	src/core/profile_par.o \
 	src/core/profile_seq.o \

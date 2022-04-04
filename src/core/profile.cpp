@@ -117,7 +117,7 @@ void CProfile::CalculateCounters(CGappedSequence *gs)
 	}
 
 	// Set counters for symbols and internal gaps
-	bool was_gap = false;
+	//bool was_gap = false;
 	size_t seq_pos = first_non_gap;
 
 	auto symbols = gs->symbols;
@@ -1090,11 +1090,6 @@ void CProfile::FinalizeGaps(CProfile* profile, vector<pair<uint32_t, uint32_t>>&
 // ****************************************************************************
 void CProfile::InsertColumn(size_t prof_col_id, CProfile *profile, size_t col_id)
 {
-	score_t gap_open	   = params->gap_open;
-	score_t gap_ext		   = params->gap_ext;
-	score_t gap_term_open  = params->gap_term_open;
-	score_t gap_term_ext   = params->gap_term_ext;
-
 	counters.add_column(prof_col_id, profile->counters.get_column(col_id));
 	scores.add_column(prof_col_id, profile->scores.get_column(col_id));
 }

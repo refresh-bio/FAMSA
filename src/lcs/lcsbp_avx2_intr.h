@@ -146,7 +146,7 @@ public:
 		__m256i sign64_bit = _mm256_set1_epi64x(1ull << 63);
 		__m256i ones = _mm256_set1_epi64x(~0ull);
 
-		const Array<bit_vec_t>& bit_masks = seq0->bit_masks;
+		//const Array<bit_vec_t>& bit_masks = seq0->bit_masks;
 
 		size_t bv_len = (seq0->length + bv_size256 - 1) / bv_size256;
 
@@ -185,8 +185,8 @@ public:
 		if (BV_LEN > 30)			*pX0++ = ones;
 		if (BV_LEN > 31)			*pX0++ = ones;
 
-		uint64_t* bm = (uint64_t*)bit_masks[0];
-		uint64_t bm_len = bit_masks.get_width();
+		//uint64_t* bm = (uint64_t*)bit_masks[0];
+		//uint64_t bm_len = bit_masks.get_width();
 
 		for (size_t i = 0; i < max_len; ++i)
 		{
@@ -198,10 +198,10 @@ public:
 
 			auto pX = X;
 
-			uint64_t* pbm1 = bm + c1 * bm_len;
-			uint64_t* pbm2 = bm + c2 * bm_len;
-			uint64_t* pbm3 = bm + c3 * bm_len;
-			uint64_t* pbm4 = bm + c4 * bm_len;
+			//uint64_t* pbm1 = bm + c1 * bm_len;
+			//uint64_t* pbm2 = bm + c2 * bm_len;
+			//uint64_t* pbm3 = bm + c3 * bm_len;
+			//uint64_t* pbm4 = bm + c4 * bm_len;
 
 			__m128i* pp34 = precomp_masks + c3 * NO_SYMBOLS * bv_len + c4 * bv_len;
 			__m128i* pp12 = precomp_masks + c1 * NO_SYMBOLS * bv_len + c2 * bv_len;

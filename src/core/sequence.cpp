@@ -295,7 +295,7 @@ string CGappedSequence::Decode()
 		s.append(n_gaps[i], '-');
 	}
 
-	return std::move(s);
+	return s;
 }
 
 // *******************************************************************

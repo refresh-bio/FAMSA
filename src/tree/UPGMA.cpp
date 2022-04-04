@@ -116,7 +116,7 @@ void UPGMA<_distance>::computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_s
 	Average<UPGMA_dist_t, MODIFIED> average;
 	
 	uint64_t g_uLeafCount;
-	uint64_t g_uTriangleSize;
+	//uint64_t g_uTriangleSize;
 	uint64_t g_uInternalNodeCount;
 	uint64_t g_uInternalNodeIndex;
 
@@ -158,7 +158,7 @@ void UPGMA<_distance>::computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_s
 	//	void UPGMA2(const DistCalc &DC, Tree &tree, LINKAGE Linkage)
 	g_uLeafCount = n_seq;
 
-	g_uTriangleSize = (g_uLeafCount*(g_uLeafCount - 1)) / 2;
+	//g_uTriangleSize = (g_uLeafCount*(g_uLeafCount - 1)) / 2;
 	g_uInternalNodeCount = g_uLeafCount - 1;
 
 	g_Dist = distances;

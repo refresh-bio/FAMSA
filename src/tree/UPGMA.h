@@ -25,11 +25,11 @@ typedef float UPGMA_dist_t;
 class CUPGMAQueue
 {
 	std::vector<CSequence> *sequences;
-
-	uint32_t lowest_uncomputed_row;
 	uint32_t n_rows;
 	UPGMA_dist_t *dist_matrix;
+	uint32_t lowest_uncomputed_row;
 	bool eoq_flag;
+
 	std::mutex mtx;
 	
 

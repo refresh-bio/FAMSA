@@ -95,11 +95,11 @@ void CLCSBP_AVX2_INTR::prepare_mask_pairs(size_t bv_len, CSequence* seq0)
 // *******************************************************************
 void CLCSBP_AVX2_INTR::calculate(CSequence* seq0, CSequence* seq1, CSequence* seq2, CSequence* seq3, CSequence* seq4, uint32_t* res, uint32_t bv_len, uint32_t max_len)
 {
-	__m256i V, tB, V2, sB, U1, U2;
+	__m256i V, tB, V2, sB, U2;
 	__m256i sign64_bit = _mm256_set1_epi64x(1ull << 63);
 	__m256i ones = _mm256_set1_epi64x(~0ull);
 
-	const Array<bit_vec_t>& bit_masks = seq0->bit_masks;
+	//const Array<bit_vec_t>& bit_masks = seq0->bit_masks;
 
 	for (size_t i = 0; i < bv_len; ++i)
 		X[i] = ones;
@@ -107,7 +107,7 @@ void CLCSBP_AVX2_INTR::calculate(CSequence* seq0, CSequence* seq1, CSequence* se
 	//	__int64* base = (__int64*) bit_masks[0];
 
 	//	__m128i plus_one = _mm_set1_epi32(1);
-	int bm_width = bit_masks.get_width();
+	//int bm_width = bit_masks.get_width();
 
 	for (size_t i = 0; i < max_len; ++i)
 	{

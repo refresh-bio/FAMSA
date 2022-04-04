@@ -67,7 +67,7 @@ void NeighborJoining<_distance>::computeTree(float* distances, size_t n_seq, tre
 
 		// find minimum element in Q matrix
 		float min_q = std::numeric_limits<float>::max();
-		int min_i, min_j;
+		int min_i = 0, min_j = 0;
 
 
 		for (int i = 0; i < n_clusters; ++i) {

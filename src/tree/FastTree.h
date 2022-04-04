@@ -28,8 +28,8 @@ public:
 
 protected:
 	std::shared_ptr<IPartialGenerator> partialGenerator;
-	std::shared_ptr<IClustering> clustering;
 	int subtreeSize;
+	std::shared_ptr<IClustering> clustering;
 	int sampleSize;
 	int clusteringThreshold;
 

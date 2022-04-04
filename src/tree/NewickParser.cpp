@@ -5,7 +5,6 @@ The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 */
-#pragma once
 #include <stdexcept>
 #include <algorithm>
 #include <ostream>
@@ -16,6 +15,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 #include "NewickParser.h"
 #include "TreeGrammar.h"
+#include "../utils/log.h"
 
 #undef min
 
@@ -33,11 +33,9 @@ void NewickParser::parse(
 		throw std::runtime_error("Error while parsing Newick tree: empty description.");
 	}
 
-	if (verbose) {
-		cerr << "Parsing guide tree..." << endl
-			<< "Description length: " << description.length() << endl;
-	}
-
+	LOG_VERBOSE << "Parsing guide tree..." << endl
+		<< "Description length: " << description.length() << endl;
+	
 	TreeGrammar grammar(sequences);
 	
 	string newDesc;
@@ -56,7 +54,7 @@ void NewickParser::parse(
 	if (verbose) {
 		string unparsed(info.stop, std::min((::size_t)50, strlen(info.stop)));
 
-		cerr << "Unparsed characters: " << strlen(info.stop) << endl
+		LOG_VERBOSE << "Unparsed characters: " << strlen(info.stop) << endl
 			<< "Unparsed context: " << unparsed << endl
 			<< "Parsed anything: " << info.hit << endl
 			<< "Parsed everything: " << info.full << endl;

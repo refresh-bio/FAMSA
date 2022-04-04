@@ -98,6 +98,9 @@
     <ClCompile Include="tree\DistanceCalculator.cpp">
       <Filter>tree</Filter>
     </ClCompile>
+    <ClCompile Include="core\params.cpp">
+      <Filter>core</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="msa.h" />

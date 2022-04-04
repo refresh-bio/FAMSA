@@ -166,7 +166,7 @@ void CProfile::AlignSeqProf(CProfile* profile1, CProfile* profile2, vector<int>*
 	size_t prof2_width = profile2->width;
 
 	//size_t prof1_card = profile1->data.size();
-	size_t prof1_card = 1;
+	//size_t prof1_card = 1;
 	size_t prof2_card = profile2->data.size();
 
 	// The profile1 contains a single sequence so there are no gaps here
@@ -183,7 +183,7 @@ void CProfile::AlignSeqProf(CProfile* profile1, CProfile* profile2, vector<int>*
 	dp_row_t curr_row(prof2_width + 1);
 	dp_row_t prev_row(prof2_width + 1);
 
-	CProfileValues<score_t, NO_SYMBOLS>& scores1 = const_cast<CProfileValues<score_t, NO_SYMBOLS>&>(profile1->scores);
+	//CProfileValues<score_t, NO_SYMBOLS>& scores1 = const_cast<CProfileValues<score_t, NO_SYMBOLS>&>(profile1->scores);
 	CProfileValues<score_t, NO_SYMBOLS>& scores2 = const_cast<CProfileValues<score_t, NO_SYMBOLS>&>(profile2->scores);
 
 	bool is_guided = column_mapping1 != nullptr && column_mapping2 != nullptr;
@@ -526,9 +526,11 @@ void CProfile::AlignProfProf(CProfile* profile1, CProfile* profile2, vector<int>
 	// Precompute scores for gaps for profile2
 	vector<dp_gap_costs> prof2_gaps(prof2_width + 1);
 
-	size_t n_gap_open, n_gap_ext, n_gap_term_open, n_gap_term_ext;
-	n_gap_open = n_gap_ext = n_gap_term_open = n_gap_term_ext = 0;
-
+	//size_t n_gap_open = 0;
+	//size_t n_gap_ext = 0;
+	//size_t n_gap_term_open = 0;
+	//size_t n_gap_term_ext = 0;
+	
 	size_t n_gap_prof1_start_open, n_gap_prof1_start_ext, n_gap_prof1_start_term_open, n_gap_prof1_start_term_ext,
 		n_gap_prof1_cont_ext, n_gap_prof1_cont_term_ext;
 	vector<dp_gap_corrections> gap_corrections(prof2_width + 1);
@@ -602,9 +604,9 @@ void CProfile::AlignProfProf(CProfile* profile1, CProfile* profile2, vector<int>
 	for (size_t i = 1; i <= prof1_width; ++i)
 	{
 		// Precompute scores for gaps for current and previous row of profile1
-		score_t prof1_gap_open_prev = scores1.get_value(i - 1, GAP_OPEN);
+		//score_t prof1_gap_open_prev = scores1.get_value(i - 1, GAP_OPEN);
 		score_t prof1_gap_open_curr = scores1.get_value(i, GAP_OPEN);
-		score_t prof1_gap_term_open_prev = scores1.get_value(i - 1, GAP_TERM_OPEN);
+		//score_t prof1_gap_term_open_prev = scores1.get_value(i - 1, GAP_TERM_OPEN);
 		score_t prof1_gap_term_open_curr = scores1.get_value(i, GAP_TERM_OPEN);
 		score_t prof1_gap_ext_curr = scores1.get_value(i, GAP_EXT);
 		score_t prof1_gap_term_ext_curr = scores1.get_value(i, GAP_TERM_EXT);

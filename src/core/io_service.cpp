@@ -395,24 +395,3 @@ bool IOService::saveAlignment(const std::string& file_name, vector<CGappedSequen
 
 	return true;
 }
-
-// *******************************************************************
-/*
-bool IOService::exportDistanceMatrix(const std::string& file_name, float*matrix, size_t size) {
-	ofstream file(file_name);
-	if (!file) {
-		return false;
-	}
-
-	for (size_t i = 0; i < size; ++i) {
-		for (size_t j = 0; j < i; ++j) {
-			const size_t id = UPGMA_TriangleSubscript(i, j);
-			float d = matrix[id];
-			file << d << ", ";
-		}
-		file << std::endl;
-	}
-
-	return true;
-}
-*/

@@ -44,8 +44,8 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 	int n_seq = (int)sequences.size();
 	int c_seq = 0;
 
-	auto t1 = chrono::high_resolution_clock::now();
-	auto sc1 = chrono::system_clock::now();
+	//auto t1 = chrono::high_resolution_clock::now();
+	//auto sc1 = chrono::system_clock::now();
 
 #ifdef MANY_CAND
 	sim_value_t s0;
@@ -127,7 +127,7 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 
 			int& candidate_worker = candidates[id_worker];
 
-			int last_size = -1;
+			//int last_size = -1;
 
 			uint64_t loc_n_filtered_pos = 0;
 			uint64_t loc_n_filtered_neg = 0;
@@ -227,7 +227,7 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 #endif
 					}
 
-					last_size = -1;
+					//last_size = -1;
 
 #ifdef ATOMIC_WAIT
 					b_flag0.wait(flag_value, memory_order_relaxed);
@@ -343,20 +343,19 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 			}));
 	}
 
-	cerr << endl;
-
-	auto c1 = chrono::high_resolution_clock::now();
+	//auto c1 = chrono::high_resolution_clock::now();
 
 	for (auto& t : workers)
 		t.join();
 	workers.clear();
 
-	auto t2 = chrono::high_resolution_clock::now();
-	auto dur = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
+	//auto t2 = chrono::high_resolution_clock::now();
+	//auto dur = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
 
-	cerr << "No. filtered pos.   : " << n_filtered_pos << endl;
-	cerr << "No. filtered neg.   : " << n_filtered_neg << endl;
-	cerr << "Fract. filtered neg.: " << (double)n_filtered_neg / (n_filtered_pos + n_filtered_neg) << endl;
+	LOG_VERBOSE 
+		<< "No. filtered pos.   : " << (uint64_t)n_filtered_pos << endl
+		<< "No. filtered neg.   : " << (uint64_t)n_filtered_neg << endl
+		<< "Fract. filtered neg.: " << (double)n_filtered_neg / (n_filtered_pos + n_filtered_neg) << endl;
 
 	mst_to_dendogram(mst_edges, v_prim_orders, tree);
 }
@@ -640,7 +639,7 @@ void CMSTPrimQueue::SetEoq()
 // *******************************************************************
 void MSTPartitioner::InitPartition(int n_elements)
 {
-	int cur_part_size;
+	//int cur_part_size;
 
 	min_part_size &= ~0x3;			// round down to mult. of 4
 	if (min_part_size == 0)
@@ -685,8 +684,6 @@ void MSTPartitioner::InitPartition(int n_elements)
 			++vd_parts.back().i_end;
 		}
 	}
-
-	int aa = 1;
 }
 
 // *******************************************************************

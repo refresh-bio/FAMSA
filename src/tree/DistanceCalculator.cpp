@@ -83,8 +83,6 @@ void DistanceCalculator<_distance>::run(std::vector<CSequence>& sequences, tree_
 	char* out_row = new char[10000 + sequences.size() * 100];
 	char *ptr = out_row;
 
-	cerr << endl;
-
 	// Gather results in one thread
 	for (int row_id = 0; row_id < sequences.size(); ++row_id) {
 

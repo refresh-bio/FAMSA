@@ -50,7 +50,7 @@ void CProfile::ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t 
 	size_t prof2_width = profile2->width;
 
 	//size_t prof1_card = profile1->data.size();
-	size_t prof1_card = 1;
+	//size_t prof1_card = 1;
 	size_t prof2_card = profile2->data.size();
 
 	// The profile1 contains a single sequence so there are no gaps here
@@ -64,7 +64,7 @@ void CProfile::ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t 
 	CDPMatrix matrix(prof1_width + 1, prof2_width + 1);
 	vector<dp_row_t> dp_rows(no_dp_rows);
 
-	CProfileValues<score_t, NO_SYMBOLS>& scores1 = const_cast<CProfileValues<score_t, NO_SYMBOLS>&>(profile1->scores);
+	//CProfileValues<score_t, NO_SYMBOLS>& scores1 = const_cast<CProfileValues<score_t, NO_SYMBOLS>&>(profile1->scores);
 	CProfileValues<score_t, NO_SYMBOLS>& scores2 = const_cast<CProfileValues<score_t, NO_SYMBOLS>&>(profile2->scores);
 
 	// Precompute scores for gaps for profile2
@@ -732,9 +732,9 @@ void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t
 				auto& prev_row = dp_rows[(curr_row_id + no_dp_rows - 1) % no_dp_rows];
 
 				// Precompute scores for gaps for current and previous row of profile1
-				score_t prof1_gap_open_prev = scores1.get_value(i - 1, GAP_OPEN);
+				//score_t prof1_gap_open_prev = scores1.get_value(i - 1, GAP_OPEN);
 				score_t prof1_gap_open_curr = scores1.get_value(i, GAP_OPEN);
-				score_t prof1_gap_term_open_prev = scores1.get_value(i - 1, GAP_TERM_OPEN);
+				//score_t prof1_gap_term_open_prev = scores1.get_value(i - 1, GAP_TERM_OPEN);
 				score_t prof1_gap_term_open_curr = scores1.get_value(i, GAP_TERM_OPEN);
 				score_t prof1_gap_ext_curr = scores1.get_value(i, GAP_EXT);
 				score_t prof1_gap_term_ext_curr = scores1.get_value(i, GAP_TERM_EXT);

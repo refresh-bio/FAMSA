@@ -127,8 +127,14 @@ jobs:
     env: 
       REF_DIR: ./test/adeno_fiber
       INPUT: ./test/adeno_fiber/adeno_fiber
- 
-    steps:       
+     
+    steps:
+    
+    - name: non-default gaps
+      run: |
+        ./famsa-${{matrix.compiler}} -go 10 -ge 2 -tgo 0.5 -tge 1.0 -gsd 3 -gsl 30 ${INPUT} gaps.fasta
+        cmp gaps.fasta ${REF_DIR}/gaps.fasta
+    
     - name: export distance
       run: |
         ./famsa-${{matrix.compiler}} -dist_export ${INPUT} dist.csv

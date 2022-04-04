@@ -23,10 +23,6 @@ enum class Distance {
 	neg_lcs_div_indel,
 	neg_lcs_div_minlen,
 	neg_lcs_div_len_corrected,
-
-	similarity_lcs2_div_AB,
-	similarity_lcs2_indel_ApB,
-	similarity_lcs_div_sqrt_indel
 };
 
 inline static Distance str2dist(const std::string& s) {
@@ -46,9 +42,13 @@ inline static std::string dist2str(Distance d) {
 	switch (d) {
 	case Distance::indel_div_lcs:				return "indel_div_lcs";
 	case Distance::sqrt_indel_div_lcs:			return "sqrt_indel_div_lcs";
+	case Distance::neg_lcs_div_indel:			return "neg_lcs_div_indel";
+	case Distance::neg_lcs_div_minlen:			return "neg_lcs_div_minlen";
+	case Distance::neg_lcs_div_len_corrected:	return "neg_lcs_div_len_corrected";
+	default:
+		throw new std::runtime_error("Error: Illegal pairwise distance measure.");
 	}
 
-	throw new std::runtime_error("Error: Illegal guide tree method.");
 	return "Unknown";
 }
 
@@ -67,9 +67,10 @@ public:
 		case NJ:				return "nj";
 		case chained:			return "chained";
 		case imported:			return "import";
+		default:
+			throw new std::runtime_error("Error: Illegal guide tree method.");
 		}
 
-		throw new std::runtime_error("Error: Illegal guide tree method.");
 		return "Unknown";
 	}
 
