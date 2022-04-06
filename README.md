@@ -19,7 +19,7 @@ For detailed instructions how to set up Bioconda, please refer to the [Bioconda 
 FAMSA can be also built from the sources distributed as:
 
 * Visual Studio 2015 solution for Windows,
-* MAKE project (G++ 5 required) for Linux and OS X.
+* MAKE project for Linux and OS X (g++-5 required, g++-8 recommended).
 
 At the top of the makefile there are several switches controlling building process. These are:
 * STATIC_LINK - enable static linking (default: false); may be helpful when binary portability is desired,
