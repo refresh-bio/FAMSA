@@ -59,7 +59,7 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 	for (int iter = 0; iter < numLocal; ++iter) {
 	//	LOG_DEBUG << std::endl << "=====================================================" << std::endl;
 		// select starting node randomly
-		std::shuffle(candidate + n_fixed_medoids, candidate + n_elems, gen_nodes);
+		partial_shuffle(candidate + n_fixed_medoids, candidate + n_elems, candidate + n_elems, gen_nodes);
 		
 		std::copy_n(candidate, n_elems, current.candidate);
 		current.cost = std::numeric_limits<float>::max();

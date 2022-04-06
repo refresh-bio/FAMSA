@@ -10,10 +10,12 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "../lcs/lcsbp.h"
 #include "../utils/deterministic_random.h"
 #include "../utils/log.h"
+#include "../core/queues.h"
 
 #include <algorithm>
 #include <random>
 #include <numeric>
+#include <thread>
 
 // *******************************************************************
 template <Distance _distance>
@@ -41,25 +43,26 @@ void FastTree<_distance>::run(std::vector<CSequence>& sequences, tree_structure&
 	std::vector<CSequence*> sequencePtrs(sequences.size());
 	std::transform(sequences.begin(), sequences.end(), sequencePtrs.begin(), [](CSequence& s)->CSequence* { return &s; });
 
-	randomIds.resize(sequences.size());
-
-	doStep(sequencePtrs, tree);
+	tree_structure local_tree;
+	doStep(sequencePtrs, local_tree, tree.size(), true);
+	tree.insert(tree.end(), local_tree.begin(), local_tree.end());
+	
 }
 
 
 // *******************************************************************
 template <Distance _distance>
-void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_structure& tree)
+void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_structure& tree, int previousTop, bool parallel)
 {
 	size_t n_seqs = sequences.size();
 	CLCSBP lcsbp(instruction_set);
 	Transform<float, _distance> transform;
 
 	if ((!clustering && n_seqs > subtreeSize) || (clustering && n_seqs > clusteringThreshold)) {
-		
+
 		float* dists = new float[n_seqs * 2]; // second row will be used later
 		int* seed_ids = new int[subtreeSize];
-		
+
 		float* dist_row = dists;
 		size_t n_seeds;
 
@@ -71,9 +74,8 @@ void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_struct
 		}
 
 		//
-		// --- Clustering ---
+		// Clustering 
 		//
-
 		// assume all sequences are clustered to 0'th seed at the beginning
 		std::vector<CSequence*> seeds(n_seeds);
 		int* assignments = new int[n_seqs];
@@ -121,23 +123,88 @@ void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_struct
 
 		// process child nodes
 		std::vector<int> subroots(seeds.size(), -1);
-		for (int k = 0; k < seeds.size(); ++k) {
-			auto &subgroup = subgroups[k];
 
-			// create a subtree when more than 1 element
-			if (subgroup.size() > 1) {
-				doStep(subgroup, tree);
-				subroots[k] = tree.size() - 1;
+		
+		if (parallel) {
+			//
+			// Parallel subtree processing
+			//
+			std::vector<std::thread> workers(n_threads);
+			std::vector<tree_structure> local_trees;
+			local_trees.reserve(seeds.size()); // to avoid reallocations
+
+			struct SubtreeTask {
+				std::vector<CSequence*>* subgroup;
+				tree_structure* localTree;
+				int previousTop;
+			};
+			RegisteringQueue<SubtreeTask> queue(1);
+
+			// schedule tasks
+			for (int k = 0; k < seeds.size(); ++k) {
+				auto& subgroup = subgroups[k];
+
+				// create a subtree when more than 1 element
+				if (subgroup.size() > 1) {
+					local_trees.push_back(tree_structure());
+					SubtreeTask task{ &subgroup, &local_trees.back(), previousTop };
+					queue.Push(task);
+
+					previousTop += subgroup.size() - 1;
+					subroots[k] = previousTop - 1;
+				}
+			}
+
+			queue.MarkCompleted();
+
+			// process tasks in threads
+			for (auto& w : workers) {
+				w = std::thread([this, &queue] {
+					SubtreeTask task;
+					while (!queue.IsEmpty()) {
+						if (queue.Pop(task)) {
+							this->doStep(*task.subgroup, *task.localTree, task.previousTop, false);
+						}
+					}
+				});
+			}
+
+			// wait for workers to finish
+			for (auto& w : workers) {
+				w.join();
+			}
+
+			// gather partial trees
+			for (const auto& lt : local_trees) {
+				tree.insert(tree.end(), lt.begin(), lt.end());
+			}
+		}
+		else {
+			//
+			// Serial subtree processing
+			//
+			for (int k = 0; k < seeds.size(); ++k) {
+				auto& subgroup = subgroups[k];
+
+				// create a subtree when more than 1 element
+				if (subgroup.size() > 1) {
+					tree_structure local_tree;
+					doStep(subgroup, local_tree, previousTop, false);
+					tree.insert(tree.end(), local_tree.begin(), local_tree.end());
+					previousTop += subgroup.size() - 1;
+					subroots[k] = previousTop - 1;
+				}
 			}
 		}
 
-		size_t previousTop = tree.size();
 
-		partialGenerator->runPartial(seeds, tree);
+		//size_t previousTop = tree.size();
+		tree_structure local_tree;
+		partialGenerator->runPartial(seeds, local_tree);
 
 		// correct node identifiers in the guide tree
-		for (size_t node_id = previousTop; node_id < tree.size(); ++node_id) {
-			auto& node = tree[node_id];
+		for (size_t node_id = 0; node_id < seeds.size() - 1; ++node_id) {
+			auto& node = local_tree[node_id];
 
 			node.first = node.first < seeds.size()
 				? (subgroups[node.first].size() > 1 ? subroots[node.first] : seeds[node.first]->sequence_no)	// case: seed id - change to subroot or seq id 
@@ -147,16 +214,18 @@ void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_struct
 				? (subgroups[node.second].size() > 1 ? subroots[node.second] : seeds[node.second]->sequence_no)	// case: seed id - change to subroot or seq id						 // case: seed id - change to subroot
 				: node.second + previousTop - seeds.size();	 // case: intermediate node
 		}
+		tree.insert(tree.end(), local_tree.begin(), local_tree.end());
+
 	}
 	else {
 
-		size_t previousTop = tree.size();
+		//size_t previousTop = tree.size();
 
 		partialGenerator->runPartial(sequences, tree);
 
 		// correct node identifiers in the guide tree
 		if (previousTop > sequences.size()) {
-			for (size_t node_id = previousTop; node_id < tree.size(); ++node_id) {
+			for (size_t node_id = 0; node_id < sequences.size() - 1; ++node_id) {
 				auto& node = tree[node_id];
 
 				node.first = node.first < sequences.size()
@@ -169,6 +238,8 @@ void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_struct
 			}
 		}
 	}
+
+	//LOG_VERBOSE << "Finished subtree of size: " << sequences.size() << endl;
 }
 
 
@@ -189,14 +260,16 @@ size_t FastTree<_distance>::randomSeeds(
 	calculateDistanceVector<CSequence*, float, decltype(transform)>(transform, sequences[0], sequences.data(), n_seqs, dist_row, lcsbp);
 
 	std::mt19937 mt;
-	std::iota(randomIds.begin(), randomIds.begin() + n_seqs, 0);
+	int* randomIds = new int[n_seqs];
+	std::iota(randomIds, randomIds + n_seqs, 0);
 	
 	size_t furthestId = std::max_element(dist_row + 1, dist_row + n_seqs) - dist_row;
 	std::swap(randomIds[1], randomIds[furthestId]);
-	partial_shuffle(randomIds.begin() + 2, randomIds.begin() + n_seeds, randomIds.begin() + n_seqs, mt);
+	partial_shuffle(randomIds + 2, randomIds + n_seeds, randomIds + n_seqs, mt);
 
-	std::copy(randomIds.begin(), randomIds.begin() + n_seeds, seed_ids);
+	std::copy(randomIds, randomIds + n_seeds, seed_ids);
 	std::sort(seed_ids, seed_ids + n_seeds);
+	delete[] randomIds;
 
 	return n_seeds;
 }
@@ -229,17 +302,19 @@ size_t FastTree<_distance>::clusterSeeds(
 	else {
 
 		std::mt19937 mt;
-		std::iota(randomIds.begin(), randomIds.begin() + n_seqs, 0);
-		partial_shuffle(randomIds.begin() + 1, randomIds.begin() + n_samples, randomIds.begin() + n_seqs, mt);
+		int* randomIds = new int[n_seqs];
+		std::iota(randomIds, randomIds + n_seqs, 0);
+		partial_shuffle(randomIds + 1, randomIds + n_samples, randomIds + n_seqs, mt);
 
 		sample_ids = new int[n_samples];
-		std::copy(randomIds.begin(), randomIds.begin() + n_samples, sample_ids);
+		std::copy(randomIds, randomIds + n_samples, sample_ids);
 		std::sort(sample_ids, sample_ids + n_samples);
 	
 		samples = new CSequence*[n_samples];
 		for (size_t j = 0; j < n_samples; ++j) {
 			samples[j] = sequences[sample_ids[j]];
 		}
+		delete[] randomIds;
 	}
 
 	//LOG_DEBUG << "Seqs count: " << sequences.size() << ", samples count: " << n_samples << std::endl;

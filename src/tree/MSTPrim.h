@@ -104,7 +104,7 @@ public:
 };
 
 template <Distance _distance>
-class MSTPrim : public AbstractTreeGenerator, public IPartialGenerator {
+class MSTPrim : public AbstractTreeGenerator {
 #ifdef MANY_CAND
 	static const int N_CAND = MANY_CAND;
 
@@ -317,7 +317,5 @@ public:
 	}
 
 	void run(std::vector<CSequence>& sequences, tree_structure& tree) override;
-
-	void runPartial(std::vector<CSequence*>& sequences, tree_structure& tree) override;
 };
 

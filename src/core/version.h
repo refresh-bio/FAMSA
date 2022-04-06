@@ -9,8 +9,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"1.11.0"
-#define FAMSA_DATE		"2022-04-01"
+#define FAMSA_VER		"1.12.0"
+#define FAMSA_DATE		"2022-04-06"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
@@ -18,6 +18,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 /*
 Version history:
 
+1.12.0 (2022-04-06)
+- Parallel medoid trees.
 
 1.11.0 (2022-04-01)
 - Gzipped output.

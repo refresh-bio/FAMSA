@@ -103,6 +103,12 @@ int main(int argc, char *argv[])
 	LOG_VERBOSE << "Total computation time: " << timer.GetElapsedTime() << "s\n";
 	LOG_NORMAL << "Done!\n";
 
+	if (params.verbose_mode || params.very_verbose_mode) {
+		FILE* out = fopen("famsa.stats", "at");
+		fprintf(out, "time.save=%lf\n", timer_saving.GetElapsedTime());
+		fclose(out);
+	}
+
 	return 0;
 }
 

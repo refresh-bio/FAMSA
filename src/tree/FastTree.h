@@ -33,9 +33,7 @@ protected:
 	int sampleSize;
 	int clusteringThreshold;
 
-	std::vector<int> randomIds;
-
-	void doStep(std::vector<CSequence*>& sequences, tree_structure& tree);
+	void doStep(std::vector<CSequence*>& sequences, tree_structure& tree, int previousTop, bool parallel);
 
 	size_t randomSeeds(
 		std::vector<CSequence*>& sequences,

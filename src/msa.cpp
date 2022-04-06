@@ -215,34 +215,26 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 		return gen;
 	}
 
-	// guide tree mode
-	switch(params.gt_method) {
-	
-	// single linkage
-	case GT::SLINK:
+	if (params.gt_method == GT::SLINK || (params.gt_heuristic != GT::None && params.gt_method == GT::MST_Prim)) {
+		// single linkage (use also when MST used as a partial generator)
 		if (params.distance == Distance::indel_div_lcs) {
 			gen = make_shared<SingleLinkage<Distance::indel_div_lcs>>(params.n_threads);
 		}
 		else if (params.distance == Distance::sqrt_indel_div_lcs) {
 			gen = make_shared<SingleLinkage<Distance::sqrt_indel_div_lcs>>(params.n_threads);
 		}
-		break;
-	
-	// Prim's minimum spanning tree 
-	case GT::MST_Prim:
+	}
+	else if (params.gt_method == GT::MST_Prim) {
+		// Prim's minimum spanning tree 
 		if (params.distance == Distance::indel_div_lcs) {
 			gen = make_shared<MSTPrim<Distance::indel_div_lcs>>(params.n_threads);
 		}
 		else if (params.distance == Distance::sqrt_indel_div_lcs) {
 			gen = make_shared<MSTPrim<Distance::sqrt_indel_div_lcs>>(params.n_threads);
 		}
-		break;
-		break;
-	
-	// UPGMA
-	case GT::UPGMA:
-	case GT::UPGMA_modified:
-		
+	}
+	else if (params.gt_method == GT::UPGMA || params.gt_method == GT::UPGMA_modified) {
+		// UPGMA
 		if (params.distance == Distance::indel_div_lcs) {
 			gen = make_shared<UPGMA<Distance::indel_div_lcs>>(params.n_threads,
 				(params.gt_method == GT::UPGMA_modified));
@@ -251,19 +243,17 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 			gen = make_shared<UPGMA<Distance::sqrt_indel_div_lcs>>(params.n_threads,
 				(params.gt_method == GT::UPGMA_modified));
 		}
-		break;
-
-	// neighbour joining
-	case GT::NJ:
+	}
+	else if (params.gt_method == GT::NJ) {
+		// neighbour joining
 		if (params.distance == Distance::indel_div_lcs) {
 			gen = make_shared<NeighborJoining<Distance::indel_div_lcs>>(params.n_threads);
 		}
 		else if (params.distance == Distance::sqrt_indel_div_lcs) {
 			gen = make_shared<NeighborJoining<Distance::sqrt_indel_div_lcs>>(params.n_threads);
 		}
-		break;
+	} else {
 
-	default:
 		throw std::runtime_error("Error: Illegal guide tree method.");
 	}
 
@@ -771,6 +761,15 @@ bool CFAMSA::ComputeMSA()
 		if (final_profile->Size() != gapped_sequences.size()) {
 			throw std::runtime_error("Error: incomplete guide tree - report a bug");
 		}
+	}
+
+
+	if (params.verbose_mode || params.very_verbose_mode) {
+		FILE* out = fopen("famsa.stats", "at");
+		fprintf(out, "time.sort=%lf\n", timers[TIMER_SORTING].GetElapsedTime());
+		fprintf(out, "time.tree_build=%lf\n", timers[TIMER_TREE_BUILD].GetElapsedTime());
+		fprintf(out, "time.alignment=%lf\n", timers[TIMER_ALIGNMENT].GetElapsedTime());
+		fclose(out);
 	}
 
 	LOG_VERBOSE
