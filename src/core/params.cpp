@@ -14,6 +14,9 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 // Show command-line parameters
 void CParams::show_usage(bool expert)
 {
+	string bool2str[]{ "disabled", "enabled" };
+	
+	
 	LOG_NORMAL
 		<< "Usage:\n"
 		<< "  famsa [options] <input_file> <output_file>\n\n"
@@ -26,18 +29,19 @@ void CParams::show_usage(bool expert)
 		<< "      * distance matrix in CSV format (-dist_export option specified),\n\n"
 
 		<< "Options:\n"
-		<< "  -help - show advanced options\n"
+		<< "  -help - print this message\n"
 		<< "  -t <value> - no. of threads, 0 means all available (default: " << n_threads << ")\n"
 		<< "  -v - verbose mode, show timing information (default: disabled)\n\n"
 
-		<< "  -gt <sl | mp | upgma | import <file>> - guide tree method (default: sl):\n"
+		<< "  -gt <sl | mp | upgma | nj | import <file>> - guide tree method (default: sl):\n"
 		<< "      * sl - single linkage (SLINK)\n"
 		<< "      * mp - single linkage (MST Prim)\n"
 		<< "      * upgma - UPGMA\n"
+		<< "      * nj - neighbour joining\n"
 		<< "      * import <file> - imported from a Newick file\n"
-		<< "  -dist <measure> - pairwise distance measure:\n"
-		<< "      * indel_div_lcs (default)\n"
-		<< "      * sqrt_indel_div_lcs\n\n"
+	//	<< "  -dist <measure> - pairwise distance measure:\n"
+	//	<< "      * indel_div_lcs (default)\n"
+	//	<< "      * sqrt_indel_div_lcs\n\n"
 
 		<< "  -medoidtree - use MedoidTree heuristic for speeding up tree construction (default: disabled)\n"
 		//	<< "  -parttree - use PartTree heuristic for speeding up tree construction (default: disabled)\n"
@@ -47,10 +51,10 @@ void CParams::show_usage(bool expert)
 		<< "  -square_matrix - generate a square distance matrix instead of a default triangle\n"
 		<< "  -pid - generate percent identity instead of distance\n\n"
 
-		<< "  -gz - enable gzipped output (default:" << boolalpha << gzippd_output << ")\n"
+		<< "  -gz - enable gzipped output (default: " << bool2str[gzippd_output] << ")\n"
 		<< "  -gz-lev <value> - gzip compression level [0-9] (default: " << gzip_level << ")\n\n";
 
-
+	/*
 	if (expert) {
 		LOG_NORMAL << "Advanced options:\n"
 			<< "  -r <value> - no. of refinement iterations (default: " << n_refinements << ")\n"
@@ -71,6 +75,7 @@ void CParams::show_usage(bool expert)
 #endif
 		LOG_NORMAL << endl;
 	}
+	*/
 }
 
 

@@ -7,6 +7,31 @@
 
 Algorithm for large-scale multiple sequence alignments (400k proteins in 2 hours and 8GB of RAM)
 
+## Quick start
+
+```bash
+git clone https://github.com/refresh-bio/FAMSA
+cd FAMSA && make
+
+# align sequences with default parameters (single linkage tree)
+./famsa ./test/adeno_fiber/adeno_fiber sl.aln
+
+# align sequences using UPGMA tree with 8 computing threads, store the result in the GZ archive
+./famsa -gt upgma -t 8 -gz ./test/adeno_fiber/adeno_fiber upgma.aln.gz
+
+# export a neighbour joining guide tree to the Newick format
+./famsa -gt nj -gt_export ./test/adeno_fiber/adeno_fiber nj.dnd
+
+# align sequences with the previously generated guide tree
+./famsa -gt import nj.dnd ./test/adeno_fiber/adeno_fiber nj.aln
+
+# export distance matrix to CSV format (lower triangular) 
+./famsa -dist_export ./test/adeno_fiber/adeno_fiber dist.csv
+
+# export pairwise identity (PID) matrix to CSV format (square) 
+./famsa -dist_export -pid -square_matrix ./test/adeno_fiber/adeno_fiber pid.csv
+```
+
 
 ## Installation and configuration
 
@@ -28,7 +53,7 @@ At the top of the makefile there are several switches controlling building proce
 
 Note, that FAMSA by default takes advantage of AVX and AVX2 CPU extensions. Pre-built binary detetermines supported instructions at runtime, thus it is multiplatform. However, one may encounter a problem when building FAMSA version on a CPU without AVX and/or AVX2. For this purpose NO_AVX and NO_AVX2 switches are provided. 
 
-The latest speed improvements in FAMSA limited the usefullness of the GPU mode. Thus, starting from the 1.5.0 version, there is no support of GPU in FAMSA. If maximum throughput is required, we encourage using new medoid trees feature (`-medoidtree` switch) which allows processing gigantic data sets in a reasonable time (e.g., a familiy of 3 millions ABC transporters was analyzed in three hours) . 
+The latest speed improvements in FAMSA limited the usefullness of the GPU mode. Thus, starting from the 1.5.0 version, there is no support of GPU in FAMSA. If maximum throughput is required, we encourage using new medoid trees feature (`-medoidtree` switch) which allows processing gigantic data sets in a reasonable time (e.g., the familiy of 3 million ABC transporters was analyzed in five minutes) . 
 
 
 ## Usage
@@ -60,18 +85,6 @@ Options:
 * `-gz` - enable gzipped output (default: disabled)
 * `-gz-lev <value>` - gzip compression level [0-9] (default: 7)
 
-Advanced options:
-* `-r <value>` - no. of refinement iterations (default: 100)
-* `-fr` - force refinement (by default the refinement is disabled for sets larger than 1000 seq.)
-* `-go <value>` - gap open cost (default: 14.85)
-* `-ge <value>` - gap extension cost (default: 1.25)
-* `-tgo <value>` - terminal gap open cost (default: 0.66)
-* `-tge <value>` - terminal gap extenstion cost (default: 0.66)
-* `-gsd <value>` - gap cost scaller div-term (default: 7)
-* `-gsl <value>` - gap cost scaller log-term (default: 45)
-* `-dgr` - disable gap cost rescaling (default: enabled)
-* `-dgo` - disable gap optimization (default: enabled)
-* `-dsp` - disable sum of pairs optimization during refinement (default: enabled)	
 
 ### Guide tree import and export
 
@@ -100,7 +113,7 @@ Note, that when importing the tree, the branch lengths are not taken into accoun
 The major algorithmic features in FAMSA are:
 * Pairwise distances based on the longest common subsequence (LCS). Thanks to the bit-level parallelism and utilization of SIMD extensions, LCS can be computed very fast. 
 * Single-linkage guide trees. While being very accurate, single-linkage trees can be established without storing entire distance matrix, which makes them suitable for large alignments. Although, alternative guide tree algorithms like UPGMA and neigbour joining ale also provided.
-* The new heuristic based on K-Medoid clustering for generating fast guide trees. Medoid trees can be calculated in O(NlogN) time and work with all types of subtrees (single linkage, UPGMA, NJ). The heuristic can be enabled with `-medoidtree` switch. Medoid trees allows ultra-scale alignments (e.g., the family of 3 million ABC transporters was processed in 3 hours).
+* The new heuristic based on K-Medoid clustering for generating fast guide trees. Medoid trees can be calculated in O(NlogN) time and work with all types of subtrees (single linkage, UPGMA, NJ). The heuristic can be enabled with `-medoidtree` switch. Medoid trees allows ultra-scale alignments (e.g., the family of 3 million ABC transporters was processed in five minutes).
 
 
 ## Experimental results

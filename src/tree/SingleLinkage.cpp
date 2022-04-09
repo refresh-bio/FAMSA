@@ -9,7 +9,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "AbstractTreeGenerator.hpp"
 #include "SingleLinkageQueue.h"
 #include "../lcs/lcsbp.h"
-
 #include "../utils/log.h"
 
 #include <algorithm>
@@ -19,7 +18,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <sstream>
 #include <random>
 #include <thread>
-#include <xmmintrin.h>
 #include <array>
 
 using namespace std;

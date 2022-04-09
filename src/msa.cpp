@@ -17,7 +17,9 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "./core/io_service.h"
 #include "./utils/log.h"
 
+#ifndef NO_AVX
 #include "./utils/cpuid.h"
+#endif
 
 #include <algorithm>
 #include <set>
@@ -185,10 +187,12 @@ void CFAMSA::DetermineInstructionSet()
 {
 	instruction_set = instruction_set_t::none;
 
+#ifndef NO_AVX
 	if ((CPUID(1).ECX() >> 28) & 1)
 		instruction_set = instruction_set_t::avx;
 	if ((CPUID(7).EBX() >> 5) & 1)
 		instruction_set = instruction_set_t::avx2;
+#endif
 }
 
 // *******************************************************************

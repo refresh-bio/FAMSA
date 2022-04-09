@@ -6,8 +6,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 */
 
-//#include "../libs/asmlib.h"
-
 #include <cstring>
 
 void mem_clear_avx(void* ptr, size_t size)

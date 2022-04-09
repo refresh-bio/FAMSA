@@ -18,8 +18,11 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <array>
 #include <algorithm>
 #include <cstring>
+
+#ifdef WIN32
 #include <xmmintrin.h>
 #include <mmintrin.h>
+#endif
 
 
 using namespace std;
@@ -53,12 +56,26 @@ public:
 
 	void set_zeros(instruction_set_t instruction_set = instruction_set_t::none)
 	{
-		if(instruction_set == instruction_set_t::avx2)
-			mem_clear_avx2(raw_data, n_rows * n_cols);
-		else if(instruction_set == instruction_set_t::avx)
-			mem_clear_avx(raw_data, n_rows * n_cols);
-		else
+#ifdef NO_AVX
+		mem_clear(raw_data, n_rows * n_cols);
+#elif defined NO_AVX2
+		if (instruction_set < instruction_set_t::avx) {
 			mem_clear(raw_data, n_rows * n_cols);
+		}
+		else {
+			mem_clear_avx(raw_data, n_rows * n_cols);
+		}
+#else
+		if (instruction_set < instruction_set_t::avx) {
+			mem_clear(raw_data, n_rows * n_cols);
+		}
+		else if (instruction_set < instruction_set_t::avx2) {
+			mem_clear_avx(raw_data, n_rows * n_cols);
+		}
+		else {
+			mem_clear_avx2(raw_data, n_rows * n_cols);
+		}		
+#endif
 	}
 
 	unsigned char *get_row(size_t row_id)
@@ -230,12 +247,27 @@ public:
 
 	void set_zeros(instruction_set_t instruction_set = instruction_set_t::none)
 	{
-		if (instruction_set == instruction_set_t::avx2)
-			mem_clear_avx2(raw_data, N_ROWS * n_cols * sizeof(T));
-		else if (instruction_set == instruction_set_t::avx)
-			mem_clear_avx(raw_data, N_ROWS * n_cols * sizeof(T));
-		else
+#ifdef NO_AVX
+		memset(raw_data, 0, N_ROWS * n_cols * sizeof(T));
+#elif defined NO_AVX2
+		if (instruction_set < instruction_set_t::avx) {
 			memset(raw_data, 0, N_ROWS * n_cols * sizeof(T));
+		}
+		else {
+			mem_clear_avx(raw_data, N_ROWS * n_cols * sizeof(T));
+		}
+#else
+		if (instruction_set < instruction_set_t::avx) {
+			memset(raw_data, 0, N_ROWS * n_cols * sizeof(T));
+		}
+		else if (instruction_set < instruction_set_t::avx2) {
+			mem_clear_avx(raw_data, N_ROWS * n_cols * sizeof(T));
+		}
+		else {
+			mem_clear_avx2(raw_data, N_ROWS * n_cols * sizeof(T));
+		}
+#endif
+			
 	}
 
 	size_t get_num_of_non_zeros(void)

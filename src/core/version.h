@@ -9,14 +9,18 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"1.12.0"
-#define FAMSA_DATE		"2022-04-06"
+#define FAMSA_VER		"1.12.1"
+#define FAMSA_DATE		"2022-04-08"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+1.12.1 (2022-04-08)
+- Non-AVX and 32-bit compilation fixed.
+- Proper handling of . and | symbols in sequence identifiers when importing Newick tree.
 
 1.12.0 (2022-04-06)
 - Parallel medoid trees.

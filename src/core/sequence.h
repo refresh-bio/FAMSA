@@ -15,8 +15,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <vector>
 #include <array>
 
-#include <immintrin.h>
-
 
 using namespace std;
 

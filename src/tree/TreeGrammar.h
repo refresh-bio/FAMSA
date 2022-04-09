@@ -157,7 +157,7 @@ struct TreeGrammar : public bs::grammar<TreeGrammar>
 				("(" >> branchSet[node.val = phs::arg1] >> ")") ;
 
 			// terminal tokens (sequence names or lengths)
-			seqname = (+(bs::alnum_p | '_' | '-' | '/' | ';'))[seqname.val = ph::construct_<std::string>(phs::arg1, phs::arg2)];
+			seqname = (+(bs::alnum_p | '_' | '-' | '/' | ';' | '.' | '|'))[seqname.val = ph::construct_<std::string>(phs::arg1, phs::arg2)];
 			length = bs::real_p[length.val = phs::arg1];
 
 		};

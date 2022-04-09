@@ -40,13 +40,39 @@ jobs:
         make -j32 CXX=g++-${{matrix.compiler}}
         cp ./famsa ./famsa-${{matrix.compiler}}
         make clean
+        
+  ########################################################################################
+  noavx-tests:
+    name: no AVX extensions
+    runs-on: [self-hosted, famsa]
+    needs: make-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [9, 10, 11]
+        cpu_ext: [none32, none64, sse4, avx1]
+        
+    env: 
+      REF_DIR: ./test/adeno_fiber
+      INPUT: ./test/adeno_fiber/adeno_fiber
+        
+    steps:
+    - name: clean
+      run: make clean
+    - name: make (g++-${{matrix.compiler}}, CPU extension ${{matrix.cpu_ext}})
+      run: | 
+        make -j32 CXX=g++-${{matrix.compiler}} CPU_EXT=${{matrix.cpu_ext}}
+    - name: distance calculation
+      run: |
+        ./famsa -dist_export ${INPUT} dist.csv
+        cmp dist.csv ${REF_DIR}/dist.csv 
       
   ########################################################################################    
     
   full-tree:
     name: adeno-fiber - full tree
     runs-on: [self-hosted, famsa]
-    needs: make-tests
+    needs: noavx-tests
     strategy:
       fail-fast: false
       matrix:

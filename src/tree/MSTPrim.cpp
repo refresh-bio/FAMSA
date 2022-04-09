@@ -21,7 +21,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <random>
 #include <thread>
 #include <utility>
-#include <xmmintrin.h>
 
 
 //#define ATOMIC_WAIT

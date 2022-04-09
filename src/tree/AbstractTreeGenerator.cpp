@@ -7,9 +7,9 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 */
 #include "AbstractTreeGenerator.h"
 
-//#include "../../libs/instrset.h"
-
+#ifndef NO_AVX
 #include "../utils/cpuid.h"
+#endif
 
 #include <algorithm>
 
@@ -22,10 +22,12 @@ AbstractTreeGenerator::AbstractTreeGenerator(size_t n_threads) : n_threads(n_thr
 	
 	instruction_set = instruction_set_t::none;
 
+#ifndef NO_AVX
 	if ((CPUID(1).ECX() >> 28) & 1)
 		instruction_set = instruction_set_t::avx;
 	if ((CPUID(7).EBX() >> 5) & 1)
 		instruction_set = instruction_set_t::avx2;
+#endif
 }
 
 // *******************************************************************
