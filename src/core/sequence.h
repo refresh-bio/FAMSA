@@ -53,6 +53,9 @@ public:
 	void PrepareHistogram();
 };
 
+#define COMPACT_GAPPED_SEQUENCE
+
+#ifndef COMPACT_GAPPED_SEQUENCE
 class CGappedSequence 
 {
 	static char mapping_table[25];
@@ -88,7 +91,56 @@ public:
     string Decode();
 	uint32_t NoSymbols();
 
+	void AddGuard() { symbols.insert(symbols.begin(), GUARD); };
+
 	void Clear();
 };
+#else
+
+class CGappedSequence 
+{
+	static char mapping_table[25];
+
+	void RecalculateDPS();
+	void InitialiseDPS();
+	void FillDPS();
+
+public:
+	string id;
+    vector<symbol_t> symbols;
+	vector<bool> uppercase;
+    size_t size;
+	size_t dps_size;
+	size_t dps_size_div2;
+
+    vector<int32_t> n_gaps;
+    vector<int32_t> dps;        // dynamic position statistics (DSP) for the sequence
+
+    size_t gapped_size;
+
+    CGappedSequence(CSequence &_sequence);
+    CGappedSequence(const CGappedSequence &_gapped_sequence);
+    CGappedSequence(CGappedSequence &&_gapped_sequence);
+    ~CGappedSequence();
+
+	bool operator==(const CGappedSequence &gs);
+
+    void InsertGap(size_t pos);
+    void InsertGaps(size_t pos, uint32_t n);
+	void InsertGapsVector(const vector<pair<uint32_t, uint32_t>> &v_gaps);
+
+	void RemoveGap(size_t pos);
+    void RemoveGaps(size_t pos, uint32_t n);
+	symbol_t GetSymbol(size_t pos);
+
+    void DecodeRaw(symbol_t *seq);
+    string Decode();
+	uint32_t NoSymbols();
+
+	void AddGuard() { symbols.insert(symbols.begin(), GUARD); };
+
+	void Clear();
+};
+#endif
 
 #endif

@@ -9,6 +9,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _UTILS_H
 #define _UTILS_H
 
+#include <vector>
+
 void mem_clear(void* ptr, size_t size);
 void mem_clear_avx(void* ptr, size_t size);
 void mem_clear_avx2(void* ptr, size_t size);
@@ -20,6 +22,12 @@ T max4(T x1, T x2, T x3, T x4)
 	T p2 = (x3 > x4) ? x3 : x4;
 	
 	return (p1 > p2) ? p1 : p2;
+}
+
+template<typename T>
+void clear_vector(std::vector<T>& vec)
+{
+	std::vector<T>().swap(vec);
 }
 
 #endif
