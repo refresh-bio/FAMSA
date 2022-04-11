@@ -271,12 +271,38 @@ bool IOService::saveAlignment(const std::string& file_name, vector<CGappedSequen
 	string s;
 	string id, seq;
 
-	uint32_t pack_size = gzip_level < 0 ? 5 : 10;
+	int32_t pack_size = gzip_level < 0 ? 5 : 10;
+	int32_t clear_pack_size = 100;
 
 	atomic<int> seq_id {0};
-
 	vector<thread> v_threads;
 	v_threads.reserve(no_threads);
+
+	for (int i = 0; i < no_threads; ++i)
+		v_threads.emplace_back([clear_pack_size, &seq_id, &sequences] {
+		int no_seqs = static_cast<int>(sequences.size());
+
+		while (true)
+		{
+			int32_t id_from = seq_id.fetch_add(clear_pack_size);
+			int32_t id_to = id_from + clear_pack_size;
+
+			if (id_from >= no_seqs)
+				break;
+			if (id_to >= no_seqs)
+				id_to = no_seqs;
+
+			for (int i = id_from; i < id_to; ++i)
+				sequences[i]->ClearDPS();
+		}
+		});
+
+	for (auto& t : v_threads)
+		t.join();
+
+	v_threads.clear();
+
+	seq_id = 0;
 
 	CLimitedPriorityQueue<vector<uint8_t>> lpq(no_threads, 5 * no_threads);
 
@@ -290,8 +316,8 @@ bool IOService::saveAlignment(const std::string& file_name, vector<CGappedSequen
 
 		while (true)
 		{
-			uint32_t id_from = seq_id.fetch_add(pack_size);
-			uint32_t id_to = id_from + pack_size;
+			int32_t id_from = seq_id.fetch_add(pack_size);
+			int32_t id_to = id_from + pack_size;
 
 			if (id_from >= no_seqs)
 				break;
@@ -322,7 +348,7 @@ bool IOService::saveAlignment(const std::string& file_name, vector<CGappedSequen
 					s_tmp.push_back('\n');
 				}
 
-				// Remove CGappedSequence* here to save memory
+				// Clear internal data here to save memory
 				p->Clear();
 			}
 

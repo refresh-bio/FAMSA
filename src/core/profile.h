@@ -37,21 +37,17 @@ class CDPMatrix {
 	size_t n_cols;
 
 	unsigned char* raw_data;
-	unsigned char** data;
+//	unsigned char** data;
 
 public:
 	CDPMatrix(size_t _n_rows, size_t _n_cols) : n_rows(_n_rows), n_cols(_n_cols)
 	{
 		raw_data = new unsigned char[n_rows*n_cols];
-		data = new unsigned char*[n_rows];
-		for(size_t i = 0; i < n_rows; ++i)
-			data[i] = raw_data + i*n_cols;
 	}
 
 	~CDPMatrix()
 	{
 		delete[] raw_data;
-		delete[] data;
 	}
 
 	void set_zeros(instruction_set_t instruction_set = instruction_set_t::none)
@@ -80,32 +76,33 @@ public:
 
 	unsigned char *get_row(size_t row_id)
 	{
-		return data[row_id];
+		return raw_data + row_id * n_cols;
 	}
 
 	unsigned char *get_cell(size_t row_id, size_t col_id)
 	{
-		return &data[row_id][col_id];
+		return raw_data + row_id * n_cols + col_id;
 	}
 
 	direction_t get_dir_D(size_t row_id, size_t col_id)
 	{
-		return (direction_t) (data[row_id][col_id] & 0x03);
+		return (direction_t) (raw_data[row_id * n_cols + col_id] & 0x03);
 	}
 
 	direction_t get_dir_H(size_t row_id, size_t col_id)
 	{
-		return (direction_t) ((data[row_id][col_id] >> 2) & 0x03);
+		return (direction_t) ((raw_data[row_id * n_cols + col_id] >> 2) & 0x03);
 	}
 
 	direction_t get_dir_V(size_t row_id, size_t col_id)
 	{
-		return (direction_t) ((data[row_id][col_id] >> 4) & 0x03);
+		return (direction_t) ((raw_data[row_id * n_cols + col_id] >> 4) & 0x03);
 	}
 
 	void set_dir_D(size_t row_id, size_t col_id, direction_t dir)
 	{
-		data[row_id][col_id] = (data[row_id][col_id] & (0xff - 0x03)) + (unsigned char) dir;
+		auto p = raw_data + row_id * n_cols + col_id;
+		*p = (*p & (0xff - 0x03)) + (unsigned char) dir;
 	}
 
 	// Assumption: this is the first attempt to store in this field
@@ -116,7 +113,8 @@ public:
 
 	void set_dir_H(size_t row_id, size_t col_id, direction_t dir)
 	{
-		data[row_id][col_id] = (data[row_id][col_id] & (0xff - (0x03 << 2))) + (((unsigned char) dir) << 2);
+		auto p = raw_data + row_id * n_cols + col_id;
+		*p = (*p & (0xff - (0x03 << 2))) + (((unsigned char)dir) << 2);
 	}
 
 	// Assumption: this is the first attempt to store in this field
@@ -127,7 +125,8 @@ public:
 
 	void set_dir_V(size_t row_id, size_t col_id, direction_t dir)
 	{
-		data[row_id][col_id] = (data[row_id][col_id] & (0xff - (0x03 << 4))) + (((unsigned char) dir) << 4);
+		auto p = raw_data + row_id * n_cols + col_id;
+		*p = (*p & (0xff - (0x03 << 4))) + (((unsigned char)dir) << 4);
 	}
 
 	// Assumption: this is the first attempt to store in this field
@@ -139,7 +138,7 @@ public:
 	void set_dir_all(size_t row_id, size_t col_id, direction_t dir)
 	{
 		unsigned char x = (unsigned char) dir;
-		data[row_id][col_id] = x + (x << 2) + (x << 4);
+		raw_data[row_id * n_cols + col_id] = x + (x << 2) + (x << 4);
 	}
 };
 
@@ -147,52 +146,80 @@ public:
 // Elements are organized in columns (not in rows)!
 template<typename T, unsigned N_ROWS> class CProfileValues {
 	size_t n_cols;
+	size_t allocated_n_cols;
 
 	T* raw_data;
-	T** data;
+
+	size_t round_n_cols_imp(size_t n, size_t r)
+	{
+		return (n + r - 1) / r * r;
+	}
+
+	size_t round_n_cols(size_t n)
+	{
+		return n;
+
+		// For possible future use when extending of profiles will be implemented
+/*		if (n < 128)
+			return round_n_cols_imp(n, 16);
+		if (n < 256)
+			return round_n_cols_imp(n, 16);
+		if (n < 512)
+			return round_n_cols_imp(n, 32);
+		if (n < 1024)
+			return round_n_cols_imp(n, 64);
+		if (n < 2 * 1024)
+			return round_n_cols_imp(n, 128);
+		if (n < 4 * 1024)
+			return round_n_cols_imp(n, 256);
+		if (n < 8 * 1024)
+			return round_n_cols_imp(n, 512);
+		if (n < 16 * 1024)
+			return round_n_cols_imp(n, 1024);
+		if (n < 32 * 1024)
+			return round_n_cols_imp(n, 2 * 1024);
+		if (n < 64 * 1024)
+			return round_n_cols_imp(n, 4 * 1024);
+
+		return round_n_cols_imp(n, 8 * 1024);*/
+	}
 
 	void allocate(size_t _n_cols)
 	{
 		n_cols = _n_cols;
 
-		if(data)
+		allocated_n_cols = round_n_cols(n_cols);
+
+		if(raw_data)
 		{
 			delete[] raw_data;
-			delete[] data;
 		}
 
 		if(!n_cols)
 		{
 			raw_data = nullptr;
-			data     = nullptr;
 			return;
 		}
 
-		raw_data = new T[N_ROWS * n_cols];
-		data = new T*[n_cols];
-
-		for(size_t i = 0; i < n_cols; ++i)
-			data[i] = raw_data + i * N_ROWS;
+		raw_data = new T[N_ROWS * allocated_n_cols];
 	}
 
 	void deallocate()
 	{
-		if(data)
+		if(raw_data)
 		{
 			delete[] raw_data;
-			delete[] data;
 			
 			raw_data = nullptr;
-			data     = nullptr;
 			
 			n_cols = 0;
+			allocated_n_cols = 0;
 		}
 	}
 
 public:
 	CProfileValues(size_t _n_cols = 0)
 	{
-		data = nullptr;
 		raw_data = nullptr;
 
 		allocate(_n_cols);
@@ -200,7 +227,6 @@ public:
 
 	CProfileValues(const CProfileValues &x)
 	{
-		data = nullptr;
 		raw_data = nullptr;
 
 		allocate(x.n_cols);
@@ -224,9 +250,9 @@ public:
 
 	void swap(CProfileValues<T, N_ROWS> &x)
 	{
-		std::swap(data, x.data);
 		std::swap(raw_data, x.raw_data);
 		std::swap(n_cols, x.n_cols);
+		std::swap(allocated_n_cols, x.allocated_n_cols);
 	}
 
 	bool empty()
@@ -236,8 +262,13 @@ public:
 
 	void resize(size_t _n_cols)
 	{
-		deallocate();
-		allocate(_n_cols);
+		if (round_n_cols(_n_cols) != allocated_n_cols)
+		{
+			deallocate();
+			allocate(_n_cols);
+		}
+		else
+			n_cols = _n_cols;
 	}
 
 	void clear(void)
@@ -266,8 +297,7 @@ public:
 		else {
 			mem_clear_avx2(raw_data, N_ROWS * n_cols * sizeof(T));
 		}
-#endif
-			
+#endif			
 	}
 
 	size_t get_num_of_non_zeros(void)
@@ -277,42 +307,43 @@ public:
 
 	T get_value(size_t col_id, size_t row_id)
 	{
-		return data[col_id][row_id];		// elements are organized in columns!
+		return raw_data[col_id * N_ROWS + row_id];		// elements are organized in columns!
 	}
 
 	void set_value(size_t col_id, size_t row_id, T value)
 	{
-		data[col_id][row_id] = value;
+		raw_data[col_id * N_ROWS + row_id] = value;
 	}
 
 	void add_value(size_t col_id, size_t row_id, T value)
 	{
- 		data[col_id][row_id] += value;
+ 		raw_data[col_id * N_ROWS + row_id] += value;
 	}
 
 	void sub_value(size_t col_id, size_t row_id, T value)
 	{
-		data[col_id][row_id] -= value;
+		raw_data[col_id * N_ROWS + row_id] -= value;
 	}
 
 	void add_column(size_t col_id, T* source)
 	{
-		T* dest = data[col_id];
+		T* dest = &raw_data[col_id * N_ROWS];
 		
 		for (size_t i = 0; i < N_ROWS; ++i)
-			//			dest[i] += source[i];
 			*dest++ += *source++;
 	}
 
 	void add_value_to_column_part(size_t col_id, size_t max_row_id, T value)
 	{
+		T* dest = &raw_data[col_id * N_ROWS];
+
 		for(size_t i = 0; i < max_row_id; ++i)
- 			data[col_id][i] += value;
+ 			*dest++ += value;
 	}
 
 	void add_column_part(size_t col_id, size_t n, vector<score_t> &source)
 	{
-		T* dest = data[col_id];
+		T* dest = &raw_data[col_id * N_ROWS];
 		
 		for(size_t i = 0; i < n; ++i)
 			dest[i] += source[i];
@@ -320,7 +351,7 @@ public:
 
 	void add_column_part_mult(size_t col_id, size_t n, vector<score_t> &source, score_t mult)
 	{
-		T* dest = data[col_id];
+		T* dest = &raw_data[col_id * N_ROWS];
 		
 		for(size_t i = 0; i < n; ++i)
 			dest[i] += source[i] * mult;
@@ -328,21 +359,21 @@ public:
 
 	T* get_column(size_t col_id)
 	{
-		return data[col_id];
+		return &raw_data[col_id * N_ROWS];
 	}
 
 	void prefetch_column(size_t col_id)
 	{
 #ifdef WIN32
-		_mm_prefetch((const char*)(data + col_id), _MM_HINT_T0);
+		_mm_prefetch((const char*)(raw_data + N_ROWS * col_id), _MM_HINT_T0);
 #else
-		__builtin_prefetch(data + col_id);
+		__builtin_prefetch(raw_data * N_ROWS + col_id);
 #endif
 	}
 
 	void set_column(size_t col_id, T* column)
 	{
-		copy_n(column, N_ROWS, data[col_id]);
+		copy_n(column, N_ROWS, &raw_data[col_id * N_ROWS]);
 	}
 };
 

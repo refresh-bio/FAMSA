@@ -720,7 +720,8 @@ void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t
 			int my_col_to = v_thr_range[my_id].second;
 
 			// Frequency of symbols at all columns of profile1 and profile2
-			vector<pair<int, int>> col1(32);
+//			vector<pair<int, int>> col1(32);
+			array<pair<int, int>, 32> col1;
 
 			for (size_t i = 0; i < my_id; ++i)
 				bar.arrive_and_wait();
@@ -758,7 +759,7 @@ void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t
 				}
 
 				// Calculate frequency of symbols in (i-1)-th column of profile1
-				col1.clear();
+/*				col1.clear();
 				size_t col1_n_non_gaps = 0;
 				for (size_t k = 0; k < NO_AMINOACIDS_AND_GAPS; ++k)
 					if (profile1->counters.get_value(i, k))
@@ -768,7 +769,18 @@ void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t
 						if (k < NO_AMINOACIDS)
 							col1_n_non_gaps += count;
 					}
-				size_t col1_size = col1.size();
+				size_t col1_size = col1.size();*/
+
+				size_t col1_size = 0;
+				size_t col1_n_non_gaps = 0;
+				for (size_t k = 0; k < NO_AMINOACIDS_AND_GAPS; ++k)
+					if (profile1->counters.get_value(i, k))
+					{
+						size_t count = profile1->counters.get_value(i, k);
+						col1[col1_size++] = make_pair(k, count);
+						if (k < NO_AMINOACIDS)
+							col1_n_non_gaps += count;
+					}
 
 #ifndef NO_GAP_CORRECTION
 				size_t n_gaps_prof1_to_change = profile1->counters.get_value(i, GAP_OPEN);   //the number of gaps to be changed from gap_open into gap_ext

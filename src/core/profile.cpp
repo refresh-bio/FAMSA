@@ -702,8 +702,6 @@ void CProfile::ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatri
 
 	vector<pair<uint32_t, uint32_t>> v_gaps_prof1, v_gaps_prof2;
 
-//	no_threads = 1;
-
 	data.clear();
 
 	size_t i = prof1_width;
@@ -1000,6 +998,7 @@ void CProfile::InsertGaps(size_t prof_col_id, CProfile *profile, size_t col_id, 
 	size_t num = profile->data.size();
 
 	++no_cumulated_gap_inserts;
+
 	if(!cumulate_gap_inserts)
 	{
 		size_t col_id_fix = col_id + 1 - no_cumulated_gap_inserts;
