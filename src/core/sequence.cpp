@@ -113,7 +113,6 @@ CSequence& CSequence::operator=(const CSequence& x) noexcept
 // *******************************************************************
 CSequence::~CSequence()
 {
-	ReleaseBitMasks();
 }
 
 
@@ -534,13 +533,14 @@ void CGappedSequence::Clear()
 // *******************************************************************
 
 // *******************************************************************
-CGappedSequence::CGappedSequence(CSequence& _sequence)
+CGappedSequence::CGappedSequence(CSequence&& _sequence)
 {
-	id = _sequence.id;
-	symbols = _sequence.data;
+	id = std::move(_sequence.id);
+	symbols = std::move(_sequence.data);
+	uppercase = std::move(_sequence.uppercase);
+	_sequence.bit_masks.clear();
+	
 	size = symbols.size();
-	uppercase = _sequence.uppercase;
-
 	gapped_size = size;
 	n_gaps.resize(size + 1, 0);
 

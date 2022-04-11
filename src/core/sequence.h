@@ -118,7 +118,7 @@ public:
 
     size_t gapped_size;
 
-    CGappedSequence(CSequence &_sequence);
+    CGappedSequence(CSequence &&_sequence);
     CGappedSequence(const CGappedSequence &_gapped_sequence);
     CGappedSequence(CGappedSequence &&_gapped_sequence);
     ~CGappedSequence();

@@ -17,10 +17,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "./core/io_service.h"
 #include "./utils/log.h"
 
-#ifndef NO_AVX
-#include "./utils/cpuid.h"
-#endif
-
 #include <algorithm>
 #include <set>
 #include <random>
@@ -96,12 +92,9 @@ double CFAMSA::SM_MIQS[24][24] = {
 */
 
 // *******************************************************************
-CFAMSA::CFAMSA()
+CFAMSA::CFAMSA(CParams& _params) 
+	: params(_params), final_profile(nullptr), instruction_set(params.instruction_set)
 {
-	DetermineInstructionSet();
-
-	params.instruction_set = instruction_set;
-	final_profile = nullptr;
 
 	init_sm();
 }
@@ -136,35 +129,17 @@ void CFAMSA::init_sm()
 }
 
 // *******************************************************************
-bool CFAMSA::SetSequences(vector<CSequence> &_sequences)
+void CFAMSA::adjustParams(int n_seqs)
 {
-	sequences = _sequences;
-	return true;
-}
 
-// *******************************************************************
-bool CFAMSA::SetSequences(vector<CSequence> &&_sequences)
-{
-	sequences = std::move(_sequences);
-	return true;
-}
-
-// *******************************************************************
-bool CFAMSA::SetParams(CParams &_params)
-{
-	if(sequences.empty())
-		return false;
-
-	params = _params;
-
-	if ((params.gt_heuristic != GT::None) && (sequences.size() < params.heuristic_threshold)) {
+	if ((params.gt_heuristic != GT::None) && (n_seqs < params.heuristic_threshold)) {
 		params.gt_heuristic = GT::None;
 	}
 
 	if(params.enable_gap_rescaling)
 	{
-		double gap_scaler = log2(sequences.size() / (double) params.scaler_log);
-		if(sequences.size() < params.scaler_log)
+		double gap_scaler = log2(n_seqs / (double) params.scaler_log);
+		if(n_seqs < params.scaler_log)
 			gap_scaler = 1.0;
 		else
 			gap_scaler = 1.0 + (gap_scaler / params.scaler_div);
@@ -178,21 +153,6 @@ bool CFAMSA::SetParams(CParams &_params)
 	params.score_matrix = score_matrix;
 	params.score_vector = score_vector;
 
-
-	return true;
-}
-
-// *******************************************************************
-void CFAMSA::DetermineInstructionSet()
-{
-	instruction_set = instruction_set_t::none;
-
-#ifndef NO_AVX
-	if ((CPUID(1).ECX() >> 28) & 1)
-		instruction_set = instruction_set_t::avx;
-	if ((CPUID(7).EBX() >> 5) & 1)
-		instruction_set = instruction_set_t::avx2;
-#endif
 }
 
 // *******************************************************************
@@ -351,10 +311,10 @@ bool CFAMSA::ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree)
 					computed_prof++;
 
 					if (computed_prof % 100 == 0 || 
-						(computed_prof % 10 == 0 && (double) computed_prof / (2 * sequences.size() - 1) > 0.95))
+						(computed_prof % 10 == 0 && (double) computed_prof / (2 * gapped_sequences.size() - 1) > 0.95))
 					{
-						LOG_NORMAL << "Computing alignment - " << fixed << setprecision(1) << 100.0 * computed_prof / (2 * sequences.size()-1) << 
-							"\%    (" << computed_prof << " of " << (2 * sequences.size() - 1) << ")\r";
+						LOG_NORMAL << "Computing alignment - " << fixed << setprecision(1) << 100.0 * computed_prof / (2 * gapped_sequences.size()-1) << 
+							"\%    (" << computed_prof << " of " << (2 * gapped_sequences.size() - 1) << ")\r";
 						fflush(stdout);
 					}
 				}
@@ -617,8 +577,10 @@ bool CFAMSA::LoadRefSequences()
 #endif
 
 // *******************************************************************
-bool CFAMSA::ComputeMSA()
+bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 {
+	adjustParams((int)sequences.size());
+	
 	LOG_VERBOSE 
 		<< "Params:\n"
 		<< "  no. of threads: " << params.n_threads << "\n"
@@ -704,7 +666,7 @@ bool CFAMSA::ComputeMSA()
 		else {
 			std::shared_ptr<AbstractTreeGenerator> gen = createTreeGenerator(params);
 			LOG_VERBOSE << "Computing guide tree...";
-			(*gen)(this->sequences, tree.raw());
+			(*gen)(sequences, tree.raw());
 		}
 		LOG_VERBOSE << " [OK]" << endl;
 		timers[TIMER_TREE_BUILD].StopTimer();
@@ -746,7 +708,8 @@ bool CFAMSA::ComputeMSA()
 		// Convert sequences into gapped sequences
 		gapped_sequences.reserve(sequences.size());
 		for (auto &p : sequences)
-			gapped_sequences.push_back(CGappedSequence(p));
+			gapped_sequences.emplace_back(std::move(p));
+		std::vector<CSequence>().swap(sequences); // clear input vector
 
 		timers[TIMER_ALIGNMENT].StartTimer();
 		LOG_VERBOSE << "Computing alignment...";

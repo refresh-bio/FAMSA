@@ -15,6 +15,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "../core/defs.h"
 #include "../tree/TreeDefs.h"
 
+
 using namespace std;
 
 class CParams
@@ -82,22 +83,7 @@ public:
 	vector<vector<score_t>> score_matrix;
 	vector<score_t> score_vector;
 
-	
-	CParams()  {
-#ifdef HUGE_ALIGNMENTS
-		gap_open = -gap_open_base;
-		gap_ext = -gap_ext_base;
-		gap_term_open = -gap_term_open_base;
-		gap_term_ext = -gap_term_ext_base;
-#else
-		gap_open      = (score_t) round(-cost_cast_factor * gap_open_base);
-		gap_ext       = (score_t) round(-cost_cast_factor * gap_ext_base);
-		gap_term_open = (score_t) round(-cost_cast_factor * gap_term_open_base);
-		gap_term_ext  = (score_t) round(-cost_cast_factor * gap_term_ext_base);
-#endif
-
-	};
-
+	CParams();
 	bool parse(int argc, char** argv, bool& showExpert);
 	void show_usage(bool expert);
 };

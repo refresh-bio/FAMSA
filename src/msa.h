@@ -43,7 +43,6 @@ protected:
 	vector<score_t> score_vector;
 
 	instruction_set_t instruction_set;
-	vector<CSequence> sequences;
 	vector<CGappedSequence> gapped_sequences;
 
 	score_t avg_sim;
@@ -63,8 +62,8 @@ protected:
 	double estimated_identity;
 #endif
 	
-	void DetermineInstructionSet();
 	void init_sm();
+	void adjustParams(int n_seqs);
 
 #ifdef DEVELOPER_MODE
 	bool LoadRefSequences();
@@ -76,12 +75,8 @@ protected:
 	std::shared_ptr<AbstractTreeGenerator> createTreeGenerator(const CParams& params);
 
 public:
-	CFAMSA();
+	CFAMSA(CParams& _params);
 	~CFAMSA();
-
-	bool SetSequences(vector<CSequence> &_sequences);
-	bool SetSequences(vector<CSequence> &&_sequences);
-	bool SetParams(CParams &_params);
 
 	bool ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree);
 #ifdef DEBUG_MODE
@@ -107,7 +102,7 @@ public:
 	};
 #endif
 
-	bool ComputeMSA();
+	bool ComputeMSA(vector<CSequence>& sequences);
 };
 
 

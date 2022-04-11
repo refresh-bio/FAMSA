@@ -20,6 +20,10 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <thread>
 #include <array>
 
+#ifdef _MSC_VER	
+	#include <immintrin.h>
+#endif
+
 using namespace std;
 
 // *******************************************************************

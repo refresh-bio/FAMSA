@@ -9,14 +9,17 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"1.12.2"
-#define FAMSA_DATE		"2022-04-09"
+#define FAMSA_VER		"1.12.3"
+#define FAMSA_DATE		"2022-04-11"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+1.12.3 (2022-04-11)
+- Futher memory optimizations.
 
 1.12.2 (2022-04-09)
 - Memory optimizations in gapped sequence representation.

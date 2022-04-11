@@ -61,23 +61,15 @@ int main(int argc, char *argv[])
     	LOG_NORMAL << "Error: no (or incorrect) input file\n";
 		return -1;
 	} else if (input_seq_cnt == 1){
-        CGappedSequence resultSeq(sequences[0]);
+        CGappedSequence resultSeq(std::move(sequences[0]));
 		result.push_back(&resultSeq);
 		return IOService::saveAlignment(params.output_file_name, result, params.n_threads, -1);
 	}
 
 	// ***** Load sequences to FAMSA
-	CFAMSA famsa;
-	if(!famsa.SetSequences(std::move(sequences)))
-		return -1;
+	CFAMSA famsa(params);
 
-	if(!famsa.SetParams(params))
-	{
-		LOG_NORMAL << "Error: No input sequences\n";
-		return -1;
-	}
-
-	if(!famsa.ComputeMSA())
+	if(!famsa.ComputeMSA(sequences))
 	{
 		LOG_NORMAL << "Some interal error occured!\n";
 		return -1;

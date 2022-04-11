@@ -8,7 +8,37 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "params.h"
 #include "../utils/log.h"
 
+#ifndef NO_AVX
+#include "../utils/cpuid.h"
+#endif
+
 #include <thread>
+
+//****************************************************************************
+//
+CParams::CParams() {
+#ifdef HUGE_ALIGNMENTS
+	gap_open = -gap_open_base;
+	gap_ext = -gap_ext_base;
+	gap_term_open = -gap_term_open_base;
+	gap_term_ext = -gap_term_ext_base;
+#else
+	gap_open = (score_t)round(-cost_cast_factor * gap_open_base);
+	gap_ext = (score_t)round(-cost_cast_factor * gap_ext_base);
+	gap_term_open = (score_t)round(-cost_cast_factor * gap_term_open_base);
+	gap_term_ext = (score_t)round(-cost_cast_factor * gap_term_ext_base);
+#endif
+
+	// verify instruction sets
+#ifndef NO_AVX
+	if ((CPUID(1).ECX() >> 28) & 1)
+		instruction_set = instruction_set_t::avx;
+	if ((CPUID(7).EBX() >> 5) & 1)
+		instruction_set = instruction_set_t::avx2;
+#endif
+
+};
+
 
 //****************************************************************************
 // Show command-line parameters
