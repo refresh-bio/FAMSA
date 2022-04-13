@@ -69,7 +69,7 @@ class CMaxRangeQueries
 
 		vv_data[0] = v_data;
 
-		for (uint32_t i = 1; i < n_levels; ++i)
+		for (int i = 1; i < n_levels; ++i)
 		{
 			auto& vc = vv_data[i];
 			auto& vp = vv_data[i - 1u];
@@ -308,7 +308,7 @@ class MSTPrim : public AbstractTreeGenerator {
 	}
 
 public:
-	MSTPrim(size_t n_threads) : AbstractTreeGenerator(n_threads) {
+	MSTPrim(int n_threads, instruction_set_t instruction_set) : AbstractTreeGenerator(n_threads, instruction_set) {
 #ifdef MANY_CAND
 		fill(sim_value_empty.begin(), sim_value_empty.end(), 0.0);
 #else

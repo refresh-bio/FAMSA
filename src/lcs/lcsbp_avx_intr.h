@@ -20,11 +20,11 @@ class CLCSBP_AVX_INTR
 public:
 	void *raw_X;
 	void *orig_X;
-	size_t X_size;
+	uint32_t X_size;
 	size_t raw_X_size;
 	__m128i *X;
 
-	inline void prepare_X(size_t bv_len);
+	inline void prepare_X(uint32_t bv_len);
 	void calculate(CSequence *seq0, CSequence *seq1, CSequence *seq2, uint32_t *res, uint32_t bv_len, uint32_t max_len);
 
 public:

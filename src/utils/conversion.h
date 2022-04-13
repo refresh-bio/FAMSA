@@ -152,5 +152,5 @@ int num2str(const T* collection, size_t size, char delim, char* out) {
 		*ptr++ = delim;
 	}
 
-	return ptr - out;
+	return (int) (ptr - out);
 }

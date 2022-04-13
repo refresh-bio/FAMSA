@@ -13,7 +13,7 @@ void NeighborJoining<_distance>::run(std::vector<CSequence>& sequences, tree_str
 	CLCSBP lcsbp(instruction_set);
 
 	Transform<float, _distance> transform;
-	calculateDistanceMatrix<CSequence, float, decltype(transform)>(transform, sequences.data(), sequences.size(), distances, lcsbp);
+	calculateDistanceMatrix<CSequence, float, decltype(transform)>(transform, sequences.data(), (int) sequences.size(), distances, lcsbp);
 
 	computeTree(distances, sequences.size(), tree);
 
@@ -28,9 +28,9 @@ void NeighborJoining<_distance>::runPartial(std::vector<CSequence*>& sequences, 
 	CLCSBP lcsbp(instruction_set);
 
 	Transform<float, _distance> transform;
-	calculateDistanceMatrix<CSequence*, float, decltype(transform)>(transform, sequences.data(), sequences.size(), distances, lcsbp);
+	calculateDistanceMatrix<CSequence*, float, decltype(transform)>(transform, sequences.data(), (int) sequences.size(), distances, lcsbp);
 	
-	computeTree(distances, sequences.size(), tree);
+	computeTree(distances, (int) sequences.size(), tree);
 
 	delete[] distances;
 }
@@ -38,7 +38,7 @@ void NeighborJoining<_distance>::runPartial(std::vector<CSequence*>& sequences, 
 
 // *******************************************************************
 template <Distance _distance>
-void NeighborJoining<_distance>::computeTree(float* distances, size_t n_seq, tree_structure& tree) {
+void NeighborJoining<_distance>::computeTree(float* distances, int n_seq, tree_structure& tree) {
 
 	struct cluster {
 		float sum_of_dists;
@@ -50,12 +50,12 @@ void NeighborJoining<_distance>::computeTree(float* distances, size_t n_seq, tre
 	std::vector<cluster> clusters(n_seq);
 
 	// initialize clusters
-	for (size_t i = 0; i < n_seq; ++i) {
+	for (int i = 0; i < n_seq; ++i) {
 		auto& ci = clusters[i];
 		ci.row_id = ci.node_id = i;
 		ci.sum_of_dists = 0;
 
-		for (size_t j = 0; j < n_seq; ++j) {
+		for (int j = 0; j < n_seq; ++j) {
 			if (i != j) {
 				ci.sum_of_dists += D[TriangleMatrix::access(i, j)];
 			}
@@ -63,12 +63,11 @@ void NeighborJoining<_distance>::computeTree(float* distances, size_t n_seq, tre
 	}
 	
 	// merge clusters as long as there are two left
-	for (int iter = 0, n_clusters = n_seq; n_clusters > 2; ++iter, --n_clusters) {
+	for (int iter = 0, n_clusters = n_seq; n_clusters > 2; ++iter) {
 
 		// find minimum element in Q matrix
 		float min_q = std::numeric_limits<float>::max();
 		int min_i = 0, min_j = 0;
-
 
 		for (int i = 0; i < n_clusters; ++i) {
 			for (int j = i + 1; j < n_clusters; ++j) {
@@ -97,7 +96,7 @@ void NeighborJoining<_distance>::computeTree(float* distances, size_t n_seq, tre
 		ci.node_id = n_seq + iter;
 
 		// recalculate distances
-		for (int k = 0; k < clusters.size(); ++k) {
+		for (int k = 0; k < n_clusters; ++k) {
 
 			if (k != min_i && k != min_j) {
 				auto & ck = clusters[k];
@@ -119,6 +118,7 @@ void NeighborJoining<_distance>::computeTree(float* distances, size_t n_seq, tre
 
 		// remove cj
 		clusters.erase(clusters.begin() + min_j);
+		--n_clusters;
 	}
 
 	// join two remanining clusters

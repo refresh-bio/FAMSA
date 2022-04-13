@@ -18,7 +18,8 @@ class FastTree : public AbstractTreeGenerator {
 public:
 
 	FastTree(
-		size_t n_threads, 
+		int n_threads, 
+		instruction_set_t instruction_set,
 		std::shared_ptr<IPartialGenerator> partialGenerator, 
 		int subtreeSize,
 		std::shared_ptr<IClustering> clustering,
@@ -35,16 +36,16 @@ protected:
 
 	void doStep(std::vector<CSequence*>& sequences, tree_structure& tree, int previousTop, bool parallel);
 
-	size_t randomSeeds(
+	int randomSeeds(
 		std::vector<CSequence*>& sequences,
-		size_t n_seeds,
+		int n_seeds,
 		int * seed_ids,
 		float * similarity_row);
 
-	size_t clusterSeeds(
+	int clusterSeeds(
 		std::vector<CSequence*>& sequences,
-		size_t n_seeds,
-		size_t n_samples,
+		int n_seeds,
+		int n_samples,
 		int * seed_ids,
 		float * similarity_row);
 };

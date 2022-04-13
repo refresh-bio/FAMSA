@@ -47,7 +47,7 @@ public:
 
 		lowest_uncomputed_row = 0;
 
-		for (int i = 0; i < max_buffered_rows; ++i)
+		for (int i = 0; i < (int) max_buffered_rows; ++i)
 			available_buffers.push(i);
 
 		eoq_flag = false;

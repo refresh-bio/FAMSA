@@ -44,7 +44,7 @@ std::hash<std::thread::id>()(std::this_thread::get_id());
 // ****************************************************************************
 void CProfile::ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t no_threads, uint32_t rows_per_box)
 {
-	uint32_t no_dp_rows = 3 * rows_per_box;
+	int no_dp_rows = 3 * rows_per_box;
 
 	size_t prof1_width = profile1->width;
 	size_t prof2_width = profile2->width;
@@ -238,9 +238,9 @@ void CProfile::ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t 
 	vector<pair<int, int>> v_thr_range;
 	
 	if (prof2_width < no_threads)
-		no_threads = prof2_width;
+		no_threads = (uint32_t) prof2_width;
 
-	for (int i = 0; i < no_threads; ++i)
+	for (int i = 0; i < (int) no_threads; ++i)
 		v_thr_range.emplace_back(1 + i * prof2_width / no_threads, 1 + (i + 1) * prof2_width / no_threads);
 
 	// Boundary conditions
@@ -312,7 +312,7 @@ void CProfile::ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t 
 #endif
 	barrier bar(no_threads);
 
-	for (int t = 0; t < no_threads; ++t)
+	for (int t = 0; t < (int) no_threads; ++t)
 #ifdef USE_ASYNC
 		v_fut[t] = async([&, t]{
 #else
@@ -575,7 +575,7 @@ void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t
 	if (no_threads > 2)
 	{
 		auto fut0 = async([&] {
-			for (int i = 0; i < no_dp_rows; ++i)
+			for (int i = 0; i < (int) no_dp_rows; ++i)
 				dp_rows[i].resize(prof2_width + 1);
 			});
 
@@ -592,7 +592,7 @@ void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t
 	else if (no_threads == 2)
 	{
 		auto fut = async([&] {
-			for (int i = 0; i < no_dp_rows; ++i)
+			for (int i = 0; i < (int) no_dp_rows; ++i)
 				dp_rows[i].resize(prof2_width + 1);
 			});
 
@@ -606,7 +606,7 @@ void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t
 	{
 		matrix.set_zeros(params->instruction_set);
 
-		for (int i = 0; i < no_dp_rows; ++i)
+		for (int i = 0; i < (int) no_dp_rows; ++i)
 			dp_rows[i].resize(prof2_width + 1);
 
 		prof2_gaps.resize(prof2_width + 1);
@@ -617,9 +617,9 @@ void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t
 	vector<pair<int, int>> v_thr_range;
 
 	if (prof2_width < no_threads)
-		no_threads = prof2_width;
+		no_threads = (uint32_t) prof2_width;
 
-	for (int i = 0; i < no_threads; ++i)
+	for (int i = 0; i < (int) no_threads; ++i)
 		v_thr_range.emplace_back(1 + i * prof2_width / no_threads, 1 + (i + 1) * prof2_width / no_threads);
 
 	//scoresX.get_value(j, GAP_OPEN) returns information of how the column j of the profile X aligns with a single gap_open
@@ -708,7 +708,7 @@ void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t
 #endif
 	barrier bar(no_threads);
 
-	for (int t = 0; t < no_threads; ++t)
+	for (int t = 0; t < (int) no_threads; ++t)
 #ifdef USE_ASYNC
 		v_fut[t] = async([&, t] {
 #else
@@ -816,8 +816,10 @@ void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t
 					{
 					case 3:
 						t += col1[2].second * scores2_column[col1[2].first];
+						FALL_THROUGH;
 					case 2:
 						t += col1[1].second * scores2_column[col1[1].first];
+						FALL_THROUGH;
 					case 1:
 						t += col1[0].second * scores2_column[col1[0].first];
 					case 0:

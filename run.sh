@@ -12,6 +12,9 @@
 # align sequences with the previously generated guide tree
 ./famsa -gt import nj.dnd ./test/adeno_fiber/adeno_fiber nj.aln
 
+# align sequences with an approximated medoid guide tree and UPGMA subtrees
+./famsa -medoidtree -gt upgma ./test/hemopexin/hemopexin upgma.medoid.aln
+
 # export distance matrix to CSV format (lower triangular) 
 ./famsa -dist_export ./test/adeno_fiber/adeno_fiber dist.csv
 

@@ -22,6 +22,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "./core/profile.h"
 #include "./core/params.h"
 #include "./utils/timer.h"
+#include "./utils/statistics.h"
 
 #include "./lcs/lcsbp.h"
 #include "./lcs/lcsbp_classic.h"
@@ -56,16 +57,17 @@ protected:
 
 	CStopWatch timers[5];
 
-	vector<CSequence> ref_sequences;
+	Statistics statistics;
 
 #ifdef DEBUG_MODE
 	double estimated_identity;
 #endif
 	
-	void init_sm();
+	void initScoreMatrix();
 	void adjustParams(int n_seqs);
 
 #ifdef DEVELOPER_MODE
+	vector<CSequence> ref_sequences;
 	bool LoadRefSequences();
 #endif
 
@@ -87,13 +89,10 @@ public:
 
 	bool GetAlignment(vector<CGappedSequence*> &result);
 	
-	score_t GetScore()
-	{
-		if(final_profile != nullptr)
-			return final_profile->total_score;
-		else
-			return 0;
-	};
+	score_t GetScore() { return final_profile != nullptr ? final_profile->total_score : 0;  }
+	
+	const Statistics& getStatistics() const { return statistics;  }
+	Statistics& getStatistics() { return statistics; }
 
 #ifdef DEBUG_MODE
 	double GetEstimatedIdentity()

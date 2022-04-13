@@ -196,7 +196,7 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 							if (++c_seq % (100) == 0)
 							{
 								LOG_DEBUG << "Computing guide tree - " << fixed << setprecision(1)
-									<< 100.0 * ((double)c_seq * (2 * n_seq - c_seq + 1) / 2) / ((double)n_seq * (n_seq + 1) / 2) << "\%    (" << c_seq << " of " << n_seq << ")  \r";
+									<< 100.0 * ((double)c_seq * (2 * n_seq - c_seq + 1) / 2) / ((double)n_seq * (n_seq + 1) / 2) << "%    (" << c_seq << " of " << n_seq << ")  \r";
 							}
 						}
 						else
@@ -513,7 +513,7 @@ void MSTPartitioner::InitPartition(int n_elements)
 
 	if (min_part_size * n_parts >= n_elements)
 	{
-		int cur_part_size = min_part_size;
+		int cur_part_size = (int) min_part_size;
 
 		for (int i = 0; i < n_elements; ++i)
 		{
@@ -525,7 +525,7 @@ void MSTPartitioner::InitPartition(int n_elements)
 	}
 	else
 	{
-		int cur_part_size = min_part_size;
+		int cur_part_size = (int) min_part_size;
 	
 		double max_part_size = 2.0 * ((double)n_elements - (double)min_part_size * n_tail_parts) / ((double)n_parts - n_tail_parts) - min_part_size;
 		double incr = (max_part_size - min_part_size) / ((double)n_parts - n_tail_parts - 1.0);
@@ -538,7 +538,7 @@ void MSTPartitioner::InitPartition(int n_elements)
 			{
 				vd_parts.emplace_back(vector<int>(), 0u, 0u);
 
-				if(vd_parts.size() > n_tail_parts)
+				if((int64_t) vd_parts.size() > n_tail_parts)
 					d_cur_part_size += incr;
 				cur_part_size = (int)d_cur_part_size;
 				cur_part_size &= ~0x3;
@@ -554,7 +554,7 @@ void MSTPartitioner::InitPartition(int n_elements)
 void MSTPartitioner::Remove(int id)
 {
 	auto p = lower_bound(vd_parts.begin(), vd_parts.end(), id, [](const part_elem_t& x, int id) {return x.data[x.i_end - 1] < id; });
-	int elem_part_id = p - vd_parts.begin();
+	int elem_part_id = (int) (p - vd_parts.begin());
 
 	auto q = lower_bound(p->data.begin() + p->i_begin, p->data.begin() + p->i_end, id, [](const int& x, int id) {return x < id; });
 
@@ -596,8 +596,8 @@ void MSTPartitioner::Remove(int id)
 		auto q = next(p);
 		vd_parts.emplace(q, part_elem_t());
 		q->data.assign(p->data.begin() + p->i_begin + s1, p->data.end());
-		q->i_end = q->data.size();
-		p->i_end = p->i_begin + s1;
+		q->i_end = (uint32_t) q->data.size();
+		p->i_end = (uint32_t) (p->i_begin + s1);
 		p->data.resize(p->i_end);
 	}
 }
@@ -608,7 +608,7 @@ pair<MSTPartitioner::iterator, MSTPartitioner::iterator> MSTPartitioner::GetPart
 	if (part_id >= vd_parts.size())
 		return make_pair(vd_parts.front().data.begin(), vd_parts.front().data.begin());
 
-	int r_part_id = vd_parts.size() - 1 - part_id;		// Parts are counted from the last
+	int r_part_id = (int) vd_parts.size() - 1 - part_id;		// Parts are counted from the last
 
 	auto& part = vd_parts[r_part_id];
 

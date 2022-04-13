@@ -9,6 +9,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <string>
 #include <iostream>
 #include <numeric>
+#include <fstream>
 
 #include "./core/io_service.h"
 #include "./core/params.h"
@@ -68,7 +69,7 @@ int main(int argc, char *argv[])
 
 	// ***** Load sequences to FAMSA
 	CFAMSA famsa(params);
-
+	famsa.getStatistics().put("input.n_sequences", sequences.size());
 	if(!famsa.ComputeMSA(sequences))
 	{
 		LOG_NORMAL << "Some interal error occured!\n";
@@ -78,27 +79,33 @@ int main(int argc, char *argv[])
 	timer_saving.StartTimer();
 
 	if (famsa.GetAlignment(result)) {
+		
+		famsa.getStatistics().put("alignment.length", result[0]->gapped_size);
+
 		LOG_VERBOSE << "Saving alignment in " << params.output_file_name;		
 		if(params.gzippd_output)
 			IOService::saveAlignment(params.output_file_name, result, params.n_threads, params.gzip_level);
 		else
 			IOService::saveAlignment(params.output_file_name, result, params.n_threads, -1);
-	//		IOService::saveAlignment(params.output_file_name, result);
+
 		LOG_VERBOSE << " [OK]" << endl;		
 	}
 
 	timer_saving.StopTimer();
 	timer.StopTimer();
-
-	LOG_VERBOSE << " Alignment saving                                 : " << timer_saving.GetElapsedTime() << "s\n";
-
-	LOG_VERBOSE << "Total computation time: " << timer.GetElapsedTime() << "s\n";
 	LOG_NORMAL << "Done!\n";
 
 	if (params.verbose_mode || params.very_verbose_mode) {
-		FILE* out = fopen("famsa.stats", "at");
-		fprintf(out, "time.save=%lf\n", timer_saving.GetElapsedTime());
-		fclose(out);
+		famsa.getStatistics().put("time.save", timer_saving.GetElapsedTime());
+		famsa.getStatistics().put("time.total", timer.GetElapsedTime());
+
+		string stats = famsa.getStatistics().toString();
+		
+		LOG_VERBOSE << endl << endl << "Statistics:" << endl << stats << endl;
+		
+		std::ofstream ofs("famsa.stats");
+		ofs << "[stats]" << endl << stats;
+		ofs.close();
 	}
 
 	return 0;

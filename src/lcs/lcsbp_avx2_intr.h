@@ -20,7 +20,7 @@ class CLCSBP_AVX2_INTR
 {
 	void* raw_X;
 	void* orig_X;
-	size_t X_size;
+	uint32_t X_size;
 	size_t raw_X_size;
 	__m256i* X;
 	CSequence* seq0_prev;
@@ -29,8 +29,8 @@ class CLCSBP_AVX2_INTR
 	void* raw_precomp_masks;
 	size_t size_precomp_masks;
 
-	inline void prepare_X(size_t bv_len);
-	inline void prepare_mask_pairs(size_t bv_len, CSequence* seq0);
+	inline void prepare_X(uint32_t bv_len);
+	inline void prepare_mask_pairs(uint32_t bv_len, CSequence* seq0);
 	void calculate(CSequence* seq0, CSequence* seq1, CSequence* seq2, CSequence* seq3, CSequence* seq4, uint32_t* res, uint32_t bv_len, uint32_t max_len);
 
 public:
@@ -148,7 +148,7 @@ public:
 
 		//const Array<bit_vec_t>& bit_masks = seq0->bit_masks;
 
-		size_t bv_len = (seq0->length + bv_size256 - 1) / bv_size256;
+		uint32_t bv_len = (seq0->length + bv_size256 - 1) / bv_size256;
 
 		auto pX0 = X;
 

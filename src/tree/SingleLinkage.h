@@ -57,7 +57,8 @@ class SingleLinkage : public AbstractTreeGenerator, public IPartialGenerator {
 
 public:
 
-	SingleLinkage(size_t n_threads) : AbstractTreeGenerator(n_threads) {}
+	SingleLinkage(int n_threads, instruction_set_t instruction_set) 
+		: AbstractTreeGenerator(n_threads, instruction_set) {}
 
 	void run(std::vector<CSequence>& sequences, tree_structure& tree) override;
 

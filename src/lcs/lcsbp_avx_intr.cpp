@@ -16,9 +16,9 @@ using namespace std;
 
 // *******************************************************************
 // Prepares (if necessary sufficient amount of memory for LCS calculation
-void CLCSBP_AVX_INTR::prepare_X(size_t bv_len)
+void CLCSBP_AVX_INTR::prepare_X(uint32_t bv_len)
 {
-	size_t new_X_size = bv_len * sizeof(__m128i);
+	uint32_t new_X_size = bv_len * sizeof(__m128i);
 
 	if (new_X_size <= X_size)
 		return;
@@ -97,10 +97,10 @@ void CLCSBP_AVX_INTR::calculate(CSequence* seq0, CSequence* seq1, CSequence* seq
 void CLCSBP_AVX_INTR::Calculate(CSequence *seq0, CSequence *seq1, CSequence *seq2,
 	uint32_t *dist)
 {
-	size_t max_len;
+	uint32_t max_len;
 	max_len = max(seq1->length, seq2->length);
 
-	size_t bv_len = (seq0->length + bv_size128 - 1) / bv_size128;
+	uint32_t bv_len = (seq0->length + bv_size128 - 1) / bv_size128;
 
 	prepare_X(bv_len);
 

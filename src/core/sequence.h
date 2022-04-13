@@ -23,29 +23,36 @@ class CSequence
 	static char mapping_table[25];
 
 public:
-	int sequence_no = -1;
-
+	int sequence_no;
+	uint32_t length;
 	string id;
 	vector<symbol_t> data;
 	vector<bool> uppercase;
-	uint32_t length;
-
+	
+/*
 #ifdef __APPLE__
 	uint16_t hist[NO_SYMBOLS];
 #else
 	uint16_t alignas(32) hist[NO_SYMBOLS];
 #endif
-
+*/
+	uint16_t* hist = nullptr;
 	Array<bit_vec_t> bit_masks;
 	
 public:
-	CSequence();
+	//CSequence();
 	CSequence(const string& _id, const string& seq);
-	CSequence(const CSequence& x);
-	CSequence(CSequence&& x) noexcept;
+	
+	// sequences are not copyable
+	CSequence(const CSequence& x) noexcept = delete;
+	CSequence& operator=(const CSequence& x) noexcept = delete;
+
+	CSequence(CSequence&& x) noexcept = default;
+	CSequence& operator=(CSequence&& x) noexcept = default; 
+	
 	~CSequence();
 
-	CSequence& operator=(const CSequence& x) noexcept;
+	
 
 	void ComputeBitMasks();
 	void ReleaseBitMasks();
@@ -75,7 +82,7 @@ public:
 
     CGappedSequence(CSequence &&_sequence);
     CGappedSequence(const CGappedSequence &_gapped_sequence);
-    CGappedSequence(CGappedSequence &&_gapped_sequence);
+    CGappedSequence(CGappedSequence &&_gapped_sequence) noexcept;
     ~CGappedSequence();
 
 	bool operator==(const CGappedSequence &gs);

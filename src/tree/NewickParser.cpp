@@ -81,7 +81,7 @@ void NewickParser::store(
 
 std::ostream& NewickParser::storeBranch(const std::vector<CSequence>& sequences, const std::vector<pair<int, int>>& guideTree, int index, std::ostream& oss) {
 
-	if (index < sequences.size()) {
+	if (index < (int)sequences.size()) {
 
 		if (sequences[index].id[0] == '>') {
 			oss << sequences[index].id.substr(1) << ":1.0";

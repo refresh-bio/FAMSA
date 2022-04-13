@@ -64,7 +64,7 @@ size_t IOService::loadFasta(const std::string& file_name, std::vector<CSequence>
 	}
 
 	if (!id.empty() && !seq.empty())
-		sequences.push_back(CSequence(id, seq));
+		sequences.emplace_back(id, seq);
 
 	return sequences.size();
 }
@@ -271,8 +271,8 @@ bool IOService::saveAlignment(const std::string& file_name, vector<CGappedSequen
 	string s;
 	string id, seq;
 
-	int32_t pack_size = gzip_level < 0 ? 5 : 10;
-	int32_t clear_pack_size = 100;
+	int pack_size = gzip_level < 0 ? 5 : 10;
+	int clear_pack_size = 100;
 
 	atomic<int> seq_id {0};
 	vector<thread> v_threads;
@@ -316,8 +316,8 @@ bool IOService::saveAlignment(const std::string& file_name, vector<CGappedSequen
 
 		while (true)
 		{
-			int32_t id_from = seq_id.fetch_add(pack_size);
-			int32_t id_to = id_from + pack_size;
+			int id_from = seq_id.fetch_add(pack_size);
+			int id_to = id_from + pack_size;
 
 			if (id_from >= no_seqs)
 				break;
@@ -326,7 +326,7 @@ bool IOService::saveAlignment(const std::string& file_name, vector<CGappedSequen
 
 			s_tmp.clear();
 
-			for (uint32_t i = id_from; i < id_to; ++i)
+			for (int i = id_from; i < id_to; ++i)
 			{
 				auto p = sequences[i];
 

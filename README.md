@@ -5,7 +5,7 @@
 [![GitHub Actions CI](../../actions/workflows/main.yml/badge.svg)](../../actions/workflows/main.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
-Algorithm for large-scale multiple sequence alignments (400k proteins in 2 hours and 8GB of RAM)
+Progressive algorithm for large-scale multiple sequence alignments (3 million ABC transporters in 5 minutes and less than 30GB of RAM)
 
 ## Quick start
 
@@ -25,6 +25,9 @@ cd FAMSA && make
 # align sequences with the previously generated guide tree
 ./famsa -gt import nj.dnd ./test/adeno_fiber/adeno_fiber nj.aln
 
+# align sequences with an approximated medoid guide tree and UPGMA subtrees
+./famsa -medoidtree -gt upgma ./test/hemopexin/hemopexin upgma.medoid.aln
+
 # export distance matrix to CSV format (lower triangular) 
 ./famsa -dist_export ./test/adeno_fiber/adeno_fiber dist.csv
 
@@ -43,17 +46,21 @@ conda install -c bioconda famsa
 For detailed instructions how to set up Bioconda, please refer to the [Bioconda manual](https://bioconda.github.io/user/install.html#install-conda).
 FAMSA can be also built from the sources distributed as:
 
-* Visual Studio 2015 solution for Windows,
+* Visual Studio 2019 solution for Windows,
 * MAKE project for Linux and OS X (g++-5 required, g++-8 recommended).
 
-At the top of the makefile there are several switches controlling building process. These are:
-* STATIC_LINK - enable static linking (default: false); may be helpful when binary portability is desired,
-* NO_AVX - prevent from using AVX and AVX2 extensions (default: false),
-* NO_AVX2 - prevent from using AVX2 extensions (default: false),
+FAMSA by default takes advantage of AVX and AVX2 CPU extensions - a binary detetermines supported instructions at runtime, thus it is multiplatform. There is, however, a possibility to limit CPU extensions when compiling sources by setting `CPU_EXT` variable for make:
 
-Note, that FAMSA by default takes advantage of AVX and AVX2 CPU extensions. Pre-built binary detetermines supported instructions at runtime, thus it is multiplatform. However, one may encounter a problem when building FAMSA version on a CPU without AVX and/or AVX2. For this purpose NO_AVX and NO_AVX2 switches are provided. 
+```bash
+make CPU_EXT=none32 # 32-bit without extensions
+make CPU_EXT=none64 # 64-bit without extensions
+make CPU_EXT=sse4   # 64-bit with SSE4.1 extensions
+make CPU_EXT=avx   # 64-bit with AVX extensions
+```   
 
-The latest speed improvements in FAMSA limited the usefullness of the GPU mode. Thus, starting from the 1.5.0 version, there is no support of GPU in FAMSA. If maximum throughput is required, we encourage using new medoid trees feature (`-medoidtree` switch) which allows processing gigantic data sets in a reasonable time (e.g., the familiy of 3 million ABC transporters was analyzed in five minutes) . 
+An additional option can be used to force static linking (may be helpful when binary portability is desired): `make STATIC_LINK=true`
+
+The latest speed improvements in FAMSA limited the usefullness of the GPU mode. Thus, starting from the 1.5.0 version, there is no support of GPU in FAMSA. If maximum throughput is required, we encourage using new medoid trees feature (`-medoidtree` switch) which allows processing gigantic data sets in short time (e.g., the familiy of 3 million ABC transporters was analyzed in five minutes). 
 
 
 ## Usage
@@ -75,6 +82,7 @@ Options:
 * `-gt <sl | upgma | import <file>>` - the guide tree method (default: sl):
     * `sl` - single linkage,
     * `upgma` - UPGMA,
+	* `nj` - neighbour joining,
     * `import <file>` - import from a Newick file.
 * `-medoidtree` - use MedoidTree heuristic for speeding up tree construction (default: disabled)
 * `-medoid_threshold <n_seqs>` - if specified, medoid trees are used only for sets with `n_seqs` or more

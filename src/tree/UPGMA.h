@@ -66,8 +66,8 @@ template <Distance _distance>
 class UPGMA : public AbstractTreeGenerator, public IPartialGenerator {
 public:
 	
-	UPGMA(size_t n_threads, bool is_modified) 
-		: AbstractTreeGenerator(n_threads), is_modified(is_modified) {}
+	UPGMA(int n_threads, instruction_set_t instruction_set, bool is_modified)
+		: AbstractTreeGenerator(n_threads, instruction_set), is_modified(is_modified) {}
 
 	void run(std::vector<CSequence>& sequences, tree_structure& tree) override;
 
@@ -76,7 +76,7 @@ public:
 	void computeDistances(std::vector<CSequence>& sequences, UPGMA_dist_t *dist_matrix);
 
 	template <bool is_modified>
-	void computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_structure& tree);
+	void computeTree(UPGMA_dist_t* distances, int n_seq, tree_structure& tree);
 
 protected:
 	const UPGMA_dist_t BIG_DIST = (UPGMA_dist_t) 1e29;

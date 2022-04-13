@@ -17,17 +17,9 @@ using namespace std;
 
 
 // *******************************************************************
-AbstractTreeGenerator::AbstractTreeGenerator(size_t n_threads) : n_threads(n_threads) {
-//	int x = instrset_detect();
-	
-	instruction_set = instruction_set_t::none;
+AbstractTreeGenerator::AbstractTreeGenerator(int n_threads, instruction_set_t instruction_set) 
+	: n_threads(n_threads), instruction_set(instruction_set) {
 
-#ifndef NO_AVX
-	if ((CPUID(1).ECX() >> 28) & 1)
-		instruction_set = instruction_set_t::avx;
-	if ((CPUID(7).EBX() >> 5) & 1)
-		instruction_set = instruction_set_t::avx2;
-#endif
 }
 
 // *******************************************************************
@@ -40,7 +32,8 @@ void AbstractTreeGenerator::operator()(std::vector<CSequence>& sequences, tree_s
 	size_t max_seq_len =
 		max_element(sequences.begin(), sequences.end(), [](const CSequence &x, CSequence &y) {return x.length < y.length; })->length;
 
-	for (int i = 0; i < sequences.size(); ++i) {
+	int n_seqs = (int)sequences.size();
+	for (int i = 0; i < n_seqs; ++i) {
 		sequences[i].data.resize(max_seq_len, UNKNOWN_SYMBOL);
 	}
 
@@ -48,7 +41,7 @@ void AbstractTreeGenerator::operator()(std::vector<CSequence>& sequences, tree_s
 	run(sequences, tree);
 
 	// Bring the sequences to the valid length
-	for (int i = 0; i < sequences.size(); ++i)
+	for (int i = 0; i < n_seqs; ++i)
 		sequences[i].data.resize(sequences[i].length, UNKNOWN_SYMBOL);
 
 }

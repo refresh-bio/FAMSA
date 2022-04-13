@@ -45,7 +45,8 @@ struct TreeWrapper {
 		guideTree.resize(2 * sequences.size(), std::pair<int,int>(-1,-1));
 		
 		// fill in mappings
-		for (int i = 0; i < sequences.size(); ++i) {
+		int n_seqs = (int)sequences.size();
+		for (int i = 0; i < n_seqs; ++i) {
 			const auto &seq = sequences[i];
 			if (seq.id[0] == '>') {
 				sequencesToIds[seq.id.substr(1, seq.id.size())] = i; // omit >

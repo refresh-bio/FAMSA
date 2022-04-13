@@ -19,20 +19,15 @@ char CGappedSequence::mapping_table[25] = "ARNDCQEGHILKMFPSTWYVBZX*";
 
 
 // *******************************************************************
-CSequence::CSequence()
+CSequence::CSequence(const string& _id, const string& seq) 
+	: 
+	sequence_no(-1), 
+	length((uint32_t)seq.length()), 
+	id(_id),
+	data(seq.length()), 
+	uppercase(seq.length())
 {
-	sequence_no = -1;
-	bit_masks.clear();
-}
-
-// *******************************************************************
-CSequence::CSequence(const string& _id, const string& seq) : id(_id)
-{
-	length = seq.length();
-	data.resize(length);
-	uppercase.resize(length);
-
-	for(size_t i = 0; i < length; ++i)
+	for(uint32_t i = 0; i < length; ++i)
 	{
 		char c = seq[i];
 		if(c > 'Z')
@@ -51,68 +46,11 @@ CSequence::CSequence(const string& _id, const string& seq) : id(_id)
 	}
 }
 
-// *******************************************************************
-CSequence::CSequence(const CSequence& x)
-{
-	sequence_no = x.sequence_no;
-
-	id = x.id;
-	data = x.data;
-	uppercase = x.uppercase;
-	length = x.length;
-
-	if (!x.bit_masks.empty())
-		//		bit_masks = new Array<bit_vec_t>(*(x.bit_masks));
-	{
-		bit_masks.clear();
-		ComputeBitMasks();
-	}
-	else
-		bit_masks.clear();
-}
-
-// *******************************************************************
-CSequence::CSequence(CSequence&& x) noexcept
-{
-	sequence_no = move(x.sequence_no);
-
-	id = move(x.id);
-	data = move(x.data);
-	uppercase = move(x.uppercase);
-	length = move(x.length);
-
-	bit_masks = move(x.bit_masks);
-}
-
-// *******************************************************************
-CSequence& CSequence::operator=(const CSequence& x) noexcept
-{
-	if (this != &x)
-	{
-		sequence_no = x.sequence_no;
-		id = x.id;
-		data = x.data;
-		uppercase = x.uppercase;
-		length = x.length;
-
-		ReleaseBitMasks();
-
-		if (!x.bit_masks.empty())
-			//		bit_masks = new Array<bit_vec_t>(*(x.bit_masks));
-		{
-			bit_masks.clear();
-			ComputeBitMasks();
-		}
-		else
-			bit_masks.clear();
-	}
-
-	return *this;
-}
 
 // *******************************************************************
 CSequence::~CSequence()
 {
+	delete[] hist;
 }
 
 
@@ -137,7 +75,7 @@ string CSequence::DecodeSequence()
 // Compute Bit-mask Vectors for bit-parallel computation of LCS for the sequences
 void CSequence::ComputeBitMasks()
 {
-	size_t bv_len = (data.size() + bv_size - 1) / bv_size;
+	uint32_t bv_len = (uint32_t) ((data.size() + bv_size - 1) / bv_size);
 
 	/*
 	bit_masks.clear();
@@ -147,7 +85,7 @@ void CSequence::ComputeBitMasks()
 		bit_masks[i].resize(bv_len, (bit_vec_t) 0);
 	*/
 
-	bit_masks.resize(bv_len, NO_SYMBOLS, (bit_vec_t)0);
+	bit_masks.resize(bv_len, (uint32_t) NO_SYMBOLS, (bit_vec_t)0);
 
 	for(size_t i = 0; i < length; ++i)
 		if(data[i] >= 0 && data[i] < NO_VALID_AMINOACIDS)
@@ -163,9 +101,11 @@ void CSequence::ReleaseBitMasks()
 // *******************************************************************
 void CSequence::PrepareHistogram()
 {
+	hist = new uint16_t[NO_AMINOACIDS];
+
 /*	int p1 = length / 3;
 	int p2 = 2 * length / 3;*/
-
+	
 //	fill_n(i_hist, NO_AMINOACIDS, 0u);
 	fill_n(hist, NO_AMINOACIDS, 0u);
 //	fill_n(hist, NO_SYMBOLS, 0u);
@@ -240,7 +180,7 @@ CGappedSequence::CGappedSequence(const CGappedSequence& _gapped_sequence)
 }
 
 // *******************************************************************
-CGappedSequence::CGappedSequence(CGappedSequence&& _gapped_sequence)
+CGappedSequence::CGappedSequence(CGappedSequence&& _gapped_sequence) noexcept
 {
 	id = move(_gapped_sequence.id);
 
@@ -488,7 +428,7 @@ void CGappedSequence::InsertGapsVector(const vector<pair<uint32_t, uint32_t>>& v
 // *******************************************************************
 uint32_t CGappedSequence::NoSymbols()
 {
-	return symbols.size();
+	return (uint32_t) symbols.size();
 }
 
 // *******************************************************************

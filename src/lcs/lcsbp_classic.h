@@ -25,7 +25,7 @@ class CLCSBP_Classic
 	CSequence *pf_seq0;
 	bit_vec_iterator_t s0bm[NO_SYMBOLS];
 	
-	inline void prepare_X(size_t bv_len);
+	inline void prepare_X(uint32_t bv_len);
 	void calculate(CSequence *seq0, CSequence *seq1, uint32_t *res, uint32_t bv_len);
 	void prefetch_bitmasks(CSequence *seq0);
 

@@ -191,7 +191,7 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 			sample_size = atoi(argv[argno++]);
 		}
 		else if (cur_par == "-cluster_fraction") {
-			cluster_fraction = atof(argv[argno++]);
+			cluster_fraction = (float) atof(argv[argno++]);
 		}
 		else if (cur_par == "-cluster_iters") {
 			cluster_iters = atoi(argv[argno++]);
@@ -214,7 +214,7 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 		}
 		else if (cur_par == "-gz-lev")
 		{
-			int g_lev = atof(argv[argno++]);
+			int g_lev = atoi(argv[argno++]);
 			if (g_lev < 0 || g_lev > 12)
 			{
 				LOG_NORMAL << "Incorrect gzip level: " << g_lev << " was changed to default value: " << gzip_level << endl;

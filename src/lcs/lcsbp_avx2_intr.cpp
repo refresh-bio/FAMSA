@@ -18,9 +18,9 @@ using namespace std;
 
 // *******************************************************************
 // Prepares (if necessary) sufficient amount of memory for LCS calculation
-void CLCSBP_AVX2_INTR::prepare_X(size_t bv_len)
+void CLCSBP_AVX2_INTR::prepare_X(uint32_t bv_len)
 {
-	size_t new_X_size = bv_len * sizeof(__m256i);
+	uint32_t new_X_size = bv_len * sizeof(__m256i);
 
 	if (new_X_size <= X_size)
 		return;
@@ -37,7 +37,7 @@ void CLCSBP_AVX2_INTR::prepare_X(size_t bv_len)
 }
 
 // *******************************************************************
-void CLCSBP_AVX2_INTR::prepare_mask_pairs(size_t bv_len, CSequence* seq0)
+void CLCSBP_AVX2_INTR::prepare_mask_pairs(uint32_t bv_len, CSequence* seq0)
 {
 	if (seq0_prev == seq0)
 		return;
@@ -123,7 +123,7 @@ void CLCSBP_AVX2_INTR::calculate(CSequence* seq0, CSequence* seq1, CSequence* se
 		{
 			V = X[j];
 			//			U1 = _mm256_set_epi64x(bit_masks[c4][j], bit_masks[c3][j], bit_masks[c2][j], bit_masks[c1][j]);
-			U2 = _mm256_set_m128i(precomp_masks[c3 * NO_SYMBOLS * bv_len + c4 * bv_len + j], precomp_masks[c1 * NO_SYMBOLS * bv_len + c2 * bv_len + j]);
+			U2 = _mm256_set_m128i(precomp_masks[(size_t) c3 * NO_SYMBOLS * bv_len + c4 * bv_len + j], precomp_masks[(size_t) c1 * NO_SYMBOLS * bv_len + c2 * bv_len + j]);
 			//			U2 = _mm256_i32gather_epi64(base, indices, 8);
 //			indices = _mm_add_epi32(indices, plus_one);
 //			tB = _mm256_and_si256(V, U1);
@@ -179,11 +179,11 @@ void CLCSBP_AVX2_INTR::calculate(CSequence* seq0, CSequence* seq1, CSequence* se
 void CLCSBP_AVX2_INTR::Calculate(CSequence* seq0, CSequence* seq1, CSequence* seq2, CSequence* seq3, CSequence* seq4,
 	uint32_t *dist)
 {
-	size_t max_len;
+	uint32_t max_len;
 //	max_len = max(seq1->length, max(seq2->length, max(seq3->length, seq4->length)));
 	max_len = max4(seq1->length, seq2->length, seq3->length, seq4->length);
 
-	size_t bv_len = (seq0->length + bv_size256 - 1) / bv_size256;
+	uint32_t bv_len = (seq0->length + bv_size256 - 1) / bv_size256;
 
 	prepare_X(bv_len);
 	prepare_mask_pairs(bv_len, seq0);

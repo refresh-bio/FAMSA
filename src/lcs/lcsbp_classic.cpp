@@ -10,7 +10,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 // *******************************************************************
 // Prepares (if necessary sufficient amount of memory for LCS calculation
-void CLCSBP_Classic::prepare_X(size_t bv_len)
+void CLCSBP_Classic::prepare_X(uint32_t bv_len)
 {
 	if (bv_len > X_size)
 	{
@@ -74,7 +74,7 @@ void CLCSBP_Classic::calculate(CSequence *seq0, CSequence *seq1, uint32_t *res, 
 void CLCSBP_Classic::Calculate(CSequence *seq0, CSequence *seq1,
 	uint32_t *dist)
 {
-	size_t bv_len = (seq0->length + bv_size - 1) / bv_size;
+	uint32_t bv_len = (seq0->length + bv_size - 1) / bv_size;
 
 	prepare_X(bv_len);
 	prefetch_bitmasks(seq0);

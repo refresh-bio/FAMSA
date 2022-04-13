@@ -80,7 +80,7 @@ void UPGMA<_distance>::computeDistances(std::vector<CSequence>& sequences, UPGMA
 	vector<thread *> workers(n_threads, nullptr);
 
 	// Calculation of similarities is made in working threads
-	for (uint32_t i = 0; i < n_threads; ++i)
+	for (int i = 0; i < n_threads; ++i)
 		workers[i] = new thread([&] {
 		CLCSBP lcsbp(instruction_set);
 		int row_id;
@@ -111,7 +111,7 @@ void UPGMA<_distance>::computeDistances(std::vector<CSequence>& sequences, UPGMA
 // *******************************************************************
 template <Distance _distance>
 template <bool MODIFIED>
-void UPGMA<_distance>::computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_structure& tree)
+void UPGMA<_distance>::computeTree(UPGMA_dist_t* distances, int n_seq, tree_structure& tree)
 {
 	Average<UPGMA_dist_t, MODIFIED> average;
 	
@@ -156,22 +156,24 @@ void UPGMA<_distance>::computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_s
 	UPGMA_dist_t *g_RightLength;
 
 	//	void UPGMA2(const DistCalc &DC, Tree &tree, LINKAGE Linkage)
-	g_uLeafCount = n_seq;
+	g_uLeafCount = (uint64_t)n_seq;
 
 	//g_uTriangleSize = (g_uLeafCount*(g_uLeafCount - 1)) / 2;
 	g_uInternalNodeCount = g_uLeafCount - 1;
 
 	g_Dist = distances;
 
-	g_uNodeIndex = new uint64_t[g_uLeafCount];
-	g_uNearestNeighbor = new uint64_t[g_uLeafCount];
-	g_MinDist = new UPGMA_dist_t[g_uLeafCount];
-
-	g_uLeft = new uint64_t[g_uInternalNodeCount];
-	g_uRight = new uint64_t[g_uInternalNodeCount];
-	g_Height = new UPGMA_dist_t[g_uInternalNodeCount];
-	g_LeftLength = new UPGMA_dist_t[g_uInternalNodeCount];
-	g_RightLength = new UPGMA_dist_t[g_uInternalNodeCount];
+	uint64_t* raw_uint = new uint64_t[g_uLeafCount * 2 + g_uInternalNodeCount * 2];
+	g_uNodeIndex		= raw_uint;
+	g_uNearestNeighbor	= raw_uint + 1 * g_uLeafCount;
+	g_uLeft				= raw_uint + 2 * g_uLeafCount;
+	g_uRight			= raw_uint + 2 * g_uLeafCount + g_uInternalNodeCount;
+	
+	UPGMA_dist_t* raw_dist = new UPGMA_dist_t[g_uInternalNodeCount * 3 + g_uLeafCount];
+	g_Height			= raw_dist;
+	g_LeftLength		= raw_dist + 1 * g_uInternalNodeCount;
+	g_RightLength		= raw_dist + 2 * g_uInternalNodeCount;
+	g_MinDist			= raw_dist + 3 * g_uInternalNodeCount;
 
 	for (uint64_t i = 0; i < g_uLeafCount; ++i)
 	{
@@ -288,15 +290,8 @@ void UPGMA<_distance>::computeTree(UPGMA_dist_t* distances, size_t n_seq, tree_s
 	for (int i = 0; i < n_seq - 1; ++i)
 		tree.emplace_back(g_uLeft[i], g_uRight[i]);
 
-	delete[] g_uNodeIndex;
-	delete[] g_uNearestNeighbor;
-	delete[] g_MinDist;
-	delete[] g_Height;
-
-	delete[] g_uLeft;
-	delete[] g_uRight;
-	delete[] g_LeftLength;
-	delete[] g_RightLength;
+	delete[] raw_dist;
+	delete[] raw_uint;
 }
 
 // *******************************************************************

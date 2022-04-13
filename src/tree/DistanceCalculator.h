@@ -8,9 +8,17 @@ private:
 	bool generate_square_matrix;
 	bool calculate_pid;
 public:
-	DistanceCalculator(size_t n_threads, const string& out_file, bool generate_square_matrix, bool calculate_pid)
-		: AbstractTreeGenerator(n_threads), 
-		out_file(out_file), generate_square_matrix(generate_square_matrix), calculate_pid(calculate_pid) {}
+	DistanceCalculator(
+		int n_threads, 
+		instruction_set_t instruction_set, 
+		const string& out_file, 
+		bool generate_square_matrix, 
+		bool calculate_pid)
+		: 
+		AbstractTreeGenerator(n_threads, instruction_set), 
+		out_file(out_file), 
+		generate_square_matrix(generate_square_matrix), 
+		calculate_pid(calculate_pid) {}
 
 protected:
 	void run(std::vector<CSequence>& sequences, tree_structure& tree) override;

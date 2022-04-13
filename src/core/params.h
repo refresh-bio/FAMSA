@@ -53,7 +53,7 @@ public:
 	int guide_tree_seed				= 0;
 	int subtree_size				= 100;
 	int sample_size					= 2000;
-	float cluster_fraction			= 0.1;
+	float cluster_fraction			= 0.1f;
 	int cluster_iters				= 2;
 
 	string guide_tree_in_file;

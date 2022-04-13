@@ -42,17 +42,17 @@ private:
 	{
 		pp_sqrt_rec.resize(val + 1);
 		for (; cur_pp_size <= val; ++cur_pp_size)
-			pp_sqrt_rec[cur_pp_size] = sqrt(cur_pp_size);
+			pp_sqrt_rec[cur_pp_size] = (T) sqrt(cur_pp_size);
 
 	}
 
 public:
 	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) { 
-		T indel = len1 + len2 - 2 * lcs;
-		T l = lcs;
+		T indel = (T) (len1 + len2 - 2 * lcs);
+		T l = (T) lcs;
 
 		if (indel >= cur_pp_size)
-			pp_extend(indel);
+			pp_extend((uint32_t) indel);
 
 		return pp_sqrt_rec[indel] / l;
 	}
@@ -61,7 +61,7 @@ public:
 template <class T>
 struct Transform<T, Distance::indel_div_lcs> {
 	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) {
-		T indel = len1 + len2 - 2 * lcs;
+		T indel = (T) (len1 + len2 - 2 * lcs);
 		return (T)indel / lcs; 
 	}
 };
@@ -118,7 +118,7 @@ void AbstractTreeGenerator::calculateDistanceVector(
 	Transform& transform,
 	seq_type& ref,
 	seq_type* sequences, 
-	size_t n_seqs, 
+	int n_seqs, 
 	distance_type* out_vector, 
 	CLCSBP& lcsbp)
 {
@@ -142,7 +142,7 @@ void AbstractTreeGenerator::calculateDistanceVector(
 	}
 
 	// if there is something left
-	size_t n_processed = n_seqs / 4 * 4;
+	int n_processed = n_seqs / 4 * 4;
 	if (n_processed < n_seqs) {
 		lcsbp.GetLCSBP(
 			seq_to_ptr(ref),
@@ -175,7 +175,7 @@ void AbstractTreeGenerator::calculateDistanceRange(
 	CLCSBP& lcsbp)
 {
 	uint32_t lcs_lens[4];
-	size_t n_seqs = distance(ids_range.first, ids_range.second);
+	int n_seqs = distance(ids_range.first, ids_range.second);
 
 	auto p_ids = ids_range.first;
 
@@ -195,7 +195,7 @@ void AbstractTreeGenerator::calculateDistanceRange(
 	}
 
 	// if there is something left
-	size_t n_processed = n_seqs / 4 * 4;
+	int n_processed = n_seqs / 4 * 4;
 	if (n_processed < n_seqs) {
 		lcsbp.GetLCSBP(
 			seq_to_ptr(ref),
@@ -220,11 +220,11 @@ template <class seq_type, class distance_type, typename Transform>
 void AbstractTreeGenerator::calculateDistanceMatrix(
 	Transform& transform,
 	seq_type* sequences,
-	size_t n_seq, 
+	int n_seq, 
 	distance_type *out_matrix, 
 	CLCSBP& lcsbp) {
 
-	for (size_t row_id = 0; row_id < n_seq; ++row_id) {
+	for (int row_id = 0; row_id < n_seq; ++row_id) {
 		
 		size_t row_offset = TriangleMatrix::access(row_id, 0);
 		

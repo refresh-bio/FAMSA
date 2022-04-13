@@ -532,7 +532,7 @@ void CProfile::AlignProfProf(CProfile* profile1, CProfile* profile2, vector<int>
 	//size_t n_gap_term_open = 0;
 	//size_t n_gap_term_ext = 0;
 	
-	size_t n_gap_prof1_start_open, n_gap_prof1_start_ext, n_gap_prof1_start_term_open, n_gap_prof1_start_term_ext,
+	counter_t n_gap_prof1_start_open, n_gap_prof1_start_ext, n_gap_prof1_start_term_open, n_gap_prof1_start_term_ext,
 		n_gap_prof1_cont_ext, n_gap_prof1_cont_term_ext;
 	vector<dp_gap_corrections> gap_corrections(prof2_width + 1);
 

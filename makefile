@@ -76,7 +76,7 @@ $(info *** Building with SSE4 extensions***)
 	COMMON_FLAGS := -m64 -msse4
 	DEFINE_FLAGS := $(DEFINE_FLAGS) -DNO_AVX
 	NO_AVX=1
-else ifeq ($(CPU_EXT), avx1)
+else ifeq ($(CPU_EXT), avx)
 $(info *** Building with AVX extensions***)
 	COMMON_FLAGS := -m64 -msse4
 	DEFINE_FLAGS := $(DEFINE_FLAGS) -DNO_AVX2

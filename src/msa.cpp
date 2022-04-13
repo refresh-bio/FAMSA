@@ -93,21 +93,19 @@ double CFAMSA::SM_MIQS[24][24] = {
 
 // *******************************************************************
 CFAMSA::CFAMSA(CParams& _params) 
-	: params(_params), final_profile(nullptr), instruction_set(params.instruction_set)
+	: params(_params), instruction_set(params.instruction_set), final_profile(nullptr)
 {
-
-	init_sm();
+	initScoreMatrix();
 }
 
 // *******************************************************************
 CFAMSA::~CFAMSA()
 {
-	if(final_profile)
-		delete final_profile;
+	delete final_profile;
 }
 
 // *******************************************************************
-void CFAMSA::init_sm()
+void CFAMSA::initScoreMatrix()
 {
 	score_matrix.resize(NO_AMINOACIDS);
 
@@ -139,7 +137,7 @@ void CFAMSA::adjustParams(int n_seqs)
 	if(params.enable_gap_rescaling)
 	{
 		double gap_scaler = log2(n_seqs / (double) params.scaler_log);
-		if(n_seqs < params.scaler_log)
+		if(n_seqs < (int) params.scaler_log)
 			gap_scaler = 1.0;
 		else
 			gap_scaler = 1.0 + (gap_scaler / params.scaler_div);
@@ -168,12 +166,14 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 
 		if (params.distance == Distance::indel_div_lcs) {
 			gen = make_shared<DistanceCalculator<Distance::indel_div_lcs>>(
-				params.n_threads, params.output_file_name, params.generate_square_matrix, params.calculate_pid);
+				params.n_threads, params.instruction_set, 
+				params.output_file_name, params.generate_square_matrix, params.calculate_pid);
 
 		}
 		else if (params.distance == Distance::sqrt_indel_div_lcs) {
 			gen = make_shared<DistanceCalculator<Distance::sqrt_indel_div_lcs>>(
-				this->params.n_threads, params.output_file_name, params.generate_square_matrix, params.calculate_pid);
+				params.n_threads, params.instruction_set, 
+				params.output_file_name, params.generate_square_matrix, params.calculate_pid);
 		}
 	
 		return gen;
@@ -182,39 +182,39 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 	if (params.gt_method == GT::SLINK || (params.gt_heuristic != GT::None && params.gt_method == GT::MST_Prim)) {
 		// single linkage (use also when MST used as a partial generator)
 		if (params.distance == Distance::indel_div_lcs) {
-			gen = make_shared<SingleLinkage<Distance::indel_div_lcs>>(params.n_threads);
+			gen = make_shared<SingleLinkage<Distance::indel_div_lcs>>(params.n_threads, params.instruction_set);
 		}
 		else if (params.distance == Distance::sqrt_indel_div_lcs) {
-			gen = make_shared<SingleLinkage<Distance::sqrt_indel_div_lcs>>(params.n_threads);
+			gen = make_shared<SingleLinkage<Distance::sqrt_indel_div_lcs>>(params.n_threads, params.instruction_set);
 		}
 	}
 	else if (params.gt_method == GT::MST_Prim) {
 		// Prim's minimum spanning tree 
 		if (params.distance == Distance::indel_div_lcs) {
-			gen = make_shared<MSTPrim<Distance::indel_div_lcs>>(params.n_threads);
+			gen = make_shared<MSTPrim<Distance::indel_div_lcs>>(params.n_threads, params.instruction_set);
 		}
 		else if (params.distance == Distance::sqrt_indel_div_lcs) {
-			gen = make_shared<MSTPrim<Distance::sqrt_indel_div_lcs>>(params.n_threads);
+			gen = make_shared<MSTPrim<Distance::sqrt_indel_div_lcs>>(params.n_threads, params.instruction_set);
 		}
 	}
 	else if (params.gt_method == GT::UPGMA || params.gt_method == GT::UPGMA_modified) {
 		// UPGMA
 		if (params.distance == Distance::indel_div_lcs) {
-			gen = make_shared<UPGMA<Distance::indel_div_lcs>>(params.n_threads,
+			gen = make_shared<UPGMA<Distance::indel_div_lcs>>(params.n_threads, params.instruction_set,
 				(params.gt_method == GT::UPGMA_modified));
 		}
 		else if (params.distance == Distance::sqrt_indel_div_lcs) {
-			gen = make_shared<UPGMA<Distance::sqrt_indel_div_lcs>>(params.n_threads,
+			gen = make_shared<UPGMA<Distance::sqrt_indel_div_lcs>>(params.n_threads, params.instruction_set,
 				(params.gt_method == GT::UPGMA_modified));
 		}
 	}
 	else if (params.gt_method == GT::NJ) {
 		// neighbour joining
 		if (params.distance == Distance::indel_div_lcs) {
-			gen = make_shared<NeighborJoining<Distance::indel_div_lcs>>(params.n_threads);
+			gen = make_shared<NeighborJoining<Distance::indel_div_lcs>>(params.n_threads, params.instruction_set);
 		}
 		else if (params.distance == Distance::sqrt_indel_div_lcs) {
-			gen = make_shared<NeighborJoining<Distance::sqrt_indel_div_lcs>>(params.n_threads);
+			gen = make_shared<NeighborJoining<Distance::sqrt_indel_div_lcs>>(params.n_threads, params.instruction_set);
 		}
 	} else {
 
@@ -233,6 +233,7 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 		if (params.distance == Distance::indel_div_lcs) {
 			gen = make_shared<FastTree<Distance::indel_div_lcs>>(
 				params.n_threads,
+				params.instruction_set,
 				dynamic_pointer_cast<IPartialGenerator>(gen),
 				params.subtree_size,
 				clustering,
@@ -241,6 +242,7 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 		else if (params.distance == Distance::sqrt_indel_div_lcs) {
 			gen = make_shared<FastTree<Distance::sqrt_indel_div_lcs>>(
 				params.n_threads,
+				params.instruction_set,
 				dynamic_pointer_cast<IPartialGenerator>(gen),
 				params.subtree_size,
 				clustering,
@@ -314,7 +316,7 @@ bool CFAMSA::ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree)
 						(computed_prof % 10 == 0 && (double) computed_prof / (2 * gapped_sequences.size() - 1) > 0.95))
 					{
 						LOG_NORMAL << "Computing alignment - " << fixed << setprecision(1) << 100.0 * computed_prof / (2 * gapped_sequences.size()-1) << 
-							"\%    (" << computed_prof << " of " << (2 * gapped_sequences.size() - 1) << ")\r";
+							"%    (" << computed_prof << " of " << (2 * gapped_sequences.size() - 1) << ")\r";
 						fflush(stdout);
 					}
 				}
@@ -362,7 +364,7 @@ void CFAMSA::RefineMostEmptyAndFullColumn(CProfile *profile_to_refine, vector<si
 
 	for(size_t i = 1; i <= size; ++i)
 	{
-		int x = min(gap_stats[i], card - gap_stats[i]);
+		int x = (int) min(gap_stats[i], card - gap_stats[i]);
 		if(x > 0)
 			tmp.emplace_back(i, x);
 	}
@@ -458,7 +460,7 @@ bool CFAMSA::RefineAlignment(CProfile *&profile_to_refine)
 
 	for(i_ref = i_succ_ref = 0; i_succ_ref < n_ref && i_ref < 20*n_ref; ++i_ref)
 	{
-		LOG_DEBUG << "Computing refinement - " << fixed << setprecision(1) << 100.0 * (double) i_succ_ref / (double) n_ref << "\%    (" << i_succ_ref << " of " << n_ref << ")  \r";
+		LOG_DEBUG << "Computing refinement - " << fixed << setprecision(1) << 100.0 * (double) i_succ_ref / (double) n_ref << "%    (" << i_succ_ref << " of " << n_ref << ")  \r";
 			
 		CProfile profile1(&params), profile2(&params);
 
@@ -652,7 +654,8 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 			std::shuffle(sequences.begin(), sequences.end(), mt);
 			LOG_VERBOSE << " [OK]" << endl;
 		}
-		for (size_t i = 0; i < sequences.size(); ++i) {
+		// update sequence identifiers
+		for (int i = 0; i < (int)sequences.size(); ++i) {
 			sequences[i].sequence_no = i;
 		}
 		timers[TIMER_SORTING].StopTimer();
@@ -691,17 +694,11 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 			ref_sequences,
 			&monte_carlo_subtree_size);
 #endif
-	uint64_t sackin;
+	int64_t sackin;
 	if (params.verbose_mode || params.very_verbose_mode) {
 		sackin = tree.calculateSackinIndex();
-		FILE *out = fopen("famsa.stats", "wt");
-		fprintf(out, "[stats]\n");
-		fprintf(out, "n_sequences=%d\n", sequences.size());
-		fprintf(out, "Sackin_idx=%lld\n", sackin);
-		fprintf(out, "Sackin_idx_norm=%.3f\n", sackin / (double)sequences.size());
-		//fprintf(out, "Ref_seq_subtree_size=%lld\n", params.ref_seq_subtree_size);
-		//fprintf(out, "Monte_carlo_subtree_size=%.1f", monte_carlo_subtree_size);
-		fclose(out);
+		statistics.put("guide_tree.sackin", sackin);
+		statistics.put("guide_tree.sackin_norm", sackin / (double)sequences.size());
 	}
 
 	if (goOn) {
@@ -730,25 +727,13 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 		}
 	}
 
-
 	if (params.verbose_mode || params.very_verbose_mode) {
-		FILE* out = fopen("famsa.stats", "at");
-		fprintf(out, "time.sort=%lf\n", timers[TIMER_SORTING].GetElapsedTime());
-		fprintf(out, "time.tree_build=%lf\n", timers[TIMER_TREE_BUILD].GetElapsedTime());
-		fprintf(out, "time.alignment=%lf\n", timers[TIMER_ALIGNMENT].GetElapsedTime());
-		fclose(out);
+		statistics.put("time.sort", timers[TIMER_SORTING].GetElapsedTime());
+		statistics.put("time.tree_build", timers[TIMER_TREE_BUILD].GetElapsedTime());
+		statistics.put("time.tree_store", timers[TIMER_TREE_STORE].GetElapsedTime());
+		statistics.put("time.alignment", timers[TIMER_ALIGNMENT].GetElapsedTime());
+		statistics.put("time.refinement", timers[TIMER_REFINMENT].GetElapsedTime());
 	}
-
-	LOG_VERBOSE
-		<< endl << "Statistics:" << endl
-		<< " Sequence sorting                                 : " << timers[TIMER_SORTING].GetElapsedTime() << "s\n"
-		<< " Tree construction/import (incl. similatiry calc.): " << timers[TIMER_TREE_BUILD].GetElapsedTime() << "s\n"
-		<< " Tree store                                       : " << timers[TIMER_TREE_STORE].GetElapsedTime() << "s\n"
-		<< " Alignment construction                           : " << timers[TIMER_ALIGNMENT].GetElapsedTime() << "s\n"
-		<< " Iterative refinement                             : " << timers[TIMER_REFINMENT].GetElapsedTime() << "s\n"
-		<< " No. of sequences : " << sequences.size() << "\n"
-		<< " Sackin index for guide tree: " << sackin << "\n"
-		<< " Sackin index for guide tree (normalized): " << fixed << setprecision(1) << sackin / (double)sequences.size() << "\n";
 
 #ifdef DEVELOPER_MODE
 	if (params.test_ref_sequences)

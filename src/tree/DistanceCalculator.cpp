@@ -20,7 +20,8 @@ void DistanceCalculator<_distance>::run(std::vector<CSequence>& sequences, tree_
 	}
 
 	//
-	CSingleLinkageQueue<float> queue(&sequences, sequences.size(), n_threads * 8);
+	int n_seqs = (int)sequences.size();
+	CSingleLinkageQueue<float> queue(&sequences, (uint32_t) sequences.size(), n_threads * 8);
 	std::vector<std::thread> workers(n_threads);
 
 	// run workers
@@ -38,7 +39,7 @@ void DistanceCalculator<_distance>::run(std::vector<CSequence>& sequences, tree_
 
 				while (queue.GetTask(row_id, sequences, dist_vector)) {
 					loc_dist_vector.resize(dist_vector->size());
-					int to_calculate = generate_square_matrix ? sequences->size() : row_id;
+					int to_calculate = generate_square_matrix ? (int)sequences->size() : row_id;
 
 					calculateDistanceVector<CSequence, float, decltype(transform)>(
 						transform,
@@ -60,7 +61,7 @@ void DistanceCalculator<_distance>::run(std::vector<CSequence>& sequences, tree_
 
 				while (queue.GetTask(row_id, sequences, dist_vector)) {
 					loc_dist_vector.resize(dist_vector->size());
-					int to_calculate = generate_square_matrix ? sequences->size() : row_id;
+					int to_calculate = generate_square_matrix ? (int)sequences->size() : row_id;
 
 					calculateDistanceVector<CSequence, float, decltype(transform)>(
 						transform,
@@ -84,7 +85,7 @@ void DistanceCalculator<_distance>::run(std::vector<CSequence>& sequences, tree_
 	char *ptr = out_row;
 
 	// Gather results in one thread
-	for (int row_id = 0; row_id < sequences.size(); ++row_id) {
+	for (int row_id = 0; row_id < n_seqs; ++row_id) {
 
 		vector<float>* dist_vector;
 

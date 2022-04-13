@@ -6,12 +6,13 @@ template <Distance _distance>
 class NeighborJoining : public AbstractTreeGenerator, public IPartialGenerator {
 public:
 	
-	NeighborJoining(size_t n_threads) : AbstractTreeGenerator(n_threads) {}
+	NeighborJoining(int n_threads, instruction_set_t instruction_set) 
+		: AbstractTreeGenerator(n_threads, instruction_set) {}
 
 	void run(std::vector<CSequence>& sequences, tree_structure& tree) override;
 	
 	void runPartial(std::vector<CSequence*>& sequences, tree_structure& tree) override;
 
 protected:
-	void computeTree(float* distances, size_t n_seq, tree_structure& tree);
+	void computeTree(float* distances, int n_seq, tree_structure& tree);
 };

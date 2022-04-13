@@ -215,6 +215,9 @@
     <ClInclude Include="..\libs\libdeflate\libdeflate.h">
       <Filter>libraries</Filter>
     </ClInclude>
+    <ClInclude Include="utils\statistics.h">
+      <Filter>utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\libs\libdeflate\windows\libdeflatestatic.lib">

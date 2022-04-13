@@ -26,31 +26,18 @@ public:
 	const std::vector<T>& getData() const { return v; }
 	std::vector<T>& getData() { return v; }
 
-	// *****************************************************************************************
-	//
+	Array() : width(0), height(0) {}
 	Array(size_t width, size_t height, const T& val) : width(width), height(height), v(width * height, val) {}
-
-	// *****************************************************************************************
-	//
 	Array(int size) : width(size), height(size), v(size * size) {}
 
-	// *****************************************************************************************
-	//
-	Array() : width(0), height(0) {}
+	
+	Array(const Array<T>& ref) noexcept = default;
+	Array(Array&& rhs) noexcept = default;
+
+	Array<T>& operator=(const Array<T>& ref) noexcept = default;
+	Array<T>& operator=(Array<T>&& ref) noexcept = default;
 
 	// *****************************************************************************************
-	//
-	Array(const Array<T>& ref) : width(ref.width), height(ref.height), v(ref.v) {}
-
-	// *****************************************************************************************
-	//
-	Array(Array&& rhs) : width(rhs.width), height(rhs.height), v(std::move(rhs.v)) {}
-
-	// *****************************************************************************************
-	//
-	Array<T>& operator=(const Array<T>& ref) = default;
-
-		// *****************************************************************************************
 	//
 	void resize(int width, int height) {
 		this->width = width;
@@ -86,7 +73,7 @@ public:
 
 	// *****************************************************************************************
 	//
-	const T* operator[](const int row) const { return v.data() + row * width; }
+	const T* operator[](const int row) const { return v.data() + (size_t) row * width; }
 
 protected:
 	int width;

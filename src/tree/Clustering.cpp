@@ -14,7 +14,7 @@ struct solution_t {
 	int* candidate;
 };
 
-void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_medoids, size_t n_fixed_medoids, int* medoids) {
+void CLARANS::operator()(const float* distanceMatrix, int n_elems, int n_medoids, int n_fixed_medoids, int* medoids) {
 
 	// CLARANS paper formula
 	int n_swaps = (n_elems - n_medoids) * n_medoids;
@@ -36,16 +36,16 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 	std::iota(candidate, candidate + n_elems, 0);
 
 	// structures for storing solutions
-	float INF = std::numeric_limits<float>::max();
+	constexpr float INF = std::numeric_limits<float>::max();
 	solution_t best{ INF, medoids };
 	solution_t current{ INF, new int[n_elems] };
 	
-	float *raw_distances = new float[n_elems * 3];
+	float *raw_distances = new float[(size_t)n_elems * 3];
 	float *dists_nearest	= raw_distances + 0 * n_elems;
 	float *dists_second		= raw_distances + 1 * n_elems;
-	float *deltas = raw_distances + 2 * n_elems;
+	float *deltas = raw_distances + 2 * (size_t)n_elems;
 	
-	int * raw_assign = new int[n_elems * 2];
+	int * raw_assign = new int[(size_t)n_elems * 2];
 	int * assign_nearest = raw_assign + 0 * n_elems;
 	int * assign_second = raw_assign + 1 * n_elems;
 
@@ -65,7 +65,7 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 		current.cost = std::numeric_limits<float>::max();
 
 		// initialize info for medoids
-		for (size_t mm = 0; mm < n_medoids; ++mm) {
+		for (int mm = 0; mm < n_medoids; ++mm) {
 			int m = candidate[mm];
 			dists_nearest[m] = 0;	// medoid is at 0 distance from itself
 			dists_second[m] = -1;	// dummy value
@@ -75,7 +75,7 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 
 		// initialize info for non-medoids
 		current.cost = 0;
-		for (size_t xx = n_medoids; xx < n_elems; ++xx) {
+		for (int xx = n_medoids; xx < n_elems; ++xx) {
 			
 			int x = candidate[xx];
 			updateAssignment(x, candidate, n_medoids, D, dists_nearest[x], dists_second[x], assign_nearest[x], assign_second[x]);
@@ -134,7 +134,7 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 				}
 			}
 			// get id of best medoid to swap (with smallest delta)
-			auto mm_new = std::min_element(deltas + n_fixed_medoids, deltas + n_medoids) - deltas;
+			int mm_new = (int)(std::min_element(deltas + n_fixed_medoids, deltas + n_medoids) - deltas);
 			float delta = deltas[mm_new];
 
 			// if there is an improvement over current medoid
@@ -154,11 +154,11 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 				assign_second[m_new] = -1;
 
 				// update distance tables for non-medoids
-				for (size_t yy = n_medoids; yy < n_elems; ++yy) {
+				for (int yy = n_medoids; yy < n_elems; ++yy) {
 					int y = candidate[yy];
 					float d_new = D[TriangleMatrix::access(m_new, y)];
 					float dn = dists_nearest[y];
-					float an = assign_nearest[y];
+					int an = assign_nearest[y];
 
 					// former medoid - update everything
 					if (yy == xx) {
@@ -264,7 +264,7 @@ void CLARANS::operator()(const float* distanceMatrix, size_t n_elems, size_t n_m
 void CLARANS::updateAssignment(
 	int x,
 	int *candidate,
-	size_t n_medoids,
+	int n_medoids,
 	const float* D,
 	float& dist_nearest,
 	float& dist_second,
@@ -277,7 +277,7 @@ void CLARANS::updateAssignment(
 	int as = -1;
 
 	// find two closest medoids
-	for (size_t mm = 0; mm < n_medoids; ++mm) {
+	for (int mm = 0; mm < n_medoids; ++mm) {
 		int m = candidate[mm];
 		float d = D[TriangleMatrix::access(m, x)];
 		if (d < dn) {
@@ -299,17 +299,17 @@ void CLARANS::updateAssignment(
 }
 
 
-float CLARANS::calculateCost(const float* distanceMatrix, int *candidate, size_t n_elems, size_t n_medoids) {
+float CLARANS::calculateCost(const float* distanceMatrix, int *candidate, int n_elems, int n_medoids) {
 	
 	float cost = 0.0;
 	
 	// iterate over non-medoids
-	for (size_t xx = n_medoids; xx < n_elems; ++xx) {
+	for (int xx = n_medoids; xx < n_elems; ++xx) {
 		int x = candidate[xx];
 
 		// find closest medoid
 		float dmin = std::numeric_limits<float>::max();
-		for (size_t mm = 0; mm < n_medoids; ++mm) {
+		for (int mm = 0; mm < n_medoids; ++mm) {
 			int m = candidate[mm];
 			float d = distanceMatrix[TriangleMatrix::access(m, x)];
 			if (d < dmin) {

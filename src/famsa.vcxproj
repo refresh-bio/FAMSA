@@ -103,7 +103,7 @@
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>C:\Program Files (x86)\Visual Leak Detector\include;$(ProjectDir)/../libs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>/D_HAS_STD_BYTE=0 /D_ENABLE_EXTENDED_ALIGNED_STORAGE %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/D_HAS_STD_BYTE=0 /D_ENABLE_EXTENDED_ALIGNED_STORAGE /D_CRT_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -147,8 +147,8 @@
       <ControlFlowGuard>false</ControlFlowGuard>
       <AdditionalIncludeDirectories>C:\Program Files (x86)\Visual Leak Detector\include;$(ProjectDir)/../libs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
-      <LanguageStandard>stdcpplatest</LanguageStandard>
-      <AdditionalOptions>/D_HAS_STD_BYTE=0 /D_ENABLE_EXTENDED_ALIGNED_STORAGE %(AdditionalOptions)</AdditionalOptions>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalOptions>/D_HAS_STD_BYTE=0 /D_ENABLE_EXTENDED_ALIGNED_STORAGE /D_CRT_SECURE_NO_WARNINGS %(AdditionalOptions)</AdditionalOptions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
@@ -235,6 +235,7 @@
     <ClInclude Include="core\queues.h" />
     <ClInclude Include="core\sequence.h" />
     <ClInclude Include="utils\pooled_threads.h" />
+    <ClInclude Include="utils\statistics.h" />
     <ClInclude Include="utils\timer.h" />
     <ClInclude Include="tree\TreeGrammar.h" />
     <ClInclude Include="core\version.h" />

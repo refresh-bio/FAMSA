@@ -30,7 +30,7 @@ using namespace std;
 template <Distance _distance>
 void SingleLinkage<_distance>::run(std::vector<CSequence>& sequences, tree_structure& tree) {
 	int next;
-	int n_seq = sequences.size();
+	int n_seq = (int)sequences.size();
 
 	int prefetch_offset = 64 * 2;
 	int prefetch_offset_2nd = 128 * 2;
@@ -45,7 +45,7 @@ void SingleLinkage<_distance>::run(std::vector<CSequence>& sequences, tree_struc
 	mutex mtx;
 
 	// Calculation of similarities is made in working threads
-	for (uint32_t i = 0; i < n_threads; ++i)
+	for (int i = 0; i < n_threads; ++i)
 		workers[i] = new thread([&] {
 		CLCSBP lcsbp(instruction_set);
 		int row_id;
@@ -93,7 +93,7 @@ void SingleLinkage<_distance>::run(std::vector<CSequence>& sequences, tree_struc
 
 		if (i % (100) == 0) {
 			LOG_DEBUG << "Computing guide tree - " << fixed << setprecision(1)
-				<< 100.0 * ((double)i * (i + 1) / 2) / ((double)n_seq * (n_seq + 1) / 2) << "\%    (" << i << " of " << n_seq << ")  \r";
+				<< 100.0 * ((double)i * (i + 1) / 2) / ((double)n_seq * (n_seq + 1) / 2) << "%    (" << i << " of " << n_seq << ")  \r";
 		}
 
 		slq.GetSolution(i, dist_vector);
@@ -161,7 +161,7 @@ void SingleLinkage<_distance>::run(std::vector<CSequence>& sequences, tree_struc
 	}
 	workers.clear();
 
-	LOG_DEBUG << "Computing guide tree - 100.0\%                                        \r";
+	LOG_DEBUG << "Computing guide tree - 100.0%                                        \r";
 
 	vector<int> elements(n_seq - 1);
 	for (int i = 0; i < n_seq - 1; ++i)
@@ -232,7 +232,7 @@ void SingleLinkage<_distance>::runPartial(std::vector<CSequence*>& sequences, tr
 			lcsbp);
 
 #ifdef SLINK_HANDLE_TIES
-		for (size_t j = 0; j < loc_dist_vector.size(); ++j)
+		for (int j = 0; j < (int) loc_dist_vector.size(); ++j)
 		{
 			dist_vector[j].first = loc_dist_vector[j];
 			dist_vector[j].second = ids_to_uint64(j, i);

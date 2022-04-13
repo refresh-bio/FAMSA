@@ -20,7 +20,7 @@ class CLCSBP;
 class AbstractTreeGenerator {
 public:
 
-	AbstractTreeGenerator(size_t n_threads);
+	AbstractTreeGenerator(int n_threads, instruction_set_t instruction_set);
 
 	virtual ~AbstractTreeGenerator() {}
 	
@@ -31,7 +31,7 @@ public:
 		Transform& transform,
 		seq_type& ref,
 		seq_type* sequences,
-		size_t n_seqs,
+		int n_seqs,
 		distance_type* out_vector,
 		CLCSBP& lcsbp);
 
@@ -48,7 +48,7 @@ public:
 	void calculateDistanceMatrix(
 		Transform& transform,
 		seq_type* sequences,
-		size_t n_seq,
+		int n_seq,
 		distance_type* out_matrix,
 		CLCSBP& lcsbp);
 
@@ -62,7 +62,7 @@ public:
 #endif
 
 protected:
-	size_t n_threads;
+	int n_threads;
 	instruction_set_t instruction_set;
 	
 	virtual void run(std::vector<CSequence>& sequences, tree_structure& tree) = 0;

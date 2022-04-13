@@ -71,7 +71,7 @@ void CProfileQueue::CheckAlignInParallel(CProfile* prof1, CProfile* prof2, uint3
 	uint32_t no_available_threads = max_no_threads - no_working_threads;
 
 	//uint32_t min_prof_width = min(prof1->width, prof2->width);
-	uint32_t max_prof_width = max(prof1->width, prof2->width);
+	uint32_t max_prof_width = (uint32_t) max(prof1->width, prof2->width);
 
 	if(no_available_threads == 1)
 	{

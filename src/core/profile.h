@@ -381,13 +381,6 @@ public:
 class CProfile {
 	CParams *params;
 
-	struct dp_matrix_elem_t {
-		direction_t dir_D, dir_H, dir_V;
-
-		dp_matrix_elem_t()
-		{};
-	};
-
 	struct dp_row_elem_t {
 		score_t D, H, V;
 //		score_t padding;
@@ -400,18 +393,18 @@ class CProfile {
 	typedef vector<dp_row_elem_t> dp_row_t;
 
 	struct dp_row_gap_info_elem {
-		size_t n_gap_open_at_left, n_gap_ext_at_left, n_gap_term_open_at_left, n_gap_term_ext_at_left;
+		counter_t n_gap_open_at_left, n_gap_ext_at_left, n_gap_term_open_at_left, n_gap_term_ext_at_left;
 
-		dp_row_gap_info_elem(size_t _n_gap_open_at_left = 0, size_t _n_gap_ext_at_left = 0,
-			size_t _n_gap_term_open_at_left = 0, size_t _n_gap_term_ext_at_left = 0) :
+		dp_row_gap_info_elem(counter_t _n_gap_open_at_left = 0, counter_t _n_gap_ext_at_left = 0,
+			counter_t _n_gap_term_open_at_left = 0, counter_t _n_gap_term_ext_at_left = 0) :
 			n_gap_open_at_left(_n_gap_open_at_left), n_gap_ext_at_left(_n_gap_ext_at_left),
 			n_gap_term_open_at_left(_n_gap_term_open_at_left), n_gap_term_ext_at_left(_n_gap_term_ext_at_left)
 		{};
 	};
 
 	struct dp_gap_corrections {
-		size_t n_gap_start_open, n_gap_start_ext, n_gap_start_term_open, n_gap_start_term_ext;
-		size_t n_gap_cont_ext, n_gap_cont_term_ext;
+		counter_t n_gap_start_open, n_gap_start_ext, n_gap_start_term_open, n_gap_start_term_ext;
+		counter_t n_gap_cont_ext, n_gap_cont_term_ext;
 
 		dp_gap_corrections() : n_gap_start_open(0), n_gap_start_ext(0), n_gap_start_term_open(0), n_gap_start_term_ext(0),
 			n_gap_cont_ext(0), n_gap_cont_term_ext(0)
@@ -441,17 +434,23 @@ class CProfile {
 
 	void ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatrix &matrix, dp_row_elem_t &last_row, uint32_t no_threads = 1);
 	
-	void InsertGaps(size_t prof_col_id, CProfile *profile, size_t col_id, size_t n_gap_open, size_t n_gap_ext, size_t n_gap_term_open, size_t n_gap_term_ext, vector<pair<uint32_t, uint32_t>> &v_gaps_prof);
+	void InsertGaps(size_t prof_col_id, CProfile *profile, size_t col_id, 
+		counter_t n_gap_open, counter_t n_gap_ext, counter_t n_gap_term_open, counter_t n_gap_term_ext, vector<pair<uint32_t, uint32_t>> &v_gaps_prof);
 	void InsertColumn(size_t prof_col_id, CProfile *profile, size_t col_id);
 	void FinalizeGaps(CProfile* profile, vector<pair<uint32_t, uint32_t>>& v_gaps_prof, uint32_t no_threads = 1);
 
 	void CalculateCounters(CGappedSequence *gs);
     void CalculateScores();
 
-	void SolveGapsProblemWhenContinuing(size_t source_col_id, size_t prof_width, size_t prof_size, size_t &n_gap_to_transfer, size_t &n_gap_term_to_transfer, size_t &n_gap_open, size_t &n_gap_ext, size_t &n_gap_term_open, size_t &n_gap_term_ext, size_t n_gap_open_at_left, size_t n_gap_ext_at_left, size_t n_gap_term_open_at_left, size_t n_gap_term_ext_at_left);
-	void SolveGapsProblemWhenStarting(size_t source_col_id, size_t prof_width, size_t prof_size, CProfile *profile, size_t &n_gap_to_transfer, size_t &n_gap_term_to_transfer, size_t &n_gap_open, size_t &n_gap_ext, size_t &n_gap_term_open, size_t &n_gap_term_ext);
-	void DP_SolveGapsProblemWhenStarting(size_t source_col_id, size_t prof_width, size_t prof_size, CProfile *profile, size_t &n_gap_open, size_t &n_gap_ext, size_t &n_gap_term_open, size_t &n_gap_term_ext);
-	void DP_SolveGapsProblemWhenContinuing(size_t source_col_id, size_t prof_width, size_t prof_size, CProfile *profile, size_t &n_gap_ext, size_t &n_gap_term_ext);
+	void SolveGapsProblemWhenContinuing(size_t source_col_id, size_t prof_width, size_t prof_size, 
+		counter_t&n_gap_to_transfer, counter_t&n_gap_term_to_transfer, counter_t&n_gap_open, counter_t&n_gap_ext, counter_t&n_gap_term_open, counter_t&n_gap_term_ext, 
+		counter_t n_gap_open_at_left, counter_t n_gap_ext_at_left, counter_t n_gap_term_open_at_left, counter_t n_gap_term_ext_at_left);
+	void SolveGapsProblemWhenStarting(size_t source_col_id, size_t prof_width, size_t prof_size, CProfile *profile, 
+		counter_t&n_gap_to_transfer, counter_t&n_gap_term_to_transfer, counter_t&n_gap_open, counter_t&n_gap_ext, counter_t&n_gap_term_open, counter_t&n_gap_term_ext);
+	void DP_SolveGapsProblemWhenStarting(size_t source_col_id, size_t prof_width, size_t prof_size, CProfile *profile, 
+		counter_t&n_gap_open, counter_t&n_gap_ext, counter_t&n_gap_term_open, counter_t&n_gap_term_ext);
+	void DP_SolveGapsProblemWhenContinuing(size_t source_col_id, size_t prof_width, size_t prof_size, CProfile *profile, 
+		counter_t&n_gap_ext, counter_t&n_gap_term_ext);
 
 public:
     vector<CGappedSequence*> data;

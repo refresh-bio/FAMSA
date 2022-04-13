@@ -87,5 +87,10 @@ inline void *my_align(std::size_t alignment, std::size_t size,
 	return ptr = reinterpret_cast< void * >(aligned);
 }
 
+#if ((defined(_MSVC_LANG) && _MSVC_LANG >= 201703L) || __cplusplus >= 201703L)
+#define FALL_THROUGH [[fallthrough]];
+#else
+#define FALL_THROUGH
+#endif
 
 #endif
