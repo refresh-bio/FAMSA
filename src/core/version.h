@@ -9,14 +9,17 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"1.12.5"
-#define FAMSA_DATE		"2022-04-13"
+#define FAMSA_VER		"1.13.0"
+#define FAMSA_DATE		"2022-04-20"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+1.13.0 (2022-04-20):
+ - Added support of NEON SIMD extensions for ARM architectures. 
 
 1.12.5 (2022-04-13)
  - Further memory optimizations.
@@ -48,8 +51,6 @@ Version history:
 
 1.8.0 (2021-06-09)
 - Added MST Prim algorithm for single linkage trees.
-- Changed default single linkage similarity measure (LCS by squared indel).
-
 
 1.7.0 (2021-06-08)
 - Parallel profile construction.

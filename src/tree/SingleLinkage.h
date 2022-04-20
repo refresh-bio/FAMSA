@@ -39,7 +39,7 @@ struct slink_dist_t {
 
 //using slink_similarity_t = pair<double, uint64_t>;
 #else
-using slink_similarity_t = double;
+using slink_dist_t = double;
 #endif
 
 

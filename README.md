@@ -49,13 +49,16 @@ FAMSA can be also built from the sources distributed as:
 * Visual Studio 2019 solution for Windows,
 * MAKE project for Linux and OS X (g++-5 required, g++-8 recommended).
 
-FAMSA by default takes advantage of AVX and AVX2 CPU extensions - a binary detetermines supported instructions at runtime, thus it is multiplatform. There is, however, a possibility to limit CPU extensions when compiling sources by setting `CPU_EXT` variable for make:
+FAMSA can be built for multiple CPU architectures: x86-64, ARM64 8, ARM64 8.4 (e.g., Apple M1). The software by default takes advantage of AVX2 (x86-64), and NEON (ARM) extensions. The supported extensions are detetermined at runtime which makes the executable portable within a particular CPU architecture. There is, however, a possibility to limit CPU extensions when compiling the sources by setting `CPU_EXT` variable for make:
 
 ```bash
-make CPU_EXT=none32 # 32-bit without extensions
-make CPU_EXT=none64 # 64-bit without extensions
-make CPU_EXT=sse4   # 64-bit with SSE4.1 extensions
-make CPU_EXT=avx   # 64-bit with AVX extensions
+make CPU_EXT=none    # no extensions
+make CPU_EXT=sse4    # x86-64 with SSE4.1 
+make CPU_EXT=avx     # x86-64 with AVX 
+make CPU_EXT=arm8    # ARM64 8 with NEON  
+make CPU_EXT=arm8-nn # ARM64 8 without NEON  
+make CPU_EXT=m1      # ARM64 8.4 (especially Apple M1) with NEON 
+make CPU_EXT=m1-nn   # ARM64 8.4 (especially Apple M1) without NEON  
 ```   
 
 An additional option can be used to force static linking (may be helpful when binary portability is desired): `make STATIC_LINK=true`

@@ -238,7 +238,7 @@ void SingleLinkage<_distance>::runPartial(std::vector<CSequence*>& sequences, tr
 			dist_vector[j].second = ids_to_uint64(j, i);
 		}
 #else
-		swap(*dist_vector, loc_dist_vector);
+		swap(dist_vector, loc_dist_vector);
 #endif
 
 		auto p_lambda = lambda.begin();

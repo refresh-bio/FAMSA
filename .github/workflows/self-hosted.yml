@@ -50,7 +50,7 @@ jobs:
       fail-fast: false
       matrix:
         compiler: [9, 10, 11]
-        cpu_ext: [none32, none64, sse4, avx]
+        cpu_ext: [none, sse4, avx]
         
     env: 
       REF_DIR: ./test/adeno_fiber

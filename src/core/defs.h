@@ -41,6 +41,12 @@ typedef double score_t;
 typedef int64_t score_t;
 #endif
 
+#define SIMD_NONE 0
+#define SIMD_AVX1 1
+#define SIMD_AVX2 2
+#define SIMD_AVX512 3
+#define SIMD_NEON 4
+
 enum class instruction_set_t { none, sse, sse2, sse3, sse3s, sse41, sse42, avx, avx2 };
 
 typedef char symbol_t;

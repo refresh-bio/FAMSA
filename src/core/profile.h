@@ -52,16 +52,16 @@ public:
 
 	void set_zeros(instruction_set_t instruction_set = instruction_set_t::none)
 	{
-#ifdef NO_AVX
+#if SIMD==SIMD_NONE
 		mem_clear(raw_data, n_rows * n_cols);
-#elif defined NO_AVX2
+#elif SIMD==SIMD_AVX1
 		if (instruction_set < instruction_set_t::avx) {
 			mem_clear(raw_data, n_rows * n_cols);
 		}
 		else {
 			mem_clear_avx(raw_data, n_rows * n_cols);
 		}
-#else
+#elif SIMD==SIMD_AVX2 || SIMD==SIMD_AVX512
 		if (instruction_set < instruction_set_t::avx) {
 			mem_clear(raw_data, n_rows * n_cols);
 		}
@@ -71,6 +71,10 @@ public:
 		else {
 			mem_clear_avx2(raw_data, n_rows * n_cols);
 		}		
+#elif SIMD==SIMD_NEON
+		mem_clear_neon(raw_data, n_rows * n_cols);
+#else
+		// Impossible to be here
 #endif
 	}
 
@@ -278,16 +282,16 @@ public:
 
 	void set_zeros(instruction_set_t instruction_set = instruction_set_t::none)
 	{
-#ifdef NO_AVX
+#if SIMD==SIMD_NONE
 		memset(raw_data, 0, N_ROWS * n_cols * sizeof(T));
-#elif defined NO_AVX2
+#elif SIMD==SIMD_AVX1
 		if (instruction_set < instruction_set_t::avx) {
 			memset(raw_data, 0, N_ROWS * n_cols * sizeof(T));
 		}
 		else {
 			mem_clear_avx(raw_data, N_ROWS * n_cols * sizeof(T));
 		}
-#else
+#elif SIMD==SIMD_AVX2 || SIMD==SIMD_AVX512
 		if (instruction_set < instruction_set_t::avx) {
 			memset(raw_data, 0, N_ROWS * n_cols * sizeof(T));
 		}
@@ -297,6 +301,8 @@ public:
 		else {
 			mem_clear_avx2(raw_data, N_ROWS * n_cols * sizeof(T));
 		}
+#elif SIMD==SIMD_NEON
+		mem_clear_neon(raw_data, N_ROWS * n_cols * sizeof(T));
 #endif			
 	}
 

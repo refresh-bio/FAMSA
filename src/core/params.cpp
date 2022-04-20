@@ -8,7 +8,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "params.h"
 #include "../utils/log.h"
 
-#ifndef NO_AVX
+#if SIMD==SIMD_AVX1 || SIMD==SIMD_AVX2 || SIMD==SIMD_AVX512
 #include "../utils/cpuid.h"
 #endif
 
@@ -30,11 +30,15 @@ CParams::CParams() {
 #endif
 
 	// verify instruction sets
-#ifndef NO_AVX
+#if SIMD==SIMD_AVX1 || SIMD==SIMD_AVX2 || SIMD==SIMD_AVX512
 	if ((CPUID(1).ECX() >> 28) & 1)
 		instruction_set = instruction_set_t::avx;
 	if ((CPUID(7).EBX() >> 5) & 1)
 		instruction_set = instruction_set_t::avx2;
+#endif
+
+#if SIMD==SIMD_NEON
+	// !!! Check if NEON is supported
 #endif
 
 };

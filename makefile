@@ -58,36 +58,57 @@ $(info *** Detecting g++ version 12 ***)
 #	DEFINE_FLAGS = -DUSE_NATIVE_BARRIERS
 	DEFINE_FLAGS = 
 endif
- 
+
+SIMD_NONE=0
+SIMD_AVX1=1
+SIMD_AVX2=2
+SIMD_AVX512=3
+SIMD_NEON=4
+
  
 # Detecting user's options and add flags
-ifeq ($(CPU_EXT), none32) 
-$(info *** Building 32 bits w/o SIMD extensions ***)
+ifeq ($(CPU_EXT), none) 
+$(info *** Building w/o SIMD extensions ***)
 	COMMON_FLAGS :=  
-	DEFINE_FLAGS := $(DEFINE_FLAGS) -DNO_AVX
-	NO_AVX=1
-else ifeq ($(CPU_EXT), none64)
-$(info *** Building 64 bits w/o SIMD extensions ***)
-	COMMON_FLAGS := -m64
-	DEFINE_FLAGS := $(DEFINE_FLAGS) -DNO_AVX
-	NO_AVX=1
+	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NONE)
+	SIMD=NONE
+else ifeq ($(CPU_EXT), arm8-nn)
+$(info *** ARMv8 w/o NEON extensions ***)
+	COMMON_FLAGS := -march=armv8-a
+	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NONE)
+	SIMD=NONE
+else ifeq ($(CPU_EXT), arm8)
+$(info *** ARMv8 with NEON extensions ***)
+	COMMON_FLAGS := -march=armv8-a
+	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NEON)
+	SIMD=NEON
+else ifeq ($(CPU_EXT), m1)
+$(info *** Apple M1 with NEON extensions ***)
+	COMMON_FLAGS := -march=armv8.4-a
+	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NEON)
+	SIMD=NEON
+else ifeq ($(CPU_EXT), m1-nn)
+$(info *** Apple M1 w/o ARM NEON extensions ***)
+	COMMON_FLAGS := -march=armv8.4-a
+	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NONE)
+	SIMD=NONE
 else ifeq ($(CPU_EXT), sse4)
-$(info *** Building with SSE4 extensions***)
-	COMMON_FLAGS := -m64 -msse4
-	DEFINE_FLAGS := $(DEFINE_FLAGS) -DNO_AVX
-	NO_AVX=1
+$(info *** x86-64 with SSE4 extensions***)
+	COMMON_FLAGS := -msse4
+	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NONE)
+	SIMD=NONE
 else ifeq ($(CPU_EXT), avx)
-$(info *** Building with AVX extensions***)
-	COMMON_FLAGS := -m64 -msse4
-	DEFINE_FLAGS := $(DEFINE_FLAGS) -DNO_AVX2
-	NO_AVX=2
+$(info *** x86-64 with AVX extensions***)
+	COMMON_FLAGS := -msse4
+	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_AVX1)
+	SIMD=AVX1
 else
-$(info *** Building with AVX and AVX2 extensions***)
-	COMMON_FLAGS := -m64 -msse4
+$(info *** x86-64 with AVX2 extensions***)
+	COMMON_FLAGS := -msse4
+	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_AVX2)
+	SIMD=AVX2
 endif
  
- 
-
  
  
 ifeq ($(STATIC_LINK), true) 
@@ -100,6 +121,7 @@ endif
  
 CFLAGS_AVX = $(CFLAGS) -mavx ${ABI_FLAG} -mpopcnt -funroll-loops
 CFLAGS_AVX2 = $(CFLAGS) -mavx2 ${ABI_FLAG} -mpopcnt -funroll-loops
+CFLAGS_NEON = $(CFLAGS) ${ABI_FLAG} -funroll-loops
 
 
 
@@ -127,7 +149,7 @@ COMMON_OBJS := src/msa.o \
 src/lcs/lcsbp_classic.o : src/lcs/lcsbp_classic.cpp
 	$(CXX) $(CFLAGS) -c src/lcs/lcsbp_classic.cpp -o $@
 
-ifeq ($(NO_AVX), 1) 
+ifeq ($(SIMD), NONE) 
 LCS_OBJS := src/lcs/lcsbp.o \
 	src/lcs/lcsbp_classic.o
 UTILS_OBJS := src/utils/utils.o 
@@ -137,7 +159,7 @@ src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
 src/utils/utils.o : src/utils/utils.cpp
 	$(CXX) $(CFLAGS) -c src/utils/utils.cpp -o $@
 
-else ifeq ($(NO_AVX), 2)
+else ifeq ($(SIMD), AVX1)
 LCS_OBJS := src/lcs/lcsbp.o \
 	src/lcs/lcsbp_classic.o \
 	src/lcs/lcsbp_avx_intr.o
@@ -153,6 +175,22 @@ src/utils/utils.o : src/utils/utils.cpp
 	$(CXX) $(CFLAGS) -c src/utils/utils.cpp -o $@
 src/utils/utils_avx.o : src/utils/utils_avx.cpp
 	$(CXX) $(CFLAGS_AVX) -c src/utils/utils_avx.cpp -o $@
+else ifeq ($(SIMD), NEON)
+LCS_OBJS := src/lcs/lcsbp.o \
+	src/lcs/lcsbp_classic.o \
+	src/lcs/lcsbp_neon_intr.o
+UTILS_OBJS := src/utils/utils.o \
+	src/utils/utils_neon.o 
+
+src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
+	$(CXX) $(CFLAGS) -c src/lcs/lcsbp.cpp -o $@
+src/lcs/lcsbp_avx_intr.o : src/lcs/lcsbp_avx_intr.cpp
+	$(CXX) $(CFLAGS_NEON) -c src/lcs/lcsbp_neon_intr.cpp -o $@
+
+src/utils/utils.o : src/utils/utils.cpp
+	$(CXX) $(CFLAGS) -c src/utils/utils.cpp -o $@
+src/utils/utils_neon.o : src/utils/utils_neon.cpp
+	$(CXX) $(CFLAGS_NEON) -c src/utils/utils_neon.cpp -o $@
 else
 LCS_OBJS := src/lcs/lcsbp.o \
 	src/lcs/lcsbp_classic.o \

@@ -1,0 +1,55 @@
+	__m128i						int64x2_t			uint64x2_t
+	
+	_mm_add_epi64				vaddq_s64			vaddq_u64
+	
+	_mm_and_si128				vandq_s64			vandq_u64
+	
+	_mm_cmpgt_epi64				vcgtq_s64			vcgtq_u64
+	
+X	_mm_cvtsi128_si32												// Copy the lower 32-bit integer in a to dst
+			// Tylko do liczenia histogramu
+
+	_mm_hadd_epi16				
+	
+X	_mm_loadu_si128													// Load 128-bits of integer data from memory into dst. mem_addr does not need to be aligned on any particular boundary.
+		vld1q_dup_u16 - dla uint16x8_t
+
+	_mm_min_epi16				vminq_s16
+	
+	_mm_or_si128				vorrq_s64			vorrq_u64
+	
+*	_mm_set_epi64x													// Set packed 64-bit integers in dst with the supplied values.
+		vcombine_u64(vcreate_u64, vcreate_u64)
+
+*	_mm_set1_epi64x				vdupq_n_s64			vdupq_n_u64		// Broadcast 64-bit integer a to all elements of dst. This intrinsic may generate the vpbroadcastq.
+		
+*	_mm_setzero_si128			vdupq_n_s64			vdupq_n_u64		// Return vector of type __m128i with all elements set to zero.
+	
+	_mm_storeu_si128								vst1q_u64		// Store 128-bits of integer data from a into memory. mem_addr does not need to be aligned on any particular boundary.
+	
+	_mm_sub_epi64				vsubq_s64			vsubq_u64
+	
+	_mm_xor_si128				veorq_s64			veorq_u64
+
+	__builtin_popcount			
+
+
+
+	__m128i
+	_mm_add_epi64
+	_mm_and_si128
+	_mm_cmpgt_epi64
+	_mm_cvtsi128_si32
+	_mm_hadd_epi16
+	_mm_loadu_si128
+	_mm_min_epi16
+	_mm_or_si128
+	_mm_set_epi64x
+	_mm_set_epi64x
+	_mm_set1_epi64x
+	_mm_setzero_si128
+	_mm_storeu_si128
+	_mm_sub_epi64
+	_mm_xor_si128
+	
+	__builtin_popcount

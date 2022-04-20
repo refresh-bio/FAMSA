@@ -101,6 +101,12 @@
     <ClCompile Include="core\params.cpp">
       <Filter>core</Filter>
     </ClCompile>
+    <ClCompile Include="lcs\lcsbp_neon_intr.cpp">
+      <Filter>lcs</Filter>
+    </ClCompile>
+    <ClCompile Include="utils\utils_neon.cpp">
+      <Filter>utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="msa.h" />
@@ -217,6 +223,9 @@
     </ClInclude>
     <ClInclude Include="utils\statistics.h">
       <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="lcs\lcsbp_neon_intr.h">
+      <Filter>lcs</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

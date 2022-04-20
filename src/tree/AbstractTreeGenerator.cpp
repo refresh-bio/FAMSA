@@ -7,7 +7,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 */
 #include "AbstractTreeGenerator.h"
 
-#ifndef NO_AVX
+#if SIMD==SIMD_AVX1 || SIMD==SIMD_AVX2 || SIMD==SIMD_AVX512
 #include "../utils/cpuid.h"
 #endif
 

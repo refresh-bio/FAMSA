@@ -7,6 +7,7 @@
 class CLCSBP_Classic;
 class CLCSBP_AVX_INTR;
 class CLCSBP_AVX2_INTR;
+class CLCSBP_NEON_INTR;
 
 class CSequence;
 
@@ -18,6 +19,7 @@ class CLCSBP
 	std::shared_ptr<CLCSBP_Classic> lcsbp_classic;
 	std::shared_ptr<CLCSBP_AVX_INTR> lcsbp_avx_intr;
 	std::shared_ptr<CLCSBP_AVX2_INTR> lcsbp_avx2_intr;
+	std::shared_ptr<CLCSBP_NEON_INTR> lcsbp_neon_intr;
 
 public:
 	CLCSBP(instruction_set_t _instruction_set = instruction_set_t::none);
