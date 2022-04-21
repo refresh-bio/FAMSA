@@ -49,19 +49,18 @@ FAMSA can be also built from the sources distributed as:
 * Visual Studio 2019 solution for Windows,
 * MAKE project for Linux and OS X (g++-5 required, g++-8 recommended).
 
-FAMSA can be built for multiple CPU architectures: x86-64, ARM64 8, ARM64 8.4 (e.g., Apple M1). The software by default takes advantage of AVX2 (x86-64), and NEON (ARM) extensions. The supported extensions are detetermined at runtime which makes the executable portable within a particular CPU architecture. There is, however, a possibility to limit CPU extensions when compiling the sources by setting `CPU_EXT` variable for make:
+FAMSA can be built for x86-64 and ARM64 8 architectures (including Apple M1 based on ARM64 8.4 core) and takes advantage of AVX2 (x86-64) and NEON (ARM) CPU extensions. The default target platform is x86-64 with AVX2 extensions. This, however, can be changed by setting `PLATFORM` variable for `make`:
 
 ```bash
-make CPU_EXT=none    # no extensions
-make CPU_EXT=sse4    # x86-64 with SSE4.1 
-make CPU_EXT=avx     # x86-64 with AVX 
-make CPU_EXT=arm8    # ARM64 8 with NEON  
-make CPU_EXT=arm8-nn # ARM64 8 without NEON  
-make CPU_EXT=m1      # ARM64 8.4 (especially Apple M1) with NEON 
-make CPU_EXT=m1-nn   # ARM64 8.4 (especially Apple M1) without NEON  
+make PLATFORM=none 	  # unspecified platform, no extensions
+make PLATFORM=sse4    # x86-64 with SSE4.1 
+make PLATFORM=avx     # x86-64 with AVX 
+make PLATFORM=avx2    # x86-64 with AVX2 (default)
+make PLATFORM=arm8    # ARM64 8 with NEON  
+make PLATFORM=m1      # ARM64 8.4 (especially Apple M1) with NEON 
 ```   
 
-An additional option can be used to force static linking (may be helpful when binary portability is desired): `make STATIC_LINK=true`
+Note, that x86-64 binaries determine the supported extensions at runtime, which makes them backwards-compatible. For instance, the AVX executable will also work on SSE-only platform, but with limited performance. An additional `make` option can be used to force static linking (may be helpful when binary portability is desired): `make STATIC_LINK=true`
 
 The latest speed improvements in FAMSA limited the usefullness of the GPU mode. Thus, starting from the 1.5.0 version, there is no support of GPU in FAMSA. If maximum throughput is required, we encourage using new medoid trees feature (`-medoidtree` switch) which allows processing gigantic data sets in short time (e.g., the familiy of 3 million ABC transporters was analyzed in five minutes). 
 

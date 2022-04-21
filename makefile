@@ -21,39 +21,32 @@ ifeq ($(GCC_VERSION), 5)
 $(info *** Detecting g++ version 5 ***)
 	CPP_STD=c++11
 	DEFINE_FLAGS = -DNO_PROFILE_PAR -DOLD_ATOMIC_FLAG
-endif
-ifeq ($(GCC_VERSION), 6)
+else ifeq ($(GCC_VERSION), 6)
 $(info *** Detecting g++ version 6 ***)
 	CPP_STD=c++11
 	DEFINE_FLAGS = -DNO_PROFILE_PAR -DOLD_ATOMIC_FLAG
-endif
-ifeq ($(GCC_VERSION), 7)
+else ifeq ($(GCC_VERSION), 7)
 $(info *** Detecting g++ version 7 ***)
 	CPP_STD=c++14
 	DEFINE_FLAGS = -DNO_PROFILE_PAR -DOLD_ATOMIC_FLAG
-endif
-ifeq ($(GCC_VERSION), 8)
+else ifeq ($(GCC_VERSION), 8)
 $(info *** Detecting g++ version 8 ***)
 	CPP_STD=c++2a
 	DEFINE_FLAGS = -DOLD_ATOMIC_FLAG
-endif
-ifeq ($(GCC_VERSION), 9)
+else ifeq ($(GCC_VERSION), 9)
 $(info *** Detecting g++ version 9 ***)
 	CPP_STD=c++2a
 	DEFINE_FLAGS =  -DOLD_ATOMIC_FLAG
-endif
-ifeq ($(GCC_VERSION), 10)
+else ifeq ($(GCC_VERSION), 10)
 $(info *** Detecting g++ version 10 ***)
 	CPP_STD=c++2a
 	DEFINE_FLAGS = -DOLD_ATOMIC_FLAG
-endif
-ifeq ($(GCC_VERSION), 11)
+else ifeq ($(GCC_VERSION), 11)
 $(info *** Detecting g++ version 11 ***)
 	CPP_STD=c++20
 	DEFINE_FLAGS = 
-endif
-ifeq ($(GCC_VERSION), 12)
-$(info *** Detecting g++ version 12 ***)
+else
+$(info *** Detecting g++ version 12 or higher ***)
 	CPP_STD=c++20
 #	DEFINE_FLAGS = -DUSE_NATIVE_BARRIERS
 	DEFINE_FLAGS = 
@@ -67,37 +60,27 @@ SIMD_NEON=4
 
  
 # Detecting user's options and add flags
-ifeq ($(CPU_EXT), none) 
-$(info *** Building w/o SIMD extensions ***)
+ifeq ($(PLATFORM), none) 
+$(info *** Unspecified platform w/o extensions ***)
 	COMMON_FLAGS :=  
 	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NONE)
 	SIMD=NONE
-else ifeq ($(CPU_EXT), arm8-nn)
-$(info *** ARMv8 w/o NEON extensions ***)
-	COMMON_FLAGS := -march=armv8-a
-	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NONE)
-	SIMD=NONE
-else ifeq ($(CPU_EXT), arm8)
+else ifeq ($(PLATFORM), arm8)
 $(info *** ARMv8 with NEON extensions ***)
 	COMMON_FLAGS := -march=armv8-a
 	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NEON)
 	SIMD=NEON
-else ifeq ($(CPU_EXT), m1)
+else ifeq ($(PLATFORM), m1)
 $(info *** Apple M1 with NEON extensions ***)
 	COMMON_FLAGS := -march=armv8.4-a
 	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NEON)
 	SIMD=NEON
-else ifeq ($(CPU_EXT), m1-nn)
-$(info *** Apple M1 w/o ARM NEON extensions ***)
-	COMMON_FLAGS := -march=armv8.4-a
-	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NONE)
-	SIMD=NONE
-else ifeq ($(CPU_EXT), sse4)
+else ifeq ($(PLATFORM), sse4)
 $(info *** x86-64 with SSE4 extensions***)
 	COMMON_FLAGS := -msse4
 	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NONE)
 	SIMD=NONE
-else ifeq ($(CPU_EXT), avx)
+else ifeq ($(PLATFORM), avx)
 $(info *** x86-64 with AVX extensions***)
 	COMMON_FLAGS := -msse4
 	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_AVX1)

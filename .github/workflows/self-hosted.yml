@@ -61,7 +61,7 @@ jobs:
       run: make clean
     - name: make (g++-${{matrix.compiler}}, CPU extension ${{matrix.cpu_ext}})
       run: | 
-        make -j32 CXX=g++-${{matrix.compiler}} CPU_EXT=${{matrix.cpu_ext}}
+        make -j32 CXX=g++-${{matrix.compiler}} PLATFORM=${{matrix.cpu_ext}}
     - name: distance calculation
       run: |
         ./famsa -dist_export ${INPUT} dist.csv
