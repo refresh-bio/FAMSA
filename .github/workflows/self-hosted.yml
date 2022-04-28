@@ -13,7 +13,10 @@ jobs:
  ########################################################################################
   checkout:
     name: checkout
-    runs-on: [self-hosted, famsa]
+    strategy:
+      matrix:
+        machine: [X64, raspberry]
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
     
     steps:
     - uses: actions/checkout@v2
@@ -27,57 +30,54 @@ jobs:
   ########################################################################################
   make-tests:
     name: make
-    runs-on: [self-hosted, famsa]
+   
     needs: checkout
     strategy:
       fail-fast: false
       matrix:
-        compiler: [9, 10, 11]
-        
+        # multiple X64 configurations
+        machine: [X64]
+        compiler: [g++-9, g++-10, g++-11]
+        platform: [avx2]
+        # additional ARM configurations
+        include:
+        - machine: raspberry
+          compiler: g++
+          platform: arm8
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
+
     steps:
-    - name: make (g++-${{matrix.compiler}})
+    - name: make
       run: | 
-        make -j32 CXX=g++-${{matrix.compiler}}
+        make -j32 CXX=${{matrix.compiler}} PLATFORM=${{matrix.platform}}
         cp ./famsa ./famsa-${{matrix.compiler}}
         make clean
         
-  ########################################################################################
-  noavx-tests:
-    name: different CPU extensions
-    runs-on: [self-hosted, famsa]
-    needs: make-tests
-    strategy:
-      fail-fast: false
-      matrix:
-        compiler: [9, 10, 11]
-        cpu_ext: [none, sse4, avx]
-        
-    env: 
-      REF_DIR: ./test/adeno_fiber
-      INPUT: ./test/adeno_fiber/adeno_fiber
-        
-    steps:
-    - name: clean
-      run: make clean
-    - name: make (g++-${{matrix.compiler}}, CPU extension ${{matrix.cpu_ext}})
-      run: | 
-        make -j32 CXX=g++-${{matrix.compiler}} PLATFORM=${{matrix.cpu_ext}}
-    - name: distance calculation
-      run: |
-        ./famsa -dist_export ${INPUT} dist.csv
-        cmp dist.csv ${REF_DIR}/dist.csv 
-      
+  
   ########################################################################################    
     
   full-tree:
     name: adeno-fiber - full tree
-    runs-on: [self-hosted, famsa]
-    needs: noavx-tests
+    needs: make-tests
     strategy:
       fail-fast: false
       matrix:
-        compiler: [9, 10, 11]
+        machine: [X64]
+        compiler: [g++-9, g++-10, g++-11]
         tree: [sl, upgma, mp]
+        # additional ARM configurations
+        include:
+        - machine: raspberry
+          compiler: g++
+          tree: sl
+        - machine: raspberry
+          compiler: g++
+          tree: upgma
+        - machine: raspberry
+          compiler: g++
+          tree: mp
+
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
         
     env: 
       REF_DIR: ./test/adeno_fiber
@@ -110,14 +110,30 @@ jobs:
     
   medoid-tree:
     name: hemopexin - medoid tree
-    runs-on: [self-hosted, famsa]
     needs: full-tree
     strategy:
       fail-fast: false
       matrix:
-        compiler: [9, 10, 11]
+        machine: [X64]
+        compiler: [g++-9, g++-10, g++-11]
         tree: [sl, upgma, mp, nj]
-        
+        # additional ARM configurations
+        include:
+        - machine: raspberry
+          compiler: g++
+          tree: sl
+        - machine: raspberry
+          compiler: g++
+          tree: upgma
+        - machine: raspberry
+          compiler: g++
+          tree: mp
+        - machine: raspberry
+          compiler: g++
+          tree: nj
+          
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
+      
     env: 
       REF_DIR: ./test/hemopexin
       INPUT: ./test/hemopexin/hemopexin
@@ -148,12 +164,18 @@ jobs:
          
   other-tests:
     name: adeno-fiber - other tests
-    runs-on: [self-hosted, famsa]
     needs: medoid-tree
     strategy:
       fail-fast: false
       matrix:
-        compiler: [9, 10, 11]
+        machine: [X64]
+        compiler: [g++-9, g++-10, g++-11]
+        # additional ARM configurations
+        include:
+        - machine: raspberry
+          compiler: g++
+     
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']    
         
     env: 
       REF_DIR: ./test/adeno_fiber
@@ -186,5 +208,29 @@ jobs:
         ./famsa-${{matrix.compiler}} -dist_export -square_matrix -pid ${INPUT} pid_sq.csv
         cmp pid_sq.csv ${REF_DIR}/pid_sq.csv
       
-
+########################################################################################
+  noavx-tests:
+    name: different X64 extensions
+    runs-on: [self-hosted, famsa, X64]
+    needs: other-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        compiler: [g++-9, g++-10, g++-11]
+        platform: [none, sse4, avx]
+        
+    env: 
+      REF_DIR: ./test/adeno_fiber
+      INPUT: ./test/adeno_fiber/adeno_fiber
+        
+    steps:
+    - name: clean
+      run: make clean
+    - name: make (${{matrix.compiler}}, CPU extension ${{matrix.platform}})
+      run: | 
+        make -j32 CXX=${{matrix.compiler}} PLATFORM=${{matrix.platform}}
+    - name: distance calculation
+      run: |
+        ./famsa -dist_export ${INPUT} dist.csv
+        cmp dist.csv ${REF_DIR}/dist.csv 
 

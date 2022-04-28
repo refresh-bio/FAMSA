@@ -5,6 +5,13 @@
 [![GitHub Actions CI](../../actions/workflows/main.yml/badge.svg)](../../actions/workflows/main.yml)
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
+![x86-64](https://img.shields.io/static/v1?label=%E2%80%8B&message=x86-64&color=yellow&logo=PCGamingWiki&logoColor=white)
+![ARM](https://img.shields.io/static/v1?label=%E2%80%8B&message=ARM&color=yellow&logo=Raspberry%20Pi&logoColor=white)
+![Apple M1](https://img.shields.io/static/v1?label=%E2%80%8B&message=Apple%20M1&color=yellow&logo=Apple&logoColor=white)
+![Windows](https://img.shields.io/badge/%E2%80%8B-Windows-00A98F?logo=windows)
+![Linux](https://img.shields.io/static/v1?label=%E2%80%8B&message=Linux&color=00A98F&logo=linux&logoColor=white)
+![macOS](https://img.shields.io/badge/%E2%80%8B-macOS-00A98F?logo=apple)
+
 Progressive algorithm for large-scale multiple sequence alignments (3 million ABC transporters in 5 minutes and less than 30GB of RAM)
 
 ## Quick start
@@ -28,17 +35,17 @@ cd FAMSA && make
 # align sequences with an approximated medoid guide tree and UPGMA subtrees
 ./famsa -medoidtree -gt upgma ./test/hemopexin/hemopexin upgma.medoid.aln
 
-# export distance matrix to CSV format (lower triangular) 
+# export a distance matrix to the CSV format (lower triangular) 
 ./famsa -dist_export ./test/adeno_fiber/adeno_fiber dist.csv
 
-# export pairwise identity (PID) matrix to CSV format (square) 
+# export a pairwise identity (PID) matrix to the CSV format (square) 
 ./famsa -dist_export -pid -square_matrix ./test/adeno_fiber/adeno_fiber pid.csv
 ```
 
 
 ## Installation and configuration
 
-FAMSA comes with a set of [precompiled binaries](https://github.com/refresh-bio/FAMSA/releases) for Windows, Linux, and OS X. They can be found under Releases tab. 
+FAMSA comes with a set of [precompiled binaries](https://github.com/refresh-bio/FAMSA/releases) for Windows, Linux, and macOS. They can be found under Releases tab. 
 The software is also available on [Bioconda](https://anaconda.org/bioconda/famsa):
 ```
 conda install -c bioconda famsa
@@ -77,7 +84,7 @@ Positional parameters:
 	* distance matrix in CSV format (`-dist_export` option specified).
 
 Options:
-*  -help - show advanced options
+* `-help` - show advanced options
 * `-t <value>` - no. of threads, 0 means all available (default: 0)
 * `-v` - verbose mode, show timing information (default: disabled)
 
