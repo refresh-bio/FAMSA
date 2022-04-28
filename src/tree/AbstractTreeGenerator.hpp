@@ -9,6 +9,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "AbstractTreeGenerator.h"
 
 #include "../lcs/lcsbp.h"
+#include "../utils/utils.h"
 
 #undef min
 #undef max
@@ -19,6 +20,9 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 // overloads for converting sequence type to pointer
 inline CSequence* seq_to_ptr(CSequence* x) { return x; }
 inline CSequence* seq_to_ptr(CSequence& x) { return &x; }
+
+inline CSequenceView* sv_to_ptr(CSequenceView* x) { return x; }
+inline CSequenceView* sv_to_ptr(CSequenceView& x) { return &x; }
 
 // dummy implementation
 template <class T, Distance measure>
@@ -66,7 +70,7 @@ struct Transform<T, Distance::indel_div_lcs> {
 	}
 };
 
-template <class T>
+/*template <class T>
 struct Transform<T, Distance::neg_lcs_div_indel> {
 	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) {
 		T indel = len1 + len2 - 2 * lcs;
@@ -94,7 +98,7 @@ struct Transform<T, Distance::neg_lcs_div_len_corrected> {
 		d = d / correction(len1, len2);
 		return d;
 	}
-};
+};*/
 
 template<class T, Distance measure>
 struct DistanceToSimilarity {
@@ -179,8 +183,57 @@ void AbstractTreeGenerator::calculateDistanceRange(
 
 	auto p_ids = ids_range.first;
 
+	if (n_seqs >= 4)
+	{
+		tpl_prefetch(seq_to_ptr(sequences[*(p_ids + 0)]));
+		tpl_prefetch(seq_to_ptr(sequences[*(p_ids + 1)]));
+		tpl_prefetch(seq_to_ptr(sequences[*(p_ids + 2)]));
+		tpl_prefetch(seq_to_ptr(sequences[*(p_ids + 3)]));
+	}
+	if (n_seqs >= 8)
+	{
+		tpl_prefetch(seq_to_ptr(sequences[*(p_ids + 4)]));
+		tpl_prefetch(seq_to_ptr(sequences[*(p_ids + 5)]));
+		tpl_prefetch(seq_to_ptr(sequences[*(p_ids + 6)]));
+		tpl_prefetch(seq_to_ptr(sequences[*(p_ids + 7)]));
+	}
+
 	// process portions of 4 sequences
 	for (int j = 0; j < n_seqs / 4; ++j, p_ids += 4) {
+		if (j + 3 < n_seqs / 4)
+		{
+			tpl_prefetch(seq_to_ptr(sequences[*(p_ids + 8)]));
+			tpl_prefetch(seq_to_ptr(sequences[*(p_ids + 9)]));
+			tpl_prefetch(seq_to_ptr(sequences[*(p_ids + 10)]));
+			tpl_prefetch(seq_to_ptr(sequences[*(p_ids + 11)]));
+		}
+
+		if (j + 2 < n_seqs / 4)
+		{
+			tpl_prefetch<symbol_t>(seq_to_ptr(sequences[*(p_ids + 4)])->data);
+//			tpl_prefetch<bit_vec_t>(seq_to_ptr(sequences[*(p_ids + 4)])->p_bit_masks);
+
+			tpl_prefetch<symbol_t>(seq_to_ptr(sequences[*(p_ids + 5)])->data);
+//			tpl_prefetch<bit_vec_t>(seq_to_ptr(sequences[*(p_ids + 5)])->p_bit_masks);
+
+			tpl_prefetch<symbol_t>(seq_to_ptr(sequences[*(p_ids + 6)])->data);
+//			tpl_prefetch<bit_vec_t>(seq_to_ptr(sequences[*(p_ids + 6)])->p_bit_masks);
+
+			tpl_prefetch<symbol_t>(seq_to_ptr(sequences[*(p_ids + 7)])->data);
+//			tpl_prefetch<bit_vec_t>(seq_to_ptr(sequences[*(p_ids + 7)])->p_bit_masks);
+
+/*			tpl_prefetch<Array<bit_vec_t>>(&seq_to_ptr(sequences[*(p_ids + 4)])->p_bit_masks);
+			tpl_prefetch<Array<bit_vec_t>>(&seq_to_ptr(sequences[*(p_ids + 5)])->p_bit_masks);
+			tpl_prefetch<Array<bit_vec_t>>(&seq_to_ptr(sequences[*(p_ids + 6)])->p_bit_masks);
+			tpl_prefetch<Array<bit_vec_t>>(&seq_to_ptr(sequences[*(p_ids + 7)])->p_bit_masks);*/
+		}
+
+/*		tpl_prefetch<bit_vec_t>(seq_to_ptr(sequences[*(p_ids + 0)])->bit_masks.v);
+		tpl_prefetch<bit_vec_t>(seq_to_ptr(sequences[*(p_ids + 1)])->bit_masks.v);
+		tpl_prefetch<bit_vec_t>(seq_to_ptr(sequences[*(p_ids + 2)])->bit_masks.v);
+		tpl_prefetch<bit_vec_t>(seq_to_ptr(sequences[*(p_ids + 3)])->bit_masks.v);*/
+
+
 		lcsbp.GetLCSBP(
 			seq_to_ptr(ref),
 			seq_to_ptr(sequences[*(p_ids + 0)]),
@@ -189,8 +242,10 @@ void AbstractTreeGenerator::calculateDistanceRange(
 			seq_to_ptr(sequences[*(p_ids + 3)]),
 			lcs_lens);
 
+		auto ref_length = seq_to_ptr(ref)->length;
+
 		for (int k = 0; k < 4; ++k) {
-			out_vector[j * 4 + k] = transform(lcs_lens[k], seq_to_ptr(ref)->length, seq_to_ptr(sequences[*(p_ids + k)])->length);
+			out_vector[j * 4 + k] = transform(lcs_lens[k], ref_length, seq_to_ptr(sequences[*(p_ids + k)])->length);
 		}
 	}
 
@@ -211,6 +266,95 @@ void AbstractTreeGenerator::calculateDistanceRange(
 
 		for (int k = 0; k < 4 && n_processed + k < n_seqs; ++k)
 			out_vector[n_processed + k] = transform(lcs_lens[k], seq_to_ptr(ref)->length, seq_to_ptr(sequences[*(p_ids + k)])->length);
+	}
+}
+
+// *******************************************************************
+/*
+	seq_type can be:
+	- CSequenceView,
+	- CSequenceView*,
+*/
+template <class seq_type, class sv_type, class distance_type, typename Iter, typename Transform>
+void AbstractTreeGenerator::calculateDistanceRangeSV(
+	Transform& transform,
+	seq_type& ref,
+	sv_type* sv,
+	pair<Iter, Iter> ids_range,
+	distance_type* out_vector,
+	CLCSBP& lcsbp)
+{
+	uint32_t lcs_lens[4];
+	int n_seqs = distance(ids_range.first, ids_range.second);
+
+	auto p_ids = ids_range.first;
+
+	if (n_seqs >= 4)
+	{
+		tpl_prefetch(sv_to_ptr(sv[*(p_ids + 0)]));
+		tpl_prefetch(sv_to_ptr(sv[*(p_ids + 1)]));
+		tpl_prefetch(sv_to_ptr(sv[*(p_ids + 2)]));
+		tpl_prefetch(sv_to_ptr(sv[*(p_ids + 3)]));
+	}
+	if (n_seqs >= 8)
+	{
+		tpl_prefetch(sv_to_ptr(sv[*(p_ids + 4)]));
+		tpl_prefetch(sv_to_ptr(sv[*(p_ids + 5)]));
+		tpl_prefetch(sv_to_ptr(sv[*(p_ids + 6)]));
+		tpl_prefetch(sv_to_ptr(sv[*(p_ids + 7)]));
+	}
+
+	// process portions of 4 sequences
+	for (int j = 0; j < n_seqs / 4; ++j, p_ids += 4) {
+		if (j + 3 < n_seqs / 4)
+		{
+			tpl_prefetch(sv_to_ptr(sv[*(p_ids + 8)]));
+			tpl_prefetch(sv_to_ptr(sv[*(p_ids + 9)]));
+			tpl_prefetch(sv_to_ptr(sv[*(p_ids + 10)]));
+			tpl_prefetch(sv_to_ptr(sv[*(p_ids + 11)]));
+		}
+
+		if (j + 2 < n_seqs / 4)
+		{
+			tpl_prefetch<symbol_t>(sv_to_ptr(sv[*(p_ids + 4)])->data);
+			tpl_prefetch<symbol_t>(sv_to_ptr(sv[*(p_ids + 5)])->data);
+			tpl_prefetch<symbol_t>(sv_to_ptr(sv[*(p_ids + 6)])->data);
+			tpl_prefetch<symbol_t>(sv_to_ptr(sv[*(p_ids + 7)])->data);
+		}
+
+
+		lcsbp.GetLCSBP(
+			seq_to_ptr(ref),
+			sv_to_ptr(sv[*(p_ids + 0)]),
+			sv_to_ptr(sv[*(p_ids + 1)]),
+			sv_to_ptr(sv[*(p_ids + 2)]),
+			sv_to_ptr(sv[*(p_ids + 3)]),
+			lcs_lens);
+
+		auto ref_length = seq_to_ptr(ref)->length;
+
+		for (int k = 0; k < 4; ++k) {
+			out_vector[j * 4 + k] = transform(lcs_lens[k], ref_length, sv_to_ptr(sv[*(p_ids + k)])->length);
+		}
+	}
+
+	// if there is something left
+	int n_processed = n_seqs / 4 * 4;
+	if (n_processed < n_seqs) {
+		lcsbp.GetLCSBP(
+			seq_to_ptr(ref),
+			/*			(n_processed + 0 < n_seqs) ? seq_to_ptr(sequences[*(p_ids + 0)]) : nullptr,
+						(n_processed + 1 < n_seqs) ? seq_to_ptr(sequences[*(p_ids + 1)]) : nullptr,
+						(n_processed + 2 < n_seqs) ? seq_to_ptr(sequences[*(p_ids + 2)]) : nullptr,
+						(n_processed + 3 < n_seqs) ? seq_to_ptr(sequences[*(p_ids + 3)]) : nullptr,*/
+			sv_to_ptr(sv[*(p_ids + 0)]),
+			(n_processed + 1 < n_seqs) ? sv_to_ptr(sv[*(p_ids + 1)]) : sv_to_ptr(sv[*(p_ids + 0)]),
+			(n_processed + 2 < n_seqs) ? sv_to_ptr(sv[*(p_ids + 2)]) : sv_to_ptr(sv[*(p_ids + 0)]),
+			(n_processed + 3 < n_seqs) ? sv_to_ptr(sv[*(p_ids + 3)]) : sv_to_ptr(sv[*(p_ids + 0)]),
+			lcs_lens);
+
+		for (int k = 0; k < 4 && n_processed + k < n_seqs; ++k)
+			out_vector[n_processed + k] = transform(lcs_lens[k], seq_to_ptr(ref)->length, sv_to_ptr(sv[*(p_ids + k)])->length);
 	}
 }
 

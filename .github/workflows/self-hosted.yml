@@ -15,7 +15,7 @@ jobs:
     name: checkout
     strategy:
       matrix:
-        machine: [X64, raspberry]
+        machine: [xeon, tripper, raspberry]
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
     
     steps:
@@ -36,7 +36,7 @@ jobs:
       fail-fast: false
       matrix:
         # multiple X64 configurations
-        machine: [X64]
+        machine: [xeon, tripper]
         compiler: [g++-9, g++-10, g++-11]
         platform: [avx2]
         # additional ARM configurations
@@ -44,6 +44,7 @@ jobs:
         - machine: raspberry
           compiler: g++
           platform: arm8
+ 
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
 
     steps:
@@ -62,7 +63,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [X64]
+        machine: [xeon, tripper]
         compiler: [g++-9, g++-10, g++-11]
         tree: [sl, upgma, mp]
         # additional ARM configurations
@@ -76,7 +77,8 @@ jobs:
         - machine: raspberry
           compiler: g++
           tree: mp
-
+          
+    
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
         
     env: 
@@ -114,7 +116,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [X64]
+        machine: [xeon, tripper]
         compiler: [g++-9, g++-10, g++-11]
         tree: [sl, upgma, mp, nj]
         # additional ARM configurations
@@ -131,6 +133,7 @@ jobs:
         - machine: raspberry
           compiler: g++
           tree: nj
+          
           
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
       
@@ -168,12 +171,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [X64]
+        machine: [xeon, tripper]
         compiler: [g++-9, g++-10, g++-11]
         # additional ARM configurations
         include:
         - machine: raspberry
           compiler: g++
+        
      
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']    
         
@@ -210,9 +214,9 @@ jobs:
       
 ########################################################################################
   noavx-tests:
-    name: different X64 extensions
-    runs-on: [self-hosted, famsa, X64]
-    needs: other-tests
+    name: distances only - different TRipper SIMD extensions 
+    runs-on: [self-hosted, famsa, tripper]
+    needs: make-tests
     strategy:
       fail-fast: false
       matrix:

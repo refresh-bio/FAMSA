@@ -120,7 +120,6 @@ void CProfile::CalculateCounters(CGappedSequence *gs)
 	}
 
 	// Set counters for symbols and internal gaps
-	//bool was_gap = false;
 	size_t seq_pos = first_non_gap;
 
 	auto symbols = gs->symbols;
@@ -140,7 +139,7 @@ void CProfile::CalculateCounters(CGappedSequence *gs)
 			//counters.add_value(seq_pos+gs->n_gaps[i]-1, GAP_OPEN, 1);
 
 			// Increment gap ext counters
-			for(int j = 1; j < n_gaps[i]; ++j)		
+			for(uint32_t j = 1; j < n_gaps[i]; ++j)		
 				counters.add_value(seq_pos+j, GAP_EXT, 1);
 		}
 		seq_pos += n_gaps[i];
@@ -193,8 +192,8 @@ void CProfile::CalculateScores()
 
 		for(symbol_t sym = 0; sym < NO_AMINOACIDS; ++sym)
 		{
-//			size_t n_sym = counters.get_value(i, sym);
 			size_t n_sym = counters_col[sym];
+
 			if(n_sym)
 			{
 				scores.add_column_part_mult(i, NO_AMINOACIDS, params->score_matrix[sym], n_sym);
@@ -324,7 +323,7 @@ void CProfile::AppendRawSequence(const CGappedSequence &gs)
 	// Check that the sequence is of correct length
 	if(data.empty())
 	{
-		if(gs.symbols.front() != GUARD)
+		if(*(gs.symbols) != GUARD)
 			width = gs.gapped_size;
 		else
 			width = gs.gapped_size - 1;
@@ -336,7 +335,7 @@ void CProfile::AppendRawSequence(const CGappedSequence &gs)
 	else
 	{
 		size_t curr_size;
-		if(gs.symbols.front() != GUARD)
+		if(*(gs.symbols) != GUARD)
 			curr_size = gs.gapped_size;
 		else
 			curr_size = gs.gapped_size - 1;
@@ -345,8 +344,8 @@ void CProfile::AppendRawSequence(const CGappedSequence &gs)
 	}
 
 	data.push_back(new CGappedSequence(gs));
-	if(gs.symbols.front() != GUARD)
-		data.back()->symbols.insert(data.back()->symbols.begin(), GUARD);
+	if(*(gs.symbols) != GUARD)
+		data.back()->InsertFront(GUARD);
 }
 
 // ****************************************************************************
@@ -838,7 +837,7 @@ void CProfile::ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatri
 								   n_gap_term_to_transfer1 * (gap_term_ext - gap_term_open);
 
 				for (size_t sym = 0; sym < NO_AMINOACIDS; ++sym)
-						scores1->add_value(i, sym, gap_cost);
+					scores1->add_value(i, sym, gap_cost);
 
 				n_gap_to_transfer1 = n_gap_term_to_transfer1 = 0;
 			}
@@ -1505,7 +1504,7 @@ score_t CProfile::CalculateTotalScore(void)
 		int cur_n_gaps = gap_matrix[len][i];
 		n_gaps_inside -= cur_n_gaps;
 		
-		if(i == 1 || i+len-1 == width)
+		if(i == 1 || i+len-1 == (int) width)
 			n_gap_term_open += (size - cur_n_gaps - n_gaps_inside) * cur_n_gaps;
 		else
 			n_gap_open += (size - cur_n_gaps - n_gaps_inside) * cur_n_gaps;

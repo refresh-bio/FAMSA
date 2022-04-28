@@ -8,13 +8,13 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 #include "lcsbp_avx2_intr.h"
 #include "../core/defs.h"
-#include "../utils/utils.h"
 
 #include <algorithm>
 #include <memory>
 #include <immintrin.h>
 
 using namespace std;
+
 
 // *******************************************************************
 // Prepares (if necessary) sufficient amount of memory for LCS calculation
@@ -39,21 +39,8 @@ void CLCSBP_AVX2_INTR::prepare_X(uint32_t bv_len)
 // *******************************************************************
 void CLCSBP_AVX2_INTR::prepare_mask_pairs(uint32_t bv_len, CSequence* seq0)
 {
-	if (seq0_prev == seq0)
+	if (seq0->sequence_no == prev_sequence_no)
 		return;
-
-/*	if (raw_precomp_masks)
-		free(raw_precomp_masks);
-
-	seq0_prev = seq0;
-
-	size_precomp_masks = bv_len * sizeof(__m128i) * NO_SYMBOLS * NO_SYMBOLS;
-	size_t raw_size_precomp_masks = size_precomp_masks + 64;
-
-	auto p = raw_precomp_masks = malloc(raw_size_precomp_masks);
-
-	precomp_masks = (__m128i*) my_align(64, size_precomp_masks, p, raw_size_precomp_masks);
-*/
 
 	size_t new_size_precomp_masks = bv_len * sizeof(__m128i) * NO_SYMBOLS * NO_SYMBOLS;
 
@@ -74,11 +61,11 @@ void CLCSBP_AVX2_INTR::prepare_mask_pairs(uint32_t bv_len, CSequence* seq0)
 		precomp_masks = (__m128i*) my_align(64, size_precomp_masks, p, raw_size_precomp_masks);
 	}
 
-	seq0_prev = seq0;
+	prev_sequence_no = seq0->sequence_no;
 
-	const Array<bit_vec_t>& bit_masks = seq0->bit_masks;
-	uint64_t* bm = (uint64_t*)bit_masks[0];
-	uint64_t bm_len = bit_masks.get_width();
+	bit_vec_t * bit_masks = seq0->p_bit_masks;
+	uint64_t* bm = (uint64_t*)bit_masks;
+	uint64_t bm_len = seq0->p_bv_len;
 
 	for (uint32_t i = 0; i < NO_SYMBOLS; ++i)
 		for (uint32_t j = 0; j < NO_SYMBOLS; ++j)
@@ -93,96 +80,10 @@ void CLCSBP_AVX2_INTR::prepare_mask_pairs(uint32_t bv_len, CSequence* seq0)
 }
 
 // *******************************************************************
-void CLCSBP_AVX2_INTR::calculate(CSequence* seq0, CSequence* seq1, CSequence* seq2, CSequence* seq3, CSequence* seq4, uint32_t* res, uint32_t bv_len, uint32_t max_len)
-{
-	__m256i V, tB, V2, sB, U2;
-	__m256i sign64_bit = _mm256_set1_epi64x(1ull << 63);
-	__m256i ones = _mm256_set1_epi64x(~0ull);
-
-	//const Array<bit_vec_t>& bit_masks = seq0->bit_masks;
-
-	for (size_t i = 0; i < bv_len; ++i)
-		X[i] = ones;
-
-	//	__int64* base = (__int64*) bit_masks[0];
-
-	//	__m128i plus_one = _mm_set1_epi32(1);
-	//int bm_width = bit_masks.get_width();
-
-	for (size_t i = 0; i < max_len; ++i)
-	{
-		sB = _mm256_setzero_si256();
-		symbol_t c1 = seq1->data[i];
-		symbol_t c2 = seq2->data[i];
-		symbol_t c3 = seq3->data[i];
-		symbol_t c4 = seq4->data[i];
-
-		//		__m128i indices = _mm_set_epi32(c4 * bm_width, c3 * bm_width, c2 * bm_width, c1 * bm_width);
-
-		for (size_t j = 0; j < bv_len; ++j)
-		{
-			V = X[j];
-			//			U1 = _mm256_set_epi64x(bit_masks[c4][j], bit_masks[c3][j], bit_masks[c2][j], bit_masks[c1][j]);
-			U2 = _mm256_set_m128i(precomp_masks[(size_t) c3 * NO_SYMBOLS * bv_len + c4 * bv_len + j], precomp_masks[(size_t) c1 * NO_SYMBOLS * bv_len + c2 * bv_len + j]);
-			//			U2 = _mm256_i32gather_epi64(base, indices, 8);
-//			indices = _mm_add_epi32(indices, plus_one);
-//			tB = _mm256_and_si256(V, U1);
-			tB = _mm256_and_si256(V, U2);
-			//			tB = _mm256_and_si256(V, _mm256_set_epi64x(bit_masks[c4][j], bit_masks[c3][j], bit_masks[c2][j], bit_masks[c1][j]));
-			V2 = _mm256_sub_epi64(_mm256_add_epi64(V, tB), sB);
-			sB = _mm256_cmpgt_epi64(_mm256_xor_si256(V, sign64_bit), _mm256_xor_si256(V2, sign64_bit));
-			X[j] = _mm256_or_si256(V2, _mm256_sub_epi64(V, tB));
-		}
-	}
-
-	alignas(32) uint64_t p[4];
-#ifdef _MSC_VER					// Visual C++
-
-	for (size_t i = 0; i < bv_len; ++i)
-	{
-		_mm256_storeu_si256((__m256i*) p, X[i]);
-
-		res[0] += POPCNT(~p[0]);
-		res[1] += POPCNT(~p[1]);
-		res[2] += POPCNT(~p[2]);
-		res[3] += POPCNT(~p[3]);
-	}
-#else
-#ifdef __GNUC__
-	for (size_t i = 0; i < bv_len; ++i)
-	{
-		_mm256_storeu_si256((__m256i*) p, X[i]);
-
-		res[0] += POPCNT(~p[0]);
-		res[1] += POPCNT(~p[1]);
-		res[2] += POPCNT(~p[2]);
-		res[3] += POPCNT(~p[3]);
-		/*		res[0] += __builtin_popcountll(~p[0]);
-				res[1] += __builtin_popcountll(~p[1]);
-				res[2] += __builtin_popcountll(~p[2]);
-				res[3] += __builtin_popcountll(~p[3]);*/
-	}
-#else
-	for (size_t i = 0; i < bv_len; ++i)
-	{
-		_mm256_storeu_si256((__m256i*) p, X[i]);
-		for (int v = 0; v < 4; ++v)
-			for (uint64_t T = ~p[v]; T; T &= T - 1)
-				++res[v];
-	}
-#endif
-#endif
-}
-
-// *******************************************************************
-// AVX2 variant of the bit-parallel LCS len calculation (processes 4 pairs of sequences in parallel)
 void CLCSBP_AVX2_INTR::Calculate(CSequence* seq0, CSequence* seq1, CSequence* seq2, CSequence* seq3, CSequence* seq4,
-	uint32_t *dist)
+	uint32_t* dist)
 {
-	uint32_t max_len;
-//	max_len = max(seq1->length, max(seq2->length, max(seq3->length, seq4->length)));
-	max_len = max4(seq1->length, seq2->length, seq3->length, seq4->length);
-
+	uint32_t max_len = max4(seq1->length, seq2->length, seq3->length, seq4->length);
 	uint32_t bv_len = (seq0->length + bv_size256 - 1) / bv_size256;
 
 	prepare_X(bv_len);
@@ -192,61 +93,89 @@ void CLCSBP_AVX2_INTR::Calculate(CSequence* seq0, CSequence* seq1, CSequence* se
 
 	switch (bv_len)
 	{
-	case 1:	CLCSBP_AVX2_INTR_Impl<1>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 2:	CLCSBP_AVX2_INTR_Impl<2>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 3:	CLCSBP_AVX2_INTR_Impl<3>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 4:	CLCSBP_AVX2_INTR_Impl<4>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 5:	CLCSBP_AVX2_INTR_Impl<5>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 6:	CLCSBP_AVX2_INTR_Impl<6>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 7:	CLCSBP_AVX2_INTR_Impl<7>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 8:	CLCSBP_AVX2_INTR_Impl<8>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 9:	CLCSBP_AVX2_INTR_Impl<9>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 10: CLCSBP_AVX2_INTR_Impl<10>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 11: CLCSBP_AVX2_INTR_Impl<11>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 12: CLCSBP_AVX2_INTR_Impl<12>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 13: CLCSBP_AVX2_INTR_Impl<13>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 14: CLCSBP_AVX2_INTR_Impl<14>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 15: CLCSBP_AVX2_INTR_Impl<15>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 16: CLCSBP_AVX2_INTR_Impl<16>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 17: CLCSBP_AVX2_INTR_Impl<17>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 18: CLCSBP_AVX2_INTR_Impl<18>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 19: CLCSBP_AVX2_INTR_Impl<19>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 20: CLCSBP_AVX2_INTR_Impl<20>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 21: CLCSBP_AVX2_INTR_Impl<21>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 22: CLCSBP_AVX2_INTR_Impl<22>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 23: CLCSBP_AVX2_INTR_Impl<23>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 24: CLCSBP_AVX2_INTR_Impl<24>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 25: CLCSBP_AVX2_INTR_Impl<25>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 26: CLCSBP_AVX2_INTR_Impl<26>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 27: CLCSBP_AVX2_INTR_Impl<27>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 28: CLCSBP_AVX2_INTR_Impl<28>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 29: CLCSBP_AVX2_INTR_Impl<29>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 30: CLCSBP_AVX2_INTR_Impl<30>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 31: CLCSBP_AVX2_INTR_Impl<31>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	case 32: CLCSBP_AVX2_INTR_Impl<32>::Calculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
-	default: calculate(seq0, seq1, seq2, seq3, seq4, dist, bv_len, max_len);		break;
+	case 1:	CLCSBP_AVX2_INTR_Impl<1, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 2:	CLCSBP_AVX2_INTR_Impl<2, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 3:	CLCSBP_AVX2_INTR_Impl<3, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 4:	CLCSBP_AVX2_INTR_Impl<4, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 5:	CLCSBP_AVX2_INTR_Impl<5, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 6:	CLCSBP_AVX2_INTR_Impl<6, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 7:	CLCSBP_AVX2_INTR_Impl<7, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 8:	CLCSBP_AVX2_INTR_Impl<8, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 9:	CLCSBP_AVX2_INTR_Impl<9, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 10: CLCSBP_AVX2_INTR_Impl<10, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 11: CLCSBP_AVX2_INTR_Impl<11, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 12: CLCSBP_AVX2_INTR_Impl<12, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 13: CLCSBP_AVX2_INTR_Impl<13, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 14: CLCSBP_AVX2_INTR_Impl<14, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 15: CLCSBP_AVX2_INTR_Impl<15, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 16: CLCSBP_AVX2_INTR_Impl<16, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 17: CLCSBP_AVX2_INTR_Impl<17, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 18: CLCSBP_AVX2_INTR_Impl<18, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 19: CLCSBP_AVX2_INTR_Impl<19, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 20: CLCSBP_AVX2_INTR_Impl<20, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 21: CLCSBP_AVX2_INTR_Impl<21, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 22: CLCSBP_AVX2_INTR_Impl<22, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 23: CLCSBP_AVX2_INTR_Impl<23, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 24: CLCSBP_AVX2_INTR_Impl<24, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 25: CLCSBP_AVX2_INTR_Impl<25, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 26: CLCSBP_AVX2_INTR_Impl<26, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 27: CLCSBP_AVX2_INTR_Impl<27, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 28: CLCSBP_AVX2_INTR_Impl<28, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 29: CLCSBP_AVX2_INTR_Impl<29, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 30: CLCSBP_AVX2_INTR_Impl<30, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 31: CLCSBP_AVX2_INTR_Impl<31, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 32: CLCSBP_AVX2_INTR_Impl<32, CSequence>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	default: CLCSBP_AVX2_INTR_Impl<1, CSequence>::LoopCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, bv_len, max_len, X);		break;
 	}
 }
 
 // *******************************************************************
-uint32_t CLCSBP_AVX2_INTR::HistogramLCS(const uint16_t* h0, const uint16_t* h1)
+void CLCSBP_AVX2_INTR::Calculate(CSequence* seq0, CSequenceView* seq1, CSequenceView* seq2, CSequenceView* seq3, CSequenceView* seq4,
+	uint32_t* dist)
 {
-	uint32_t est_lcs = 0;
-	__m256i m0, m1, m2;
+	uint32_t max_len = max4(seq1->length, seq2->length, seq3->length, seq4->length);
+	uint32_t bv_len = (seq0->length + bv_size256 - 1) / bv_size256;
 
-	for (uint32_t i = 0; i < NO_SYMBOLS; i += 16)
+	prepare_X(bv_len);
+	prepare_mask_pairs(bv_len, seq0);
+
+	dist[0] = dist[1] = dist[2] = dist[3] = 0;
+
+	switch (bv_len)
 	{
-		m0 = _mm256_loadu_si256((__m256i*) (h0 + i));
-		m1 = _mm256_loadu_si256((__m256i*) (h1 + i));
-		
-		m2 = _mm256_min_epi16(m0, m1);
-
-		__m128i m3 = _mm_add_epi16(_mm256_extracti128_si256(m2, 1), _mm256_castsi256_si128(m2));
-		__m128i m4 = _mm_add_epi16(m3, _mm_unpackhi_epi64(m3, m3));
-		__m128i m5 = _mm_add_epi16(m4, _mm_shuffle_epi32(m4, 1));
-		__m128i m6 = _mm_add_epi16(m5, _mm_shufflelo_epi16(m5, 1));
-		est_lcs += (uint16_t) _mm_cvtsi128_si32(m6);             
+	case 1:	CLCSBP_AVX2_INTR_Impl<1, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 2:	CLCSBP_AVX2_INTR_Impl<2, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 3:	CLCSBP_AVX2_INTR_Impl<3, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 4:	CLCSBP_AVX2_INTR_Impl<4, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 5:	CLCSBP_AVX2_INTR_Impl<5, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 6:	CLCSBP_AVX2_INTR_Impl<6, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 7:	CLCSBP_AVX2_INTR_Impl<7, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 8:	CLCSBP_AVX2_INTR_Impl<8, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 9:	CLCSBP_AVX2_INTR_Impl<9, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 10: CLCSBP_AVX2_INTR_Impl<10, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 11: CLCSBP_AVX2_INTR_Impl<11, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 12: CLCSBP_AVX2_INTR_Impl<12, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 13: CLCSBP_AVX2_INTR_Impl<13, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 14: CLCSBP_AVX2_INTR_Impl<14, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 15: CLCSBP_AVX2_INTR_Impl<15, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 16: CLCSBP_AVX2_INTR_Impl<16, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 17: CLCSBP_AVX2_INTR_Impl<17, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 18: CLCSBP_AVX2_INTR_Impl<18, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 19: CLCSBP_AVX2_INTR_Impl<19, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 20: CLCSBP_AVX2_INTR_Impl<20, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 21: CLCSBP_AVX2_INTR_Impl<21, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 22: CLCSBP_AVX2_INTR_Impl<22, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 23: CLCSBP_AVX2_INTR_Impl<23, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 24: CLCSBP_AVX2_INTR_Impl<24, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 25: CLCSBP_AVX2_INTR_Impl<25, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 26: CLCSBP_AVX2_INTR_Impl<26, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 27: CLCSBP_AVX2_INTR_Impl<27, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 28: CLCSBP_AVX2_INTR_Impl<28, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 29: CLCSBP_AVX2_INTR_Impl<29, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 30: CLCSBP_AVX2_INTR_Impl<30, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 31: CLCSBP_AVX2_INTR_Impl<31, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	case 32: CLCSBP_AVX2_INTR_Impl<32, CSequenceView>::UnrolledCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, max_len, X);					break;
+	default: CLCSBP_AVX2_INTR_Impl<1, CSequenceView>::LoopCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, bv_len, max_len, X);		break;
 	}
-
-	return est_lcs;
 }
+

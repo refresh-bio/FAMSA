@@ -13,19 +13,20 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "../utils/meta_oper.h"
 #include <nmmintrin.h>
 
-template <unsigned BV_LEN> class CLCSBP_AVX_INTR_Impl;
+template <unsigned BV_LEN, typename SeqType> class CLCSBP_AVX_INTR_Impl;
 
+// *******************************************************************
+//
 class CLCSBP_AVX_INTR
 {
 public:
-	void *raw_X;
-	void *orig_X;
+	void* raw_X;
+	void* orig_X;
 	uint32_t X_size;
 	size_t raw_X_size;
-	__m128i *X;
+	__m128i* X;
 
 	inline void prepare_X(uint32_t bv_len);
-	void calculate(CSequence *seq0, CSequence *seq1, CSequence *seq2, uint32_t *res, uint32_t bv_len, uint32_t max_len);
 
 public:
 	CLCSBP_AVX_INTR() {
@@ -42,11 +43,13 @@ public:
 			free(orig_X);
 	}
 	
-	void Calculate(CSequence *seq0, CSequence *seq1, CSequence *seq2, uint32_t *dist);
-	uint32_t HistogramLCS(const uint16_t* h0, const uint16_t* h1);
+	void Calculate(CSequence* seq0, CSequence* seq1, CSequence* seq2, uint32_t* dist);
+	void Calculate(CSequence* seq0, CSequenceView* seq1, CSequenceView* seq2, uint32_t* dist);
 };
 
-template <unsigned BV_LEN> class CLCSBP_AVX_INTR_Impl {
+// *******************************************************************
+//
+template <unsigned BV_LEN, typename SeqType> class CLCSBP_AVX_INTR_Impl {
 public:
 #define AVX_INTR_POP_CNT_LOOP					\
 	{										\
@@ -88,15 +91,78 @@ public:
 		*pX++ = _mm_or_si128(V2, _mm_xor_si128(V, tB));											\
 	}	
 
+	// *******************************************************************
+	static void LoopCalculate(CSequence* seq0, SeqType* seq1, SeqType* seq2, uint32_t* res, uint32_t bv_len, uint32_t max_len, __m128i* X)
+	{
+		__m128i V, tB, V2, sB;
+		__m128i sign64_bit = _mm_set1_epi64x(1ull << 63);
+		__m128i ones = _mm_set1_epi64x(~0ull);
 
-	static void Calculate(CSequence *seq0, CSequence *seq1, CSequence *seq2, uint32_t *res, uint32_t max_len, __m128i *X)
+		bit_vec_t* bit_masks = seq0->p_bit_masks;
+		uint32_t loc_bv_len = seq0->p_bv_len;
+
+		auto pc1 = seq1->data;
+		auto pc2 = seq2->data;
+
+		for (size_t i = 0; i < loc_bv_len; ++i)
+			X[i] = ones;
+
+		for (size_t i = 0; i < max_len; ++i)
+		{
+			sB = _mm_setzero_si128();
+
+			for (size_t j = 0; j < loc_bv_len; ++j)
+			{
+				V = X[j];
+				tB = _mm_and_si128(V, _mm_set_epi64x(bit_masks[*pc2 * loc_bv_len + j], bit_masks[*pc1 * loc_bv_len + j]));
+				V2 = _mm_sub_epi64(_mm_add_epi64(V, tB), sB);
+				sB = _mm_cmpgt_epi64(_mm_xor_si128(V, sign64_bit), _mm_xor_si128(V2, sign64_bit));
+				X[j] = _mm_or_si128(V2, _mm_sub_epi64(V, tB));
+			}
+
+			++pc1; ++pc2;
+		}
+
+		alignas(32) uint64_t p[2];
+#ifdef _MSC_VER					// Visual C++
+		for (size_t i = 0; i < loc_bv_len; ++i)
+		{
+			_mm_storeu_si128((__m128i*) p, X[i]);
+
+			res[0] += POPCNT(~p[0]);
+			res[1] += POPCNT(~p[1]);
+		}
+#else
+#ifdef __GNUC__
+		for (size_t i = 0; i < loc_bv_len; ++i)
+		{
+			_mm_storeu_si128((__m128i*) p, X[i]);
+
+			res[0] += POPCNT(~p[0]);
+			res[1] += POPCNT(~p[1]);
+		}
+#else
+		for (size_t i = 0; i < loc_bv_len; ++i)
+		{
+			_mm_storeu_si128((__m128i*) p, X[i]);
+
+			for (int v = 0; v < 2; ++v)
+				for (uint64_t T = ~p[v]; T; T &= T - 1)
+					++res[v];
+		}
+#endif
+#endif
+	}
+
+	// *******************************************************************
+	static void UnrolledCalculate(CSequence *seq0, SeqType* seq1, SeqType* seq2, uint32_t *res, uint32_t max_len, __m128i *X)
 	{
 		__m128i V, tB, V2, sB;
 		__m128i sign64_bit = _mm_set1_epi64x(1ull << 63);
 		__m128i ones = _mm_set1_epi64x(~0ull);
 
 		auto pX0 = X;
-		const Array<bit_vec_t>& bit_masks = seq0->bit_masks;
+		const bit_vec_t* bit_masks = seq0->p_bit_masks;
 
 		if (BV_LEN > 0)				*pX0++ = ones;
 		if (BV_LEN > 1)				*pX0++ = ones;
@@ -131,19 +197,22 @@ public:
 		if (BV_LEN > 30)			*pX0++ = ones;
 		if (BV_LEN > 31)			*pX0++ = ones;
 
-		uint64_t* bm = (uint64_t*)bit_masks[0];
-		uint64_t bm_len = bit_masks.get_width();
+		uint64_t* bm = (uint64_t*)bit_masks;
+		uint64_t bm_len = seq0->p_bv_len;
+//		uint32_t bm_len = (seq0->length + bv_size128 - 1) / bv_size128;
+
+		auto pc1 = seq1->data;
+		auto pc2 = seq2->data;
+
 
 		for (size_t i = 0; i < max_len; ++i)
 		{
 			sB = _mm_setzero_si128();
-			symbol_t c1 = seq1->data[i];
-			symbol_t c2 = seq2->data[i];
 
 			auto pX = X;
 
-			uint64_t* pbm1 = bm + c1 * bm_len;
-			uint64_t* pbm2 = bm + c2 * bm_len;
+			uint64_t* pbm1 = bm + *pc1 * bm_len;
+			uint64_t* pbm2 = bm + *pc2 * bm_len;
 
 			if (BV_LEN == 1)		AVX_INTR_LCS_INNER_LOOP_SINGLE
 			else if (BV_LEN > 0)	AVX_INTR_LCS_INNER_LOOP_FIRST;
@@ -209,6 +278,8 @@ public:
 			else if (BV_LEN > 30)	AVX_INTR_LCS_INNER_LOOP;
 			if (BV_LEN == 32)		AVX_INTR_LCS_INNER_LOOP_LAST
 			else if (BV_LEN > 31)	AVX_INTR_LCS_INNER_LOOP;
+
+			++pc1; ++pc2;
 		}
 
 		alignas(32) uint64_t p[2];

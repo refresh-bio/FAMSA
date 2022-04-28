@@ -15,6 +15,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <vector>
 
 class CLCSBP;
+#include "../lcs/lcsbp.h"
 
 
 class AbstractTreeGenerator {
@@ -40,6 +41,15 @@ public:
 		Transform& transform, 
 		seq_type& ref,
 		seq_type* sequences,
+		pair<Iter, Iter> ids_range,
+		distance_type* out_vector,
+		CLCSBP& lcsbp);
+
+	template <class seq_type, class sv_type, class distance_type, typename Iter, typename Transform>
+	void calculateDistanceRangeSV(
+		Transform& transform, 
+		seq_type& ref,
+		sv_type* sv,
 		pair<Iter, Iter> ids_range,
 		distance_type* out_vector,
 		CLCSBP& lcsbp);

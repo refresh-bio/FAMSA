@@ -78,6 +78,7 @@ const symbol_t GUARD					= (symbol_t) (NO_SYMBOLS) - 1;
 const symbol_t NO_AMINOACIDS			= 24;
 const symbol_t NO_VALID_AMINOACIDS		= 20;
 const symbol_t NO_AMINOACIDS_AND_GAPS	= 30;
+const symbol_t NO_AA_SYMBOLS			= UNKNOWN_SYMBOL;		// no. of symbols that can be compared
 
 #define MAX3(x, y, z)		(max(x, max(y, z)))
 #define ABS(x)				((x) >= 0 ? (x) : -(x))

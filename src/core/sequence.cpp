@@ -19,14 +19,29 @@ char CGappedSequence::mapping_table[25] = "ARNDCQEGHILKMFPSTWYVBZX*";
 
 
 // *******************************************************************
-CSequence::CSequence(const string& _id, const string& seq) 
+CSequence::CSequence(const string& _id, const string& seq, memory_monotonic_safe* mma)
 	: 
-	sequence_no(-1), 
 	length((uint32_t)seq.length()), 
+	sequence_no(-1),
 	id(_id),
-	data(seq.length()), 
+	mma(mma),
 	uppercase(seq.length())
 {
+	data_size = seq.length();
+
+	if (length)
+	{
+		if (mma)
+			data = (symbol_t*)mma->allocate(data_size + 1);
+		else
+			data = new symbol_t[data_size + 1];
+	}
+	else
+		data = nullptr;
+
+	p_bit_masks = nullptr;
+	p_bv_len = 0;
+
 	for(uint32_t i = 0; i < length; ++i)
 	{
 		char c = seq[i];
@@ -46,103 +61,124 @@ CSequence::CSequence(const string& _id, const string& seq)
 	}
 }
 
+// *******************************************************************
+CSequence::CSequence(CSequence&& x) noexcept
+{
+	sequence_no = move(x.sequence_no);
+	length = move(x.length);
+	id = move(x.id);
+
+	data = x.data;
+	x.data = nullptr;
+	data_size = x.data_size;
+
+	mma = x.mma;
+	x.mma = nullptr;
+
+	uppercase = move(x.uppercase);
+
+	p_bit_masks = move(x.p_bit_masks);
+	x.p_bit_masks = nullptr;
+	p_bv_len = x.p_bv_len;
+}
+
+// *******************************************************************
+CSequence& CSequence::operator=(CSequence&& x) noexcept
+{
+	this->sequence_no = move(x.sequence_no);
+	this->length = move(x.length);
+	this->id = move(x.id);
+
+	delete_arr_ptr(this->data);
+	this->data = x.data;
+	x.data = nullptr;
+	data_size = x.data_size;
+	this->mma = x.mma;
+	x.mma = nullptr;
+
+	this->uppercase = move(x.uppercase);
+
+	this->p_bit_masks = x.p_bit_masks;
+	x.p_bit_masks = nullptr;
+	this->p_bv_len = x.p_bv_len;
+
+	return *this;
+}
 
 // *******************************************************************
 CSequence::~CSequence()
 {
-	delete[] hist;
-}
+	delete_arr_ptr(p_bit_masks);
 
+	if (mma)
+		mma->deallocate(data);
+	else
+		delete_arr_ptr(data);
+}
 
 // *******************************************************************
 string CSequence::DecodeSequence()
 {
 	string s;
 
-	s.reserve(data.size()+1);
-	for(auto &p : data)
-		if(p == GUARD)
+	s.reserve(length + 1);
+	for(uint32_t i = 0; i < length; ++i)
+		if(data[i] == GUARD)
 			continue;
-		else if(p == GAP)
+		else if(data[i] == GAP)
 			s += "-";
 		else
-			s += mapping_table[p];
+			s += mapping_table[data[i]];
 
 	return s;
+}
+
+// *******************************************************************
+void CSequence::DataResize(uint32_t new_size, symbol_t new_symbol)
+{
+	assert(new_size >= length);
+
+	symbol_t* ptr;
+	
+	if (mma)
+		ptr = (symbol_t*)mma->allocate(new_size + 1);
+	else
+		ptr = new symbol_t[new_size + 1];
+
+	copy_n(data, min(data_size, new_size), ptr);
+
+	if(new_size > data_size)
+		fill(ptr + data_size, ptr + new_size, new_symbol);
+	swap(data, ptr);
+
+	data_size = new_size;
+
+	if (mma)
+		mma->deallocate(ptr);
+	else
+		delete[] ptr;
 }
 
 // *******************************************************************
 // Compute Bit-mask Vectors for bit-parallel computation of LCS for the sequences
 void CSequence::ComputeBitMasks()
 {
-	uint32_t bv_len = (uint32_t) ((data.size() + bv_size - 1) / bv_size);
+	p_bv_len = (uint32_t) ((data_size + bv_size - 1) / bv_size);
 
-	/*
-	bit_masks.clear();
-	bit_masks.resize(NO_SYMBOLS);
-
-	for (size_t i = 0; i < NO_SYMBOLS; ++i)
-		bit_masks[i].resize(bv_len, (bit_vec_t) 0);
-	*/
-
-	bit_masks.resize(bv_len, (uint32_t) NO_SYMBOLS, (bit_vec_t)0);
+	delete_arr_ptr(p_bit_masks);
+	p_bit_masks = new bit_vec_t[p_bv_len * NO_SYMBOLS];
+	fill_n(p_bit_masks, p_bv_len * NO_SYMBOLS, (bit_vec_t)0);
 
 	for(size_t i = 0; i < length; ++i)
 		if(data[i] >= 0 && data[i] < NO_VALID_AMINOACIDS)
-			bit_masks[data[i]][i / bv_size] |= ((bit_vec_t) 1) << (i % bv_size);
+			p_bit_masks[data[i] * p_bv_len + i / bv_size] |= ((bit_vec_t) 1) << (i % bv_size);
 }
 
 // *******************************************************************
 void CSequence::ReleaseBitMasks() 
 {
-	bit_masks.clear();
+	delete_arr_ptr(p_bit_masks);
 }
-
-// *******************************************************************
-void CSequence::PrepareHistogram()
-{
-	hist = new uint16_t[NO_AMINOACIDS];
-
-/*	int p1 = length / 3;
-	int p2 = 2 * length / 3;*/
-	
-//	fill_n(i_hist, NO_AMINOACIDS, 0u);
-	fill_n(hist, NO_AMINOACIDS, 0u);
-//	fill_n(hist, NO_SYMBOLS, 0u);
-
-/*	fill_n(hist0, NO_SYMBOLS, 0u);
-	fill_n(hist1, NO_SYMBOLS, 0u);
-	fill_n(hist2, NO_SYMBOLS, 0u);
-	fill_n(hist01, NO_SYMBOLS, 0u);
-	fill_n(hist12, NO_SYMBOLS, 0u);
-	fill_n(hist012, NO_SYMBOLS, 0u);*/
-
-	for (size_t i = 0; i < length; ++i)
-	{
-//		++i_hist[data[i]];
-		++hist[data[i]];
-
-/*		if (i < p1)
-		{
-			++hist0[data[i]];
-			++hist01[data[i]];
-			++hist012[data[i]];
-		}
-		else if (i < p2)
-		{
-			++hist1[data[i]];
-			++hist01[data[i]];
-			++hist012[data[i]];
-		}
-		else
-		{
-			++hist2[data[i]];
-			++hist12[data[i]];
-			++hist012[data[i]];
-		}*/
-	}
-}
-
 
 // *******************************************************************
 //
@@ -152,11 +188,19 @@ void CSequence::PrepareHistogram()
 CGappedSequence::CGappedSequence(CSequence&& _sequence)
 {
 	id = std::move(_sequence.id);
+
 	symbols = std::move(_sequence.data);
+	_sequence.data = nullptr;
+
+	mma = _sequence.mma;
+	_sequence.mma = nullptr;
+
 	uppercase = std::move(_sequence.uppercase);
-	_sequence.bit_masks.clear();
+	delete_arr_ptr(_sequence.p_bit_masks);
 	
-	size = symbols.size();
+	size = _sequence.data_size;
+	symbols_size = size;
+
 	gapped_size = size;
 	n_gaps.resize(size + 1, 0);
 
@@ -169,11 +213,19 @@ CGappedSequence::CGappedSequence(const CGappedSequence& _gapped_sequence)
 	id = _gapped_sequence.id;
 
 	size = _gapped_sequence.size;
+	symbols_size = _gapped_sequence.symbols_size;
 	gapped_size = _gapped_sequence.gapped_size;
 	dps_size = _gapped_sequence.dps_size;
 	dps_size_div2 = _gapped_sequence.dps_size_div2;
+	mma = _gapped_sequence.mma;
 
-	symbols = _gapped_sequence.symbols;
+	if (mma)
+		symbols = (symbol_t*)mma->allocate(symbols_size + 1);
+	else
+		symbols = new symbol_t[symbols_size + 1];
+
+	copy_n(_gapped_sequence.symbols, symbols_size, symbols);
+
 	n_gaps = _gapped_sequence.n_gaps;
 	dps = _gapped_sequence.dps;
 	uppercase = _gapped_sequence.uppercase;
@@ -185,11 +237,17 @@ CGappedSequence::CGappedSequence(CGappedSequence&& _gapped_sequence) noexcept
 	id = move(_gapped_sequence.id);
 
 	size = _gapped_sequence.size;
+	symbols_size = _gapped_sequence.symbols_size;
 	gapped_size = _gapped_sequence.gapped_size;
 	dps_size = _gapped_sequence.dps_size;
 	dps_size_div2 = _gapped_sequence.dps_size_div2;
 
-	symbols = move(_gapped_sequence.symbols);
+	symbols = _gapped_sequence.symbols;
+	mma = _gapped_sequence.mma;
+
+	_gapped_sequence.symbols = nullptr;
+	_gapped_sequence.mma = nullptr;
+
 	n_gaps = move(_gapped_sequence.n_gaps);
 	dps = move(_gapped_sequence.dps);
 	uppercase = move(_gapped_sequence.uppercase);
@@ -198,15 +256,26 @@ CGappedSequence::CGappedSequence(CGappedSequence&& _gapped_sequence) noexcept
 // *******************************************************************
 CGappedSequence::~CGappedSequence()
 {
+	if (mma)
+		mma->deallocate(symbols);
+	else
+		delete_arr_ptr(symbols);
 }
 
 // *******************************************************************
 bool CGappedSequence::operator==(const CGappedSequence& gs)
 {
-	return id == gs.id &&
+	bool r = 
+		id == gs.id &&
 		gapped_size == gs.gapped_size &&
-		symbols == gs.symbols &&
+		size == gs.size &&
+		symbols_size == gs.symbols_size &&
 		n_gaps == gs.n_gaps;
+
+	if (!r)
+		return false;
+
+	return equal(symbols, symbols + symbols_size, gs.symbols);
 }
 
 // *******************************************************************
@@ -252,7 +321,6 @@ void CGappedSequence::InitialiseDPS()
 	}
 
 	dps_size_div2 = dps_size / 2;
-//	dps.resize(dps_size_div2 + size + 1, 0);
 	dps.resize(dps_size_div2 + size / 2 + 1, 0);
 
 	RecalculateDPS();
@@ -268,7 +336,7 @@ string CGappedSequence::Decode()
 	// Starting gaps
 	s.append(n_gaps[0], '-');
 
-	for (int i = 1; i <= size; ++i)
+	for (int i = 1; i <= (int) size; ++i)
 	{
 		char symbol = mapping_table[symbols[i]];
 
@@ -291,22 +359,22 @@ void CGappedSequence::DecodeRaw(symbol_t* seq)
 	seq[0] = GUARD;
 
 	// Starting gaps
-	for (int j = 0; j < n_gaps[0]; ++j)
+	for (uint32_t j = 0; j < n_gaps[0]; ++j)
 		seq[seq_pos++] = GAP;
-	for (int i = 1; i <= size; ++i)
+	for (uint32_t i = 1; i <= (uint32_t) size; ++i)
 	{
 		seq[seq_pos++] = symbols[i];
 
-		for (int j = 0; j < n_gaps[i]; ++j)
+		for (uint32_t j = 0; j < n_gaps[i]; ++j)
 			seq[seq_pos++] = GAP;
 	}
 }
 
 // *******************************************************************
-void CGappedSequence::InsertGap(size_t pos)
+void CGappedSequence::InsertGap(uint32_t pos)
 {
 	// Look for the place to insert the gap
-	size_t x = 1;
+	uint32_t x = 1;
 
 	++dps[1];
 
@@ -352,10 +420,10 @@ void CGappedSequence::InsertGap(size_t pos)
 }
 
 // *******************************************************************
-void CGappedSequence::InsertGaps(size_t pos, uint32_t n)
+void CGappedSequence::InsertGaps(uint32_t pos, uint32_t n)
 {
 	// Look for the place to insert the gap
-	size_t x = 1;
+	uint32_t x = 1;
 
 	dps[1] += n;
 
@@ -428,7 +496,7 @@ void CGappedSequence::InsertGapsVector(const vector<pair<uint32_t, uint32_t>>& v
 // *******************************************************************
 uint32_t CGappedSequence::NoSymbols()
 {
-	return (uint32_t) symbols.size();
+	return (uint32_t) symbols_size;
 }
 
 // *******************************************************************
@@ -532,7 +600,11 @@ symbol_t CGappedSequence::GetSymbol(size_t pos)
 // *******************************************************************
 void CGappedSequence::Clear()
 {
-	clear_vector(symbols);
+	if (mma)
+		mma->deallocate(symbols);
+	else
+		delete_arr_ptr(symbols);
+
 	clear_vector(uppercase);
 	clear_vector(n_gaps);
 	clear_vector(dps);
@@ -542,4 +614,13 @@ void CGappedSequence::Clear()
 void CGappedSequence::ClearDPS()
 {
 	clear_vector(dps);
+}
+
+// *******************************************************************
+void CGappedSequence::InsertFront(symbol_t new_symbol)
+{
+	// It is assumed that there is a room in memory for extension by 1 symbol
+	copy_backward(symbols, symbols + symbols_size, symbols + symbols_size + 1);
+	++symbols_size;
+	*symbols = new_symbol;
 }

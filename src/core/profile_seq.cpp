@@ -27,8 +27,10 @@ void CProfile::AlignSeqSeq(CProfile* profile1, CProfile* profile2)
 	size_t prof2_width = profile2->width;
 
 	// These profiles contain single sequences so there are no gaps here
-	vector<symbol_t>& seq1 = const_cast<vector<symbol_t>&>(profile1->data[0]->symbols);
-	vector<symbol_t>& seq2 = const_cast<vector<symbol_t>&>(profile2->data[0]->symbols);
+//	vector<symbol_t>& seq1 = const_cast<vector<symbol_t>&>(profile1->data[0]->symbols);
+//	vector<symbol_t>& seq2 = const_cast<vector<symbol_t>&>(profile2->data[0]->symbols);
+	symbol_t* seq1 = const_cast<symbol_t*>(profile1->data[0]->symbols);
+	symbol_t* seq2 = const_cast<symbol_t*>(profile2->data[0]->symbols);
 
 	score_t gap_open = params->gap_open;
 	score_t gap_ext = params->gap_ext;
@@ -170,7 +172,8 @@ void CProfile::AlignSeqProf(CProfile* profile1, CProfile* profile2, vector<int>*
 	size_t prof2_card = profile2->data.size();
 
 	// The profile1 contains a single sequence so there are no gaps here
-	vector<symbol_t>& seq1 = const_cast<vector<symbol_t>&>(profile1->data[0]->symbols);
+//	vector<symbol_t>& seq1 = const_cast<vector<symbol_t>&>(profile1->data[0]->symbols);
+	symbol_t* seq1 = const_cast<symbol_t*>(profile1->data[0]->symbols);
 
 	score_t gap_open = params->gap_open;
 	score_t gap_ext = params->gap_ext;

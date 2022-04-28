@@ -21,47 +21,323 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <random>
 #include <thread>
 #include <utility>
+#include <limits>
 
 
 //#define ATOMIC_WAIT
-#define USE_HISTOGRAMS
 
 //#define OLD_ATOMIC_FLAG
-
-//#define USE_VERTEX_HEIGHT
 
 #include <chrono>
 
 using namespace std;
 
 #if 1
+
 //#pragma GCC optimize("align-loops=16")
 // *******************************************************************
 template <Distance _distance>
-void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& tree)
+void MSTPrim<_distance>::run_view(std::vector<CSequence>& sequences, tree_structure& tree)
 {
 	int n_seq = (int)sequences.size();
 	int c_seq = 0;
 
-	//auto t1 = chrono::high_resolution_clock::now();
-	//auto sc1 = chrono::system_clock::now();
+	CSequence ref_seq ("", "");		// Object just to simplify implementation of variants of CLCSBP
+
+	prepare_sequences_view(sequences);
 
 #ifdef MANY_CAND
-	sim_value_t s0;
+	dist_value_t s0;
 	for (auto& x : s0)
-		x = -1.0;
+		x = std::numeric_limits<dist_value_t>::max();
 
-	v_similarities.resize(n_seq, sim_t{ s0, 0 });
+	v_distances.resize(n_seq, dist_t{ s0, 0 });
 #else
-	v_similarities.resize(n_seq, sim_t{ -1.0, 0 });
+	v_distances.resize(n_seq, dist_t{ std::numeric_limits<dist_value_t>::max(), 0 });
 #endif
 
-#ifdef USE_VERTEX_HEIGHT
-	vector<uint32_t> v_vertex_height(sequences.size(), 0u);
+	vector<mst_edge_t> mst_edges;
+	vector<int> v_prim_orders(n_seq, n_seq);
+
+	vector<int> candidates(n_threads, -1);
+	atomic<int> n_thr_ready{ 0 };
+
+	vector<thread> workers;
+
+	MSTPartitioner mst_partitioner(n_threads, n_threads * 16, 4, n_threads * 2);
+
+	atomic<uint32_t> part_id{ 0 };
+	int cur_seq_id = 0;
+	//	int cur_seq_id = n_seq-1;
+	int cur_prim_order = 0;
+	int cur_no_parts = 0;
+
+	v_prim_orders[cur_seq_id] = cur_prim_order++;
+
+	mst_partitioner.InitPartition(n_seq);
+
+	mst_partitioner.Remove(cur_seq_id);
+	prepare_bit_masks_for_sequence(sequences[cur_seq_id], ref_seq.p_bit_masks, ref_seq.p_bv_len);		// the only allocation of ref_bm is here
+	ref_seq.length = sequences[cur_seq_id].length;
+	ref_seq.sequence_no = sequences[cur_seq_id].sequence_no;
+
+	workers.reserve(n_threads);
+
+	atomic<int> a_cnt0{ (int)n_threads - 1 };
+#ifndef OLD_ATOMIC_FLAG
+	atomic_flag b_flag0;
+#else
+	atomic<bool> b_flag0;
+#endif
+	// barrier bar_flag0(n_threads);
+
+	cur_no_parts = mst_partitioner.GetNoParts();
+
+#ifndef OLD_ATOMIC_FLAG
+	b_flag0.test_and_set();
+#else
+	b_flag0.store(true);
 #endif
 
-	for (auto& seq : sequences)
-		seq.PrepareHistogram();
+	for (int i = 0; i < n_threads; ++i)
+	{
+		workers.push_back(thread([&, i] {
+			auto id_worker = i;
+			CLCSBP lcsbp(instruction_set);
+			Transform<double, _distance> transform;
+
+			auto sv = sequence_views;
+			auto v_distances_data = v_distances.data();
+
+			vector<dist_value_t> part_dist;
+
+			int& candidate_worker = candidates[id_worker];
+
+			bool flag_value = true;
+
+			vector<int> ids_sub_range;
+
+			int seq_id = cur_seq_id;
+			int no_parts = cur_no_parts;
+
+			while (true)
+			{
+				int loc_part_id = part_id++;
+
+				if (loc_part_id >= no_parts)
+				{
+					if (seq_id < 0)
+						break;
+
+					if (!a_cnt0.fetch_sub(1, memory_order_relaxed))
+					{
+						a_cnt0 = n_threads - 1;
+
+						// All threads are over, so we can pick a new sequence
+
+						int best_candidate_id = -1;
+						for (int j = 0; j < n_threads; ++j)
+							if (best_candidate_id == -1)
+								best_candidate_id = candidates[j];
+							else if (candidates[j] != -1)
+							{
+								if (v_distances_data[candidates[j]] < v_distances_data[best_candidate_id])
+									best_candidate_id = candidates[j];
+							}
+
+						fill_n(candidates.begin(), n_threads, -1);
+
+						auto pids = uint64_to_id(~v_distances[best_candidate_id].second);
+
+						mst_edges.emplace_back(pids.first, pids.second, cur_prim_order, -v_distances[best_candidate_id].first);	// We use MaxRangeQueries so change here to negative value
+
+						if (v_prim_orders[pids.first] == n_seq)
+							v_prim_orders[pids.first] = cur_prim_order++;
+						else
+							v_prim_orders[pids.second] = cur_prim_order++;
+
+						if (!mst_partitioner.IsAlmostEmpty())
+						{
+							cur_seq_id = best_candidate_id;
+							part_id = 0;
+
+							mst_partitioner.Remove(cur_seq_id);
+
+							cur_no_parts = mst_partitioner.GetNoParts();
+
+							prepare_bit_masks_for_sequence(sequences[cur_seq_id], ref_seq.p_bit_masks, ref_seq.p_bv_len);
+							ref_seq.length = sequences[cur_seq_id].length;
+							ref_seq.sequence_no = sequences[cur_seq_id].sequence_no;
+
+							if (++c_seq % (100) == 0)
+							{
+								LOG_DEBUG << "Computing guide tree - " << fixed << setprecision(1)
+									<< 100.0 * ((double)c_seq * (2 * n_seq - c_seq + 1) / 2) / ((double)n_seq * (n_seq + 1) / 2) << "%    (" << c_seq << " of " << n_seq << ")  \r";
+							}
+						}
+						else
+						{
+							++c_seq;
+							LOG_DEBUG << "Computing guide tree - " << fixed << setprecision(1)
+								<< 100.0 * ((double)c_seq * (2 * n_seq - c_seq + 1) / 2) / ((double)n_seq * (n_seq + 1) / 2) << "\%    (" << c_seq << " of " << n_seq << ")  \r";
+
+							cur_seq_id = -1;
+							part_id = no_parts;
+						}
+
+#ifndef OLD_ATOMIC_FLAG
+						if (flag_value)
+							b_flag0.clear(memory_order_relaxed);
+						else
+							b_flag0.test_and_set(memory_order_relaxed);
+#else
+						if (flag_value)
+							b_flag0.store(false, memory_order_relaxed);
+						else
+							b_flag0.store(true, memory_order_relaxed);
+						//						b_flag0.store(!flag_value, memory_order_relaxed);
+#endif
+#ifdef ATOMIC_WAIT
+						b_flag0.notify_all();
+#endif
+					}
+
+					//last_size = -1;
+
+#ifdef ATOMIC_WAIT
+					b_flag0.wait(flag_value, memory_order_relaxed);
+#else
+#ifndef OLD_ATOMIC_FLAG
+					while (b_flag0.test(memory_order_relaxed) == flag_value)
+#else
+					while (b_flag0.load(memory_order_relaxed) == flag_value)
+#endif
+						;
+#endif
+					flag_value = !flag_value;
+
+					seq_id = cur_seq_id;
+					no_parts = cur_no_parts;
+
+					continue;
+				}
+
+				auto ids_range = mst_partitioner.GetPart(loc_part_id);
+
+				if (ids_range.first == ids_range.second)
+					continue;
+
+				ids_sub_range.assign(ids_range.first, ids_range.second);
+
+				if (!ids_sub_range.empty())
+				{
+					part_dist.resize(distance(ids_sub_range.begin(), ids_sub_range.end()));
+
+					calculateDistanceRangeSV<CSequence, CSequenceView, dist_value_t, vector<int>::iterator, decltype(transform)>(
+						transform,
+						ref_seq,
+						sv,
+						make_pair(ids_sub_range.begin(), ids_sub_range.end()),
+						part_dist.data(),
+						lcsbp
+						);
+
+					auto p_part_dist = part_dist.begin();
+					for (auto p_id = ids_sub_range.begin(); p_id != ids_sub_range.end(); ++p_id, ++p_part_dist)
+					{
+#ifdef MANY_CAND
+						if (*p_part_dist <= v_distances_data[*p_id].first.back())
+						{
+							if (*p_part_dist < v_distances_data[*p_id].first.front() ||
+								(*p_part_dist == v_distances_data[*p_id].first.front() && ids_to_uint64(seq_id, *p_id) > v_distances_data[*p_id].second))
+							{
+								//								copy_backward(v_distances_data[*p_id].first.begin(), v_distances_data[*p_id].first.end() - 1, v_distances_data[*p_id].first.end() - 1);
+								copy_backward(v_distances_data[*p_id].first.begin(), v_distances_data[*p_id].first.end() - 1, v_distances_data[*p_id].first.end());
+								v_distances_data[*p_id].first.front() = *p_part_dist;
+								v_distances_data[*p_id].second = ids_to_uint64(seq_id, *p_id);
+							}
+							else
+							{
+								v_distances_data[*p_id].first.back() = *p_part_dist;
+								for (int i = N_CAND - 1; i > 0; --i)
+									if (v_distances_data[*p_id].first[i] < v_distances_data[*p_id].first[i - 1])
+										swap(v_distances_data[*p_id].first[i], v_distances_data[*p_id].first[i - 1]);
+									else
+										break;
+							}
+						}
+
+#else
+						if (*p_part_dist <= v_distances_data[*p_id].first)
+						{
+							//							dist_t s{ *p_part_dist, ~ids_to_uint64(seq_id, *p_id) };
+							dist_t s{ *p_part_dist, ~ids_to_uint64(seq_id, *p_id) };
+
+							if (s < v_distances_data[*p_id])
+								v_distances_data[*p_id] = s;
+						}
+#endif
+					}
+				}
+
+				int best_id = *(ids_range.first);
+				dist_t best_dist = v_distances_data[best_id];
+
+				for (auto p_id = ids_range.first + 1; p_id != ids_range.second; ++p_id)
+					if (v_distances_data[*p_id] < best_dist)
+					{
+						best_id = *p_id;
+						best_dist = v_distances_data[best_id];
+					}
+
+				if (candidate_worker == -1 || best_dist < v_distances_data[candidate_worker])
+					candidate_worker = best_id;
+			}
+			}));
+	}
+
+	for (auto& t : workers)
+		t.join();
+	workers.clear();
+
+	mst_to_dendogram(mst_edges, v_prim_orders, tree);
+}
+
+// *******************************************************************
+template <Distance _distance>
+void MSTPrim<_distance>::prepare_bit_masks_for_sequence(CSequence& seq, bit_vec_t*& bm, uint32_t &p_bv_len)
+{
+	p_bv_len = (uint32_t)((seq.data_size + bv_size - 1) / bv_size);
+
+	if (bm == nullptr)
+		bm = new bit_vec_t[p_bv_len * NO_SYMBOLS];
+
+	fill_n(bm, p_bv_len * NO_SYMBOLS, (bit_vec_t)0);
+
+	for (size_t i = 0; i < seq.length; ++i)
+		if (seq.data[i] >= 0 && seq.data[i] < NO_VALID_AMINOACIDS)
+			bm[seq.data[i] * p_bv_len + i / bv_size] |= ((bit_vec_t)1) << (i % bv_size);
+}
+
+// *******************************************************************
+template <Distance _distance>
+void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& tree)
+{
+	run_view(sequences, tree);
+	return;
+
+	int n_seq = (int)sequences.size();
+	int c_seq = 0;
+
+#ifdef MANY_CAND
+	dist_value_t s0;
+	for (auto& x : s0)
+		x = std::numeric_limits<dist_value_t>::max();
+
+	v_distances.resize(n_seq, dist_t{ s0, 0 });
+#else
+	v_distances.resize(n_seq, dist_t{ std::numeric_limits<dist_value_t>::max(), 0});
+#endif
 
 	vector<mst_edge_t> mst_edges;
 	vector<int> v_prim_orders(n_seq, n_seq);
@@ -81,8 +357,6 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 	int cur_prim_order = 0;
 	int cur_no_parts = 0;
 
-	map<pair<int, int>, double> m_sim;
-
 	v_prim_orders[cur_seq_id] = cur_prim_order++;
 
 	mst_partitioner.InitPartition(n_seq);
@@ -100,9 +374,6 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 #endif
 	// barrier bar_flag0(n_threads);
 
-	atomic<uint64_t> n_filtered_pos{ 0 };
-	atomic<uint64_t> n_filtered_neg{ 0 };
-
 	cur_no_parts = mst_partitioner.GetNoParts();
 
 #ifndef OLD_ATOMIC_FLAG
@@ -111,25 +382,23 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 	b_flag0.store(true);
 #endif
 
-	for (uint32_t i = 0; i < n_threads; ++i)
+	for (int i = 0; i < n_threads; ++i)
 	{
 		workers.push_back(thread([&, i] {
 			auto id_worker = i;
 			CLCSBP lcsbp(instruction_set);
-			DistanceToSimilarity<double, _distance> transform;
+//			DistanceToSimilarity<double, _distance> transform;
+			Transform<double, _distance> transform;
 		
 			auto sequences_data = sequences.data();
-			auto v_similarities_data = v_similarities.data();
+			auto v_distances_data = v_distances.data();
 			CSequence* cur_sequence_ptr = nullptr;
 
-			vector<double> part_sim;
+			vector<dist_value_t> part_dist;
 
 			int& candidate_worker = candidates[id_worker];
 
 			//int last_size = -1;
-
-			uint64_t loc_n_filtered_pos = 0;
-			uint64_t loc_n_filtered_neg = 0;
 
 			bool flag_value = true;
 
@@ -162,25 +431,20 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 								best_candidate_id = candidates[j];
 							else if (candidates[j] != -1)
 							{
-								if (v_similarities_data[candidates[j]] > v_similarities_data[best_candidate_id])
+								if (v_distances_data[candidates[j]] < v_distances_data[best_candidate_id])
 									best_candidate_id = candidates[j];
 							}
 
 						fill_n(candidates.begin(), n_threads, -1);
 
-						auto pids = uint64_to_id(v_similarities[best_candidate_id].second);
+						auto pids = uint64_to_id(~v_distances[best_candidate_id].second);
 
-						mst_edges.emplace_back(pids.first, pids.second, cur_prim_order, v_similarities[best_candidate_id].first);
+						mst_edges.emplace_back(pids.first, pids.second, cur_prim_order, -v_distances[best_candidate_id].first);	// We use MaxRangeQueries so change here to negative value
 
 						if (v_prim_orders[pids.first] == n_seq)
 							v_prim_orders[pids.first] = cur_prim_order++;
 						else
-						{
 							v_prim_orders[pids.second] = cur_prim_order++;
-#ifdef USE_VERTEX_HEIGHT
-							v_vertex_height[pids.second] = v_vertex_height[pids.first] + 1;
-#endif
-						}
 
 						if (!mst_partitioner.IsAlmostEmpty())
 						{
@@ -219,7 +483,7 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 							b_flag0.store(false, memory_order_relaxed);
 						else
 							b_flag0.store(true, memory_order_relaxed);
-//						b_flag0.store(!flag_value, memory_order_relaxed);
+						//						b_flag0.store(!flag_value, memory_order_relaxed);
 #endif
 #ifdef ATOMIC_WAIT
 						b_flag0.notify_all();
@@ -253,108 +517,78 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 				if (ids_range.first == ids_range.second)
 					continue;
 
-				ids_sub_range.clear();
-				for (auto p = ids_range.first; p != ids_range.second; ++p)
-				{
-#ifdef USE_HISTOGRAMS
-#ifdef MANY_CAND
-					if (est_from_hist(transform, sequences_data[seq_id], sequences_data[*p]) >= v_similarities_data[*p].first.back())
-#else
-					if (est_from_hist(transform, sequences_data[seq_id], sequences_data[*p]) >= v_similarities_data[*p].first)
-#endif
-#endif
-					{
-						ids_sub_range.emplace_back(*p);
-						loc_n_filtered_pos++;
-					}
-#ifdef USE_HISTOGRAMS
-					else
-						loc_n_filtered_neg++;
-#endif
-				}
+				ids_sub_range.assign(ids_range.first, ids_range.second);
 
 				if (!ids_sub_range.empty())
 				{
-					part_sim.resize(distance(ids_sub_range.begin(), ids_sub_range.end()));
+					part_dist.resize(distance(ids_sub_range.begin(), ids_sub_range.end()));
 
-					calculateDistanceRange<CSequence, double, vector<int>::iterator, decltype(transform)>(
+					calculateDistanceRange<CSequence, dist_value_t, vector<int>::iterator, decltype(transform)>(
 						transform,
 						*cur_sequence_ptr,
 						sequences_data,
 						make_pair(ids_sub_range.begin(), ids_sub_range.end()),
-						part_sim.data(),
+						part_dist.data(),
 						lcsbp
 						);
 
-					auto p_part_sim = part_sim.begin();
-					for (auto p_id = ids_sub_range.begin(); p_id != ids_sub_range.end(); ++p_id, ++p_part_sim)
+					auto p_part_dist = part_dist.begin();
+					for (auto p_id = ids_sub_range.begin(); p_id != ids_sub_range.end(); ++p_id, ++p_part_dist)
 					{
 #ifdef MANY_CAND
-						if (*p_part_sim >= v_similarities_data[*p_id].first.back())
+						if (*p_part_dist <= v_distances_data[*p_id].first.back())
 						{
-							if (*p_part_sim > v_similarities_data[*p_id].first.front() ||
-								(*p_part_sim == v_similarities_data[*p_id].first.front() && ids_to_uint64(seq_id, *p_id) > v_similarities_data[*p_id].second))
+							if (*p_part_dist < v_distances_data[*p_id].first.front() ||
+								(*p_part_dist == v_distances_data[*p_id].first.front() && ids_to_uint64(seq_id, *p_id) > v_distances_data[*p_id].second))
 							{
-//								copy_backward(v_similarities_data[*p_id].first.begin(), v_similarities_data[*p_id].first.end() - 1, v_similarities_data[*p_id].first.end() - 1);
-								copy_backward(v_similarities_data[*p_id].first.begin(), v_similarities_data[*p_id].first.end() - 1, v_similarities_data[*p_id].first.end());
-								v_similarities_data[*p_id].first.front() = *p_part_sim;
-								v_similarities_data[*p_id].second = ids_to_uint64(seq_id, *p_id);
+//								copy_backward(v_distances_data[*p_id].first.begin(), v_distances_data[*p_id].first.end() - 1, v_distances_data[*p_id].first.end() - 1);
+								copy_backward(v_distances_data[*p_id].first.begin(), v_distances_data[*p_id].first.end() - 1, v_distances_data[*p_id].first.end());
+								v_distances_data[*p_id].first.front() = *p_part_dist;
+								v_distances_data[*p_id].second = ids_to_uint64(seq_id, *p_id);
 							}
 							else
 							{
-								v_similarities_data[*p_id].first.back() = *p_part_sim;
+								v_distances_data[*p_id].first.back() = *p_part_dist;
 								for (int i = N_CAND - 1; i > 0; --i)
-									if (v_similarities_data[*p_id].first[i] > v_similarities_data[*p_id].first[i - 1])
-										swap(v_similarities_data[*p_id].first[i], v_similarities_data[*p_id].first[i - 1]);
+									if (v_distances_data[*p_id].first[i] < v_distances_data[*p_id].first[i - 1])
+										swap(v_distances_data[*p_id].first[i], v_distances_data[*p_id].first[i - 1]);
 									else
 										break;
 							}
 						}
 
 #else
-						if (*p_part_sim >= v_similarities_data[*p_id].first)
+						if (*p_part_dist <= v_distances_data[*p_id].first)
 						{
-							sim_t s{ *p_part_sim, ids_to_uint64(seq_id, *p_id) };
+							dist_t s{ *p_part_dist, ~ids_to_uint64(seq_id, *p_id) };	// ~ here just for backward compatibility (same order of pairs in case of draws)
 
-							if (s > v_similarities_data[*p_id])
-								v_similarities_data[*p_id] = s;
+							if (s < v_distances_data[*p_id])
+								v_distances_data[*p_id] = s;
 						}
 #endif
 					}
 				}
 
 				int best_id = *(ids_range.first);
-				sim_t best_sim = v_similarities_data[best_id];
+				dist_t best_dist = v_distances_data[best_id];
 
 				for (auto p_id = ids_range.first + 1; p_id != ids_range.second; ++p_id)
-					if (v_similarities_data[*p_id] > best_sim)
+					if (v_distances_data[*p_id] < best_dist)
 					{
 						best_id = *p_id;
-						best_sim = v_similarities_data[best_id];
+						best_dist = v_distances_data[best_id];
 					}
 
-				if (candidate_worker == -1 || best_sim > v_similarities_data[candidate_worker])
+				if (candidate_worker == -1 || best_dist < v_distances_data[candidate_worker])
 					candidate_worker = best_id;
 			}
-
-			n_filtered_pos += loc_n_filtered_pos;
-			n_filtered_neg += loc_n_filtered_neg;
 			}));
 	}
-
-	//auto c1 = chrono::high_resolution_clock::now();
 
 	for (auto& t : workers)
 		t.join();
 	workers.clear();
 
-	//auto t2 = chrono::high_resolution_clock::now();
-	//auto dur = chrono::duration_cast<chrono::duration<double>>(t2 - t1);
-
-	LOG_VERBOSE 
-		<< "No. filtered pos.   : " << (uint64_t)n_filtered_pos << endl
-		<< "No. filtered neg.   : " << (uint64_t)n_filtered_neg << endl
-		<< "Fract. filtered neg.: " << (double)n_filtered_neg / (n_filtered_pos + n_filtered_neg) << endl;
 
 	mst_to_dendogram(mst_edges, v_prim_orders, tree);
 }
@@ -367,12 +601,12 @@ void MSTPrim<_distance>::mst_to_dendogram(vector<mst_edge_t>& mst_edges, vector<
 	vector<int> v_rev_prim_orders(v_prim_orders.size());
 
 #ifdef MANY_CAND
-	mst_edges.emplace(mst_edges.begin(), 0, 0, 0, sim_value_empty);
+	mst_edges.emplace(mst_edges.begin(), 0, 0, 0, dist_value_empty);
 #else
 	mst_edges.emplace(mst_edges.begin(), 0, 0, 0, 0);
 #endif
 
-	for (int i = 0; i < v_prim_orders.size(); ++i)
+	for (int i = 0; i < (int) v_prim_orders.size(); ++i)
 		v_rev_prim_orders[v_prim_orders[i]] = i;
 
 	int n_seq = (int)mst_edges.size();
@@ -417,86 +651,24 @@ void MSTPrim<_distance>::mst_to_dendogram(vector<mst_edge_t>& mst_edges, vector<
 	}
 }
 
-#if 0
 // *******************************************************************
-// CSingleLinkageQueue
-// *******************************************************************
-//CMSTPrimQueue::CMSTPrimQueue(vector<CSequence>* _sequences, uint32_t _n_rows, uint32_t _max_buffered_rows)
-CMSTPrimQueue::CMSTPrimQueue(int _n_threads)
+template <Distance _distance>
+void MSTPrim<_distance>::prepare_sequences_view(std::vector<CSequence>& sequences)
 {
-	n_threads = _n_threads;
-	eoq_flag = false;
+	if (raw_sequence_views)
+		free(raw_sequence_views);
+
+	size_t size_sequence_views = sequences.size() * sizeof(CSequenceView);
+	size_t raw_size_sequence_views = size_sequence_views + 64;
+	auto p = raw_sequence_views = malloc(raw_size_sequence_views);
+	sequence_views = (CSequenceView*) my_align(64, size_sequence_views, p, raw_size_sequence_views);
+
+	for (size_t i = 0; i < sequences.size(); ++i)
+	{
+		sequence_views[i].length = sequences[i].length;
+		sequence_views[i].data = sequences[i].data;
+	}
 }
-
-// *******************************************************************
-CMSTPrimQueue::~CMSTPrimQueue()
-{
-}
-
-// *******************************************************************
-bool CMSTPrimQueue::PopTask(int& seq_id, int &from, int &to)
-{
-	unique_lock<mutex> lck(mtx_tasks);
-	cv_tasks.wait(lck, [this] {return !q_tasks.empty() || this->eoq_flag; });
-
-	if (eoq_flag)
-		return false;	// End of data in the profiles queue
-
-	seq_id = get<0>(q_tasks.top());
-	from   = get<1>(q_tasks.top());
-	to     = get<2>(q_tasks.top());
-
-	q_tasks.pop();
-
-#ifdef PRODUCE_LOG
-	cerr << "GetTask : " << row_id << "\n";
-	cerr << available_buffers.size() << "  " << lowest_uncomputed_row << "\n";
-#endif
-
-	return true;
-}
-
-// *******************************************************************
-void CMSTPrimQueue::CMSTPrimQueue::PushTasks(int seq_id, int n_seq, int part_size)
-{
-	unique_lock<mutex> lck(mtx_tasks);
-
-//	for(int i = 0; i < n_seq; i += part_size)
-//		q_tasks.emplace(seq_id, i, (i + part_size < n_seq) ? i + part_size : n_seq);
-	
-	for(int i = n_seq; i >= 0; i -= part_size)
-		q_tasks.emplace(seq_id, (i - part_size < 0) ? 0 : i - part_size, i);
-
-	n_parts_to_process = (int) q_tasks.size();
-
-	cv_tasks.notify_all();
-}
-
-// *******************************************************************
-void CMSTPrimQueue::MarkTaskReady()
-{
-	unique_lock<mutex> lck(mtx_tasks);
-
-	if (--n_parts_to_process == 0)
-		cv_ready.notify_one();
-}
-
-// *******************************************************************
-void CMSTPrimQueue::AllTasksReady()
-{
-	unique_lock<mutex> lck(mtx_tasks);
-	cv_ready.wait(lck, [this] {return n_parts_to_process == 0; });
-}
-
-// *******************************************************************
-void CMSTPrimQueue::SetEoq()
-{
-	unique_lock<mutex> lck(mtx_tasks);
-
-	eoq_flag = true;
-	cv_tasks.notify_all();
-}
-#endif
 
 // *******************************************************************
 // MSTPartitioner
@@ -517,7 +689,7 @@ void MSTPartitioner::InitPartition(int n_elements)
 
 		for (int i = 0; i < n_elements; ++i)
 		{
-			if (vd_parts.back().data.size() == cur_part_size)
+			if ((int) vd_parts.back().data.size() == cur_part_size)
 				vd_parts.emplace_back(vector<int>(), 0u, 0u);
 			vd_parts.back().data.emplace_back(i);
 			++vd_parts.back().i_end;
@@ -534,7 +706,7 @@ void MSTPartitioner::InitPartition(int n_elements)
 
 		for (int i = 0; i < n_elements; ++i)
 		{
-			if (vd_parts.back().data.size() == cur_part_size)
+			if ((int) vd_parts.back().data.size() == cur_part_size)
 			{
 				vd_parts.emplace_back(vector<int>(), 0u, 0u);
 
@@ -593,19 +765,21 @@ void MSTPartitioner::Remove(int id)
 
 		uint32_t s1 = (p_size / 2u) & ~0x3;
 
-		auto q = next(p);
-		vd_parts.emplace(q, part_elem_t());
-		q->data.assign(p->data.begin() + p->i_begin + s1, p->data.end());
-		q->i_end = (uint32_t) q->data.size();
-		p->i_end = (uint32_t) (p->i_begin + s1);
+		part_elem_t new_part;
+		new_part.data.assign(p->data.begin() + p->i_begin + s1, p->data.end());
+		new_part.i_begin = 0;
+		new_part.i_end = new_part.data.size();
+
+		p->i_end = (uint32_t)(p->i_begin + s1);
 		p->data.resize(p->i_end);
+		vd_parts.emplace(next(p), new_part);
 	}
 }
 
 // *******************************************************************
 pair<MSTPartitioner::iterator, MSTPartitioner::iterator> MSTPartitioner::GetPart(int part_id)
 {
-	if (part_id >= vd_parts.size())
+	if (part_id >= (int) vd_parts.size())
 		return make_pair(vd_parts.front().data.begin(), vd_parts.front().data.begin());
 
 	int r_part_id = (int) vd_parts.size() - 1 - part_id;		// Parts are counted from the last
@@ -634,13 +808,10 @@ bool MSTPartitioner::IsAlmostEmpty()
 	return vd_parts.front().i_begin + 1 >= vd_parts.front().i_end;
 }
 
-
 // *******************************************************************
 // Explicit template specializations for specified distance measures
 
 template class MSTPrim<Distance::indel_div_lcs>;
 template class MSTPrim<Distance::sqrt_indel_div_lcs>;
-
-
 
 // EOF

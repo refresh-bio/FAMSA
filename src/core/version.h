@@ -9,14 +9,18 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"1.13.0"
-#define FAMSA_DATE		"2022-04-20"
+#define FAMSA_VER		"1.15.0"
+#define FAMSA_DATE		"2022-04-28"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+1.15.0 (2022-04-28):
+1.14.0 (2022-04-22):
+ - Highly optimized MST Prim implementation. 
 
 1.13.0 (2022-04-20):
  - Added support of NEON SIMD extensions for ARM architectures. 

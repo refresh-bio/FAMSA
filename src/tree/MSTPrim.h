@@ -20,6 +20,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <queue>
 #include <tuple>
 #include <list>
+#include <limits>
 #include <functional>
 #include "math.h"
 
@@ -40,8 +41,16 @@ private:
 		vector<int> data; 
 		uint32_t i_begin;
 		uint32_t i_end;
+
 		part_elem_t() : i_begin(0), i_end(0) {};
+
 		part_elem_t(const vector<int> &_data, uint32_t _i_begin, uint32_t _i_end) : data(_data), i_begin(_i_begin), i_end(_i_end) {};
+
+		part_elem_t(const part_elem_t&) = default;
+		part_elem_t(part_elem_t&&) = default;
+
+		part_elem_t& operator=(const part_elem_t& x) noexcept = delete;
+		part_elem_t& operator=(part_elem_t&& x) noexcept = default;
 	};
 	vector<part_elem_t> vd_parts;
 
@@ -108,16 +117,18 @@ class MSTPrim : public AbstractTreeGenerator {
 #ifdef MANY_CAND
 	static const int N_CAND = MANY_CAND;
 
-	using sim_value_t = array<double, N_CAND>;
+	using dist_value_t = array<double, N_CAND>;
 #else
-	using sim_value_t = double;
+	using dist_value_t = double;
+//	using dist_value_t = uint64_t;
 #endif
 
-	using sim_t = pair<sim_value_t, uint64_t>;
-	vector<sim_t> v_similarities;
+	using dist_t = pair<dist_value_t, uint64_t>;
+	vector<dist_t> v_distances;
 	vector<bool> v_processed;
 
-	sim_value_t sim_value_empty;
+	void* raw_sequence_views;
+	CSequenceView* sequence_views;
 
 	static uint64_t ids_to_uint64(int id1, int id2)
 	{
@@ -143,30 +154,24 @@ class MSTPrim : public AbstractTreeGenerator {
 		int seq_from;
 		int seq_to;
 		int prim_order;
-		sim_value_t sim;
+		dist_value_t dist;
 
 #ifdef MANY_CAND
-		mst_edge_t(int _seq_from, int _seq_to, int _prim_order, sim_value_t _sim) : seq_from(_seq_from), seq_to(_seq_to), prim_order(_prim_order), sim(_sim) {}
+		mst_edge_t(int _seq_from, int _seq_to, int _prim_order, dist_value_t _dist) : seq_from(_seq_from), seq_to(_seq_to), prim_order(_prim_order), dist(_dist) {}
 		mst_edge_t() {
 			seq_from = -1;
 			seq_to = -1;
 			prim_order = -1;
-			fill(sim.begin(), sim.end(), 0.0);
+			fill(sim.begin(), sim.end(), numeric_limits<double>::max());
 		}
 #else
-		mst_edge_t(int _seq_from = -1, int _seq_to = -1, int _prim_order = -1, sim_value_t _sim = 0.0) : seq_from(_seq_from), seq_to(_seq_to), prim_order(_prim_order), sim(_sim) {}
+		mst_edge_t(int _seq_from = -1, int _seq_to = -1, int _prim_order = -1, dist_value_t _dist = 0) : seq_from(_seq_from), seq_to(_seq_to), prim_order(_prim_order), dist(_dist) {}
 #endif
 
 		bool is_less(const mst_edge_t& x, const mst_edge_t& y)
 		{
-			if (x.sim != y.sim)
-				return x.sim > y.sim;
-
-/*			auto dif_x = abs(x.seq_from - x.seq_to);
-			auto dif_y = abs(y.seq_from - y.seq_to);
-
-			if (dif_x != dif_y)
-				return dif_x < dif_y;*/
+			if (x.dist != y.dist)
+				return x.dist > y.dist;
 
 			return ids_to_uint64(x.seq_from, x.seq_to) > ids_to_uint64(y.seq_from, y.seq_to);
 		}
@@ -197,125 +202,29 @@ class MSTPrim : public AbstractTreeGenerator {
 	};
 
 	void mst_to_dendogram(vector<mst_edge_t>& mst_edges, vector<int>& v_prim_orders, tree_structure& tree);
-
-//#define EXTENDED_EST_ESTIMATION
-
-	template<typename Transform>
-	inline double est_from_hist(Transform &transform, const CSequence& s1, const CSequence& s2)
-	{
-		int est_lcs = 0;
-
-		auto h1 = s1.hist;
-		auto h2 = s2.hist;
-
-		for (int i = 0; i < NO_AMINOACIDS; ++i, ++h1, ++h2)
-			est_lcs += min(*h1, *h2);
-
-#ifdef EXTENDED_EST_ESTIMATION
-		int no_min1 = 0;
-		int no_min2 = 0;
-
-		uint32_t mask = 0;
-
-		h1 = s1.hist;
-		h2 = s2.hist;
-		int i1, i2;
-		uint32_t x;
-
-		for (i1 = i2 = 0; i1 < 8 && i2 < 8;)
-		{
-			for (; i1 < 8 && no_min1 == no_min2; ++i1)
-			{
-				symbol_t c1 = s1.data[i1];
-
-				x = 1u << c1;
-				if ((mask | x) == mask)
-					goto stop_label1;
-				mask |= x;
-
-				if (h1[c1] <= h2[c1])
-					no_min1++;
-			}
-
-			for (; i2 < 8 && no_min1 != no_min2; ++i2)
-			{
-				symbol_t c2 = s2.data[i2];
-
-				x = 1u << c2;
-				if ((mask | x) == mask)
-					goto stop_label1;
-				mask |= x;
-
-				if (h1[c2] >= h2[c2])
-					no_min2++;
-			}
-		}
-
-	stop_label1:
-		est_lcs -= min(no_min1, no_min2);
-
-		no_min1 = no_min2 = 0;
-		mask = 0u;
-
-		for (i1 = i2 = 0; i1 < 8 && i2 < 8;)
-		{
-			for (; i1 < 8 && no_min1 == no_min2; ++i1)
-			{
-				symbol_t c1 = s1.data[s1.length - i1 - 1];
-
-				x = 1u << c1;
-				if ((mask | x) == mask)
-					goto stop_label2;
-				mask |= x;
-
-				if (h1[c1] <= h2[c1])
-					no_min1++;
-			}
-
-			for (; i2 < 8 && no_min1 != no_min2; ++i2)
-			{
-				symbol_t c2 = s2.data[s2.length - i2 - 1];
-
-				x = 1u << c2;
-				if ((mask | x) == mask)
-					goto stop_label2;
-				mask |= x;
-
-				if (h1[c2] >= h2[c2])
-					no_min2++;
-			}
-		}
-
-	stop_label2:
-		est_lcs -= min(no_min1, no_min2);
-#endif
-
-/*		if (min(no_min1, no_min2))
-			cerr << "no_min1: " + to_string(no_min1) + "  no_min2: " + to_string(no_min2) + "\n";*/
-
-		return transform(est_lcs, s1.length, s2.length);
-
-//		est_lcs = min(s1.length, s2.length);
-
-//		est_lcs = lcsbp.EstimateLCS(s1, s2);
-
-/*		int est_indel = s1.length + s2.length - 2 * est_lcs;
-
-		if (est_indel == 0)
-			return 1000.0 * est_lcs;
-
-		return (double)est_lcs / est_indel;*/
-	}
+	void prepare_sequences_view(std::vector<CSequence>& sequences);
+	void prepare_bit_masks_for_sequence(CSequence& seq, bit_vec_t*& bm, uint32_t& p_bv_len);
 
 public:
 	MSTPrim(int n_threads, instruction_set_t instruction_set) : AbstractTreeGenerator(n_threads, instruction_set) {
 #ifdef MANY_CAND
-		fill(sim_value_empty.begin(), sim_value_empty.end(), 0.0);
+//		fill(sim_value_empty.begin(), sim_value_empty.end(), 0.0);
 #else
-		sim_value_empty = 0.0;
+//		sim_value_empty = 0.0;
 #endif
+
+		sequence_views = nullptr;
+		raw_sequence_views = nullptr;
+	}
+
+	~MSTPrim()
+	{
+		if (raw_sequence_views)
+			free(raw_sequence_views);
 	}
 
 	void run(std::vector<CSequence>& sequences, tree_structure& tree) override;
+
+	void run_view(std::vector<CSequence>& sequences, tree_structure& tree);
 };
 

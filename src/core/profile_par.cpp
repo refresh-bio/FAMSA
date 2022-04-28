@@ -20,7 +20,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <thread>
 #include <future>
 
-
 //#include "../utils/pooled_threads.h"
 
 #define max3(x, y, z)	(max((x), max((y), (z))))
@@ -54,7 +53,8 @@ void CProfile::ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t 
 	size_t prof2_card = profile2->data.size();
 
 	// The profile1 contains a single sequence so there are no gaps here
-	vector<symbol_t>& seq1 = const_cast<vector<symbol_t>&>(profile1->data[0]->symbols);
+//	vector<symbol_t>& seq1 = const_cast<vector<symbol_t>&>(profile1->data[0]->symbols);
+	symbol_t* seq1 = const_cast<symbol_t*>(profile1->data[0]->symbols);
 
 	score_t gap_open = params->gap_open;
 	score_t gap_ext = params->gap_ext;
@@ -67,11 +67,11 @@ void CProfile::ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t 
 	//CProfileValues<score_t, NO_SYMBOLS>& scores1 = const_cast<CProfileValues<score_t, NO_SYMBOLS>&>(profile1->scores);
 	CProfileValues<score_t, NO_SYMBOLS>& scores2 = const_cast<CProfileValues<score_t, NO_SYMBOLS>&>(profile2->scores);
 
-	// Precompute scores for gaps for profile2
+	// Precompute scores for gaps in profile2
 	vector<dp_gap_costs> prof2_gaps;
 	vector<dp_gap_corrections> gap_corrections;
 
-	// Precomputing korekcji gapów w profile2
+	// Precompute gap corrections in profile2
 	vector<score_t> n_gaps_prof2_to_change;
 	vector<score_t> n_gaps_prof2_term_to_change;
 	vector<score_t> gaps_prof2_change;
@@ -323,7 +323,7 @@ void CProfile::ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t 
 			int my_col_from = v_thr_range[my_id].first;
 			int my_col_to = v_thr_range[my_id].second;
 
-			for (size_t i = 0; i < my_id; ++i)
+			for (int i = 0; i < my_id; ++i)
 				bar.arrive_and_wait();
 
 			// Calculate matrix interior
@@ -355,7 +355,7 @@ void CProfile::ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t 
 				auto ptr_prev_row = &prev_row[my_col_from - 1];
 				auto ptr_curr_row = &curr_row[my_col_from - 1];
 
-				for (size_t j = my_col_from; j < my_col_to; ++j)
+				for (int j = my_col_from; j < my_col_to; ++j)
 				{
 					// Get current cell of matrix for faster access
 					++matrix_cell;
@@ -723,7 +723,7 @@ void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t
 //			vector<pair<int, int>> col1(32);
 			array<pair<int, int>, 32> col1;
 
-			for (size_t i = 0; i < my_id; ++i)
+			for (int i = 0; i < my_id; ++i)
 				bar.arrive_and_wait();
 
 			// Calculate matrix interior
@@ -795,7 +795,7 @@ void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t
 				auto ptr_prev_row = &prev_row[my_col_from - 1];
 				auto ptr_curr_row = &curr_row[my_col_from - 1];
 
-				for (size_t j = my_col_from; j < my_col_to; ++j)
+				for (int j = my_col_from; j < my_col_to; ++j)
 				{
 					// Get current cell of matrix for faster access
 					++matrix_cell;

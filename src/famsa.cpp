@@ -56,8 +56,10 @@ int main(int argc, char *argv[])
 
 	vector<CGappedSequence*> result;
 	vector<CSequence> sequences;
+	memory_monotonic_safe mma(16 << 20, 64);
 
-	size_t input_seq_cnt = IOService::loadFasta(params.input_file_name, sequences);
+	size_t input_seq_cnt = IOService::loadFasta(params.input_file_name, sequences, &mma);
+//	size_t input_seq_cnt = IOService::loadFasta(params.input_file_name, sequences);
     if(input_seq_cnt == 0){			
     	LOG_NORMAL << "Error: no (or incorrect) input file\n";
 		return -1;

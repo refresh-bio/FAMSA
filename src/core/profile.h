@@ -37,7 +37,6 @@ class CDPMatrix {
 	size_t n_cols;
 
 	unsigned char* raw_data;
-//	unsigned char** data;
 
 public:
 	CDPMatrix(size_t _n_rows, size_t _n_cols) : n_rows(_n_rows), n_cols(_n_cols)
@@ -389,7 +388,6 @@ class CProfile {
 
 	struct dp_row_elem_t {
 		score_t D, H, V;
-//		score_t padding;
 
 		dp_row_elem_t(score_t _D = 0.0, score_t _H = 0.0, score_t _V = 0.0) :
 			D(_D), H(_H), V(_V)

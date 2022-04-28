@@ -26,6 +26,148 @@ public:
 	const std::vector<T>& getData() const { return v; }
 	std::vector<T>& getData() { return v; }
 
+	Array() : width(0), height(0), v(nullptr) {}
+	Array(size_t width, size_t height, const T& val) : width(width), height(height), v(new T[width * height, val]) {}
+	Array(int size) : width(size), height(size), v(new T[size * size]) {}
+
+	
+	Array(const Array<T>& ref) noexcept
+	{
+		width = ref.width;
+		height = ref.height;
+		v = new T[width * height];
+		memcpy(v, ref.v, width * height * sizeof(T));
+	}
+
+	Array(Array&& rhs) noexcept
+	{
+		width = rhs.width;
+		height = rhs.height;
+		v = rhs.v;
+
+		rhs.width = 0;
+		rhs.height = 0;
+		rhs.v = nullptr;
+	}
+
+	~Array()
+	{
+		if (v)
+			delete[] v;
+	}
+
+	Array<T>& operator=(const Array<T>& ref) noexcept
+	{
+		this->width = ref.width;
+		this->height = ref.height;
+
+		if (this->v)
+			delete[] this->v;
+
+		if (ref.v)
+		{
+			this->v = new T[this->width * this->height];
+			memcpy(this->v, ref.v, this->width * this->height * sizeof(T));
+		}
+		else
+			this->v = nullptr;
+
+		return *this;
+	}
+
+	Array<T>& operator=(Array<T>&& ref) noexcept
+	{
+		this->width = ref.width;
+		this->height = ref.height;
+
+		if (this->v)
+			delete[] this->v;
+
+		this->v = ref.v;
+		ref.width = 0;
+		ref.height = 0;
+		ref.v = nullptr;
+
+		return *this;
+	}
+
+	// *****************************************************************************************
+	//
+	void resize(int width, int height) {
+		this->width = width;
+		this->height = height;
+
+		if (this->v)
+			delete[] this->v;
+
+		if (width * height != 0)
+			this->v = new T[this->width * this->height * sizeof(T)];
+		else
+			this->v = nullptr;
+	}
+
+	// *****************************************************************************************
+	//
+	void resize(int width, int height, const T& value) {
+		this->width = width;
+		this->height = height;
+
+		if (this->v)
+			delete[] this->v;
+
+		if (width * height != 0)
+		{
+			this->v = new T[this->width * this->height * sizeof(T)];
+			fill_n(this->v, this->width * this->height, value);
+		}
+		else
+			this->v = nullptr;
+	}
+
+	// *****************************************************************************************
+	//
+	void clear() {
+		width = 0;
+		height = 0;
+		if (v)
+		{
+			delete[] v;
+			v = nullptr;
+		}
+	}
+
+	// *****************************************************************************************
+	//
+	bool empty() const {
+		return v == nullptr;
+	}
+
+	// *****************************************************************************************
+	//
+	T* operator[](const int row) { return v + row * width; }
+
+	// *****************************************************************************************
+	//
+	const T* operator[](const int row) const { return v + (size_t) row * width; }
+
+protected:
+	int width;
+	int height;
+public:
+	T* v;
+};
+
+/*
+template <class T>
+class ArrayOld
+{
+
+public:
+	size_t get_width() const { return width; }
+	size_t get_height() const { return height; }
+	const std::vector<T>& getData() const { return v; }
+	std::vector<T>& getData() { return v; }
+
 	Array() : width(0), height(0) {}
 	Array(size_t width, size_t height, const T& val) : width(width), height(height), v(width * height, val) {}
 	Array(int size) : width(size), height(size), v(size * size) {}
@@ -80,7 +222,7 @@ protected:
 	int height;
 	std::vector<T> v;
 };
-
+*/
 // *****************************************************************************************
 //
 template <class T>

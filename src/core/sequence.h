@@ -10,6 +10,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #define _SEQUENCE_H
 
 #include "../core/defs.h"
+#include "../utils/memory_monotonic.h"
 #include "../utils/array.h"
 #include <string>
 #include <vector>
@@ -17,78 +18,95 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 
 using namespace std;
+using namespace refresh;
 
+// *******************************************************************
 class CSequence
 {
 	static char mapping_table[25];
 
 public:
-	int sequence_no;
 	uint32_t length;
+	uint32_t data_size;
+	symbol_t* data = nullptr;
+	bit_vec_t *p_bit_masks;
+	uint32_t p_bv_len;
+
+	int sequence_no;
 	string id;
-	vector<symbol_t> data;
+
+	memory_monotonic_safe *mma;
+
 	vector<bool> uppercase;
 	
-/*
-#ifdef __APPLE__
-	uint16_t hist[NO_SYMBOLS];
-#else
-	uint16_t alignas(32) hist[NO_SYMBOLS];
-#endif
-*/
-	uint16_t* hist = nullptr;
-	Array<bit_vec_t> bit_masks;
-	
 public:
-	//CSequence();
-	CSequence(const string& _id, const string& seq);
+	CSequence() = delete;
+	CSequence(const string& _id, const string& seq, memory_monotonic_safe *mma = nullptr);
 	
 	// sequences are not copyable
 	CSequence(const CSequence& x) noexcept = delete;
 	CSequence& operator=(const CSequence& x) noexcept = delete;
 
-	CSequence(CSequence&& x) noexcept = default;
-	CSequence& operator=(CSequence&& x) noexcept = default; 
+	CSequence(CSequence&& x) noexcept;
+	CSequence& operator=(CSequence&& x) noexcept; 
 	
 	~CSequence();
-
 	
+	void DataResize(uint32_t new_size, symbol_t new_symbol);
 
 	void ComputeBitMasks();
 	void ReleaseBitMasks();
 	string DecodeSequence();
-	void PrepareHistogram();
+
+	memory_monotonic_safe* get_mma()
+	{
+		return mma;
+	}
 };
 
-class CGappedSequence 
+// *******************************************************************
+struct CSequenceView
+{
+	uint32_t length;
+	uint32_t padding1;
+	symbol_t* data;
+};
+
+// *******************************************************************
+class CGappedSequence
 {
 	static char mapping_table[25];
 
 	void RecalculateDPS();
 	void InitialiseDPS();
 
+	memory_monotonic_safe* mma = nullptr;
+
 public:
-	string id;
-    vector<symbol_t> symbols;
-	vector<bool> uppercase;
+	symbol_t* symbols = nullptr;
     size_t size;
+	size_t symbols_size;
 	size_t gapped_size;
 
 	size_t dps_size;
 	size_t dps_size_div2;
 
-    vector<int32_t> n_gaps;
-    vector<int32_t> dps;        // dynamic position statistics (DSP) for the sequence
+    vector<uint32_t> n_gaps;
+    vector<uint32_t> dps;        // dynamic position statistics (DSP) for the sequence
 
+	string id;
+	vector<bool> uppercase;
+
+	CGappedSequence() = delete;
     CGappedSequence(CSequence &&_sequence);
     CGappedSequence(const CGappedSequence &_gapped_sequence);
     CGappedSequence(CGappedSequence &&_gapped_sequence) noexcept;
-    ~CGappedSequence();
+	~CGappedSequence();
 
 	bool operator==(const CGappedSequence &gs);
 
-    void InsertGap(size_t pos);
-    void InsertGaps(size_t pos, uint32_t n);
+    void InsertGap(uint32_t pos);
+    void InsertGaps(uint32_t pos, uint32_t n);
 	void InsertGapsVector(const vector<pair<uint32_t, uint32_t>> &v_gaps);
 
 	void RemoveGap(size_t pos);
@@ -99,7 +117,7 @@ public:
     string Decode();
 	uint32_t NoSymbols();
 
-	void AddGuard() { symbols.insert(symbols.begin(), GUARD); };
+	void InsertFront(symbol_t new_symbol);
 
 	void Clear();
 	void ClearDPS();

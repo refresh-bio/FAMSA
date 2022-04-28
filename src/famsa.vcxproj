@@ -137,7 +137,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>C:\Program Files (x86)\Visual Leak Detector\include;$(ProjectDir)/../libs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\Visual Leak Detector\include;$(ProjectDir)/../libs/mimalloc;$(ProjectDir)/../libs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AdditionalOptions>/D_HAS_STD_BYTE=0 /D_ENABLE_EXTENDED_ALIGNED_STORAGE /D_CRT_SECURE_NO_WARNINGS /DSIMD=2 %(AdditionalOptions)</AdditionalOptions>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
@@ -198,7 +198,7 @@
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <EnableEnhancedInstructionSet>NotSet</EnableEnhancedInstructionSet>
       <ControlFlowGuard>false</ControlFlowGuard>
-      <AdditionalIncludeDirectories>C:\Program Files (x86)\Visual Leak Detector\include;$(ProjectDir)/../libs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files (x86)\Visual Leak Detector\include;$(ProjectDir)/../libs/mimalloc;$(ProjectDir)/../libs/;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard_C>stdc11</LanguageStandard_C>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <AdditionalOptions>/D_HAS_STD_BYTE=0 /D_ENABLE_EXTENDED_ALIGNED_STORAGE /D_CRT_SECURE_NO_WARNINGS /DSIMD=2 %(AdditionalOptions)</AdditionalOptions>
@@ -243,6 +243,9 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\libs\mimalloc\override-new-delete.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="core\params.cpp" />
     <ClCompile Include="core\profile_par.cpp">
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotSet</EnableEnhancedInstructionSet>
@@ -292,6 +295,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\libs\libdeflate\libdeflate.h" />
+    <ClInclude Include="..\libs\mimalloc\mimalloc.h" />
     <ClInclude Include="lcs\lcsbp_avx2_intr.h" />
     <ClInclude Include="lcs\lcsbp_avx_intr.h" />
     <ClInclude Include="lcs\lcsbp_neon_intr.h" />
@@ -318,6 +322,7 @@
     <ClInclude Include="utils\cpuid.h" />
     <ClInclude Include="utils\deterministic_random.h" />
     <ClInclude Include="utils\log.h" />
+    <ClInclude Include="utils\memory_monotonic.h" />
     <ClInclude Include="utils\meta_oper.h" />
     <ClInclude Include="msa.h" />
     <ClInclude Include="tree\NewickParser.h" />
@@ -334,6 +339,14 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\libs\libdeflate\windows\libdeflatestatic.lib" />
+    <Library Include="..\libs\mimalloc\mimalloc-static-debug.lib">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+    </Library>
+    <Library Include="..\libs\mimalloc\mimalloc-static.lib">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </Library>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

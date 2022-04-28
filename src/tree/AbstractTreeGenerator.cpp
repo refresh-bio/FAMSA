@@ -32,18 +32,31 @@ void AbstractTreeGenerator::operator()(std::vector<CSequence>& sequences, tree_s
 	size_t max_seq_len =
 		max_element(sequences.begin(), sequences.end(), [](const CSequence &x, CSequence &y) {return x.length < y.length; })->length;
 
+	auto mma = sequences.front().get_mma();
+
+	if(mma)
+		mma->freeze();
+
 	int n_seqs = (int)sequences.size();
 	for (int i = 0; i < n_seqs; ++i) {
-		sequences[i].data.resize(max_seq_len, UNKNOWN_SYMBOL);
+		sequences[i].DataResize(max_seq_len, UNKNOWN_SYMBOL);
 	}
+
+	if (mma)
+		mma->release_freezed();
 
 	// build the tree
 	run(sequences, tree);
 
+	if (mma)
+		mma->freeze();
+
 	// Bring the sequences to the valid length
 	for (int i = 0; i < n_seqs; ++i)
-		sequences[i].data.resize(sequences[i].length, UNKNOWN_SYMBOL);
+		sequences[i].DataResize(sequences[i].length, UNKNOWN_SYMBOL);
 
+	if (mma)
+		mma->release_freezed();
 }
 
 
