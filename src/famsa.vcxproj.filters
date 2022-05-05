@@ -110,6 +110,9 @@
     <ClCompile Include="..\libs\mimalloc\override-new-delete.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
+    <ClCompile Include="..\libs\mimalloc\static.c">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="msa.h" />
@@ -239,12 +242,6 @@
   </ItemGroup>
   <ItemGroup>
     <Library Include="..\libs\libdeflate\windows\libdeflatestatic.lib">
-      <Filter>libraries</Filter>
-    </Library>
-    <Library Include="..\libs\mimalloc\mimalloc-static.lib">
-      <Filter>libraries</Filter>
-    </Library>
-    <Library Include="..\libs\mimalloc\mimalloc-static-debug.lib">
       <Filter>libraries</Filter>
     </Library>
   </ItemGroup>

@@ -85,6 +85,11 @@ $(info *** x86-64 with AVX extensions***)
 	COMMON_FLAGS := -msse4
 	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_AVX1)
 	SIMD=AVX1
+else ifeq ($(PLATFORM), native)
+$(info *** x86-64 with AVX2 extensions and native architecture ***)
+	COMMON_FLAGS := -mavx2 -march=native
+	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_AVX2)
+	SIMD=AVX2
 else
 $(info *** x86-64 with AVX2 extensions***)
 	COMMON_FLAGS := -msse4
@@ -127,7 +132,8 @@ COMMON_OBJS := src/msa.o \
 	src/core/profile_par.o \
 	src/core/profile_seq.o \
 	src/core/sequence.o \
-	src/core/queues.o 
+	src/core/queues.o \
+	libs/mimalloc/static.o
 		
 src/lcs/lcsbp_classic.o : src/lcs/lcsbp_classic.cpp
 	$(CXX) $(CFLAGS) -c src/lcs/lcsbp_classic.cpp -o $@
@@ -203,6 +209,9 @@ endif
 .cpp.o:
 	$(CXX) $(CFLAGS) -c $< -o $@
 
+.c.o:
+	$(CXX) $(CFLAGS) -c $< -o $@
+
 famsa: src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS)
 	$(CXX) $(CLINK) -o $@ src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS) $(LIB_FILES)
 
@@ -213,5 +222,6 @@ clean:
 	-rm src/tree/*.o
 	-rm src/utils/*.o
 	-rm src/*.o
+	-rm lib/mimalloc/*.o
 	-rm famsa
 

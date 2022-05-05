@@ -59,10 +59,11 @@ FAMSA can be also built from the sources distributed as:
 FAMSA can be built for x86-64 and ARM64 8 architectures (including Apple M1 based on ARM64 8.4 core) and takes advantage of AVX2 (x86-64) and NEON (ARM) CPU extensions. The default target platform is x86-64 with AVX2 extensions. This, however, can be changed by setting `PLATFORM` variable for `make`:
 
 ```bash
-make PLATFORM=none 	  # unspecified platform, no extensions
+make PLATFORM=none    # unspecified platform, no extensions
 make PLATFORM=sse4    # x86-64 with SSE4.1 
 make PLATFORM=avx     # x86-64 with AVX 
 make PLATFORM=avx2    # x86-64 with AVX2 (default)
+make PLATFORM=native  # x86-64 with AVX2 and native architecture
 make PLATFORM=arm8    # ARM64 8 with NEON  
 make PLATFORM=m1      # ARM64 8.4 (especially Apple M1) with NEON 
 ```   
@@ -91,7 +92,7 @@ Options:
 * `-gt <sl | upgma | import <file>>` - the guide tree method (default: sl):
     * `sl` - single linkage,
     * `upgma` - UPGMA,
-	* `nj` - neighbour joining,
+    * `nj` - neighbour joining,
     * `import <file>` - import from a Newick file.
 * `-medoidtree` - use MedoidTree heuristic for speeding up tree construction (default: disabled)
 * `-medoid_threshold <n_seqs>` - if specified, medoid trees are used only for sets with `n_seqs` or more

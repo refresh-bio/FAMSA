@@ -1,5 +1,5 @@
 /* ----------------------------------------------------------------------------
-Copyright (c) 2018, Microsoft Research, Daan Leijen
+Copyright (c) 2018-2021, Microsoft Research, Daan Leijen
 This is free software; you can redistribute it and/or modify it under the
 terms of the MIT license. A copy of the license can be found in the file
 "LICENSE" at the root of this distribution.
@@ -10,14 +10,14 @@ terms of the MIT license. A copy of the license can be found in the file
 
 #include <stddef.h>   // ptrdiff_t
 #include <stdint.h>   // uintptr_t, uint16_t, etc
-#include <mimalloc-atomic.h>  // _Atomic
+#include "mimalloc-atomic.h"  // _Atomic
 
 #ifdef _MSC_VER
 #pragma warning(disable:4214) // bitfield is not int
 #endif 
 
 // Minimal alignment necessary. On most platforms 16 bytes are needed
-// due to SSE registers for example. This must be at least `MI_INTPTR_SIZE`
+// due to SSE registers for example. This must be at least `sizeof(void*)`
 #ifndef MI_MAX_ALIGN_SIZE
 #define MI_MAX_ALIGN_SIZE  16   // sizeof(max_align_t)
 #endif
@@ -67,6 +67,7 @@ terms of the MIT license. A copy of the license can be found in the file
 #define MI_ENCODE_FREELIST  1
 #endif
 
+
 // ------------------------------------------------------
 // Platform specific values
 // ------------------------------------------------------
@@ -83,20 +84,43 @@ terms of the MIT license. A copy of the license can be found in the file
 // or otherwise one might define an intptr_t type that is larger than a pointer...
 // ------------------------------------------------------
 
-#if INTPTR_MAX == 9223372036854775807LL
+#if INTPTR_MAX > INT64_MAX
+# define MI_INTPTR_SHIFT (4)  // assume 128-bit  (as on arm CHERI for example)
+#elif INTPTR_MAX == INT64_MAX
 # define MI_INTPTR_SHIFT (3)
-#elif INTPTR_MAX == 2147483647LL
+#elif INTPTR_MAX == INT32_MAX
 # define MI_INTPTR_SHIFT (2)
 #else
-#error platform must be 32 or 64 bits
+#error platform pointers must be 32, 64, or 128 bits
+#endif
+
+#if SIZE_MAX == UINT64_MAX
+# define MI_SIZE_SHIFT (3)
+typedef int64_t  mi_ssize_t;
+#elif SIZE_MAX == UINT32_MAX
+# define MI_SIZE_SHIFT (2)
+typedef int32_t  mi_ssize_t;
+#else
+#error platform objects must be 32 or 64 bits
+#endif
+
+#if (SIZE_MAX/2) > LONG_MAX
+# define MI_ZU(x)  x##ULL
+# define MI_ZI(x)  x##LL
+#else
+# define MI_ZU(x)  x##UL
+# define MI_ZI(x)  x##L
 #endif
 
 #define MI_INTPTR_SIZE  (1<<MI_INTPTR_SHIFT)
 #define MI_INTPTR_BITS  (MI_INTPTR_SIZE*8)
 
-#define KiB     ((size_t)1024)
-#define MiB     (KiB*KiB)
-#define GiB     (MiB*KiB)
+#define MI_SIZE_SIZE  (1<<MI_SIZE_SHIFT)
+#define MI_SIZE_BITS  (MI_SIZE_SIZE*8)
+
+#define MI_KiB     (MI_ZU(1024))
+#define MI_MiB     (MI_KiB*MI_KiB)
+#define MI_GiB     (MI_MiB*MI_KiB)
 
 
 // ------------------------------------------------------
@@ -104,51 +128,70 @@ terms of the MIT license. A copy of the license can be found in the file
 // ------------------------------------------------------
 
 // Main tuning parameters for segment and page sizes
-// Sizes for 64-bit, divide by two for 32-bit
-#define MI_SEGMENT_SLICE_SHIFT            (13 + MI_INTPTR_SHIFT)         // 64kb
-#define MI_SEGMENT_SHIFT                  ( 7 + MI_SEGMENT_SLICE_SHIFT)  //  8mb
+// Sizes for 64-bit (usually divide by two for 32-bit)
+#define MI_SEGMENT_SLICE_SHIFT            (13 + MI_INTPTR_SHIFT)         // 64KiB  (32KiB on 32-bit)
 
-#define MI_SMALL_PAGE_SHIFT               (MI_SEGMENT_SLICE_SHIFT)       // 64kb
-#define MI_MEDIUM_PAGE_SHIFT              ( 3 + MI_SMALL_PAGE_SHIFT)     // 512kb
+#if MI_INTPTR_SIZE > 4
+#define MI_SEGMENT_SHIFT                  (10 + MI_SEGMENT_SLICE_SHIFT)  // 64MiB
+#else
+#define MI_SEGMENT_SHIFT                  ( 7 + MI_SEGMENT_SLICE_SHIFT)  // 4MiB on 32-bit
+#endif
+
+#define MI_SMALL_PAGE_SHIFT               (MI_SEGMENT_SLICE_SHIFT)       // 64KiB
+#define MI_MEDIUM_PAGE_SHIFT              ( 3 + MI_SMALL_PAGE_SHIFT)     // 512KiB
 
 
 // Derived constants
-#define MI_SEGMENT_SIZE                   (1ULL<<MI_SEGMENT_SHIFT)
+#define MI_SEGMENT_SIZE                   (MI_ZU(1)<<MI_SEGMENT_SHIFT)
 #define MI_SEGMENT_ALIGN                  MI_SEGMENT_SIZE
 #define MI_SEGMENT_MASK                   (MI_SEGMENT_SIZE - 1)
-#define MI_SEGMENT_SLICE_SIZE             (1ULL<< MI_SEGMENT_SLICE_SHIFT)
+#define MI_SEGMENT_SLICE_SIZE             (MI_ZU(1)<< MI_SEGMENT_SLICE_SHIFT)
 #define MI_SLICES_PER_SEGMENT             (MI_SEGMENT_SIZE / MI_SEGMENT_SLICE_SIZE) // 1024
 
-#define MI_SMALL_PAGE_SIZE                (1ULL<<MI_SMALL_PAGE_SHIFT)
-#define MI_MEDIUM_PAGE_SIZE               (1ULL<<MI_MEDIUM_PAGE_SHIFT)
+#define MI_SMALL_PAGE_SIZE                (MI_ZU(1)<<MI_SMALL_PAGE_SHIFT)
+#define MI_MEDIUM_PAGE_SIZE               (MI_ZU(1)<<MI_MEDIUM_PAGE_SHIFT)
 
-#define MI_SMALL_OBJ_SIZE_MAX             (MI_SMALL_PAGE_SIZE/4)   // 8kb on 64-bit
-
-#define MI_MEDIUM_OBJ_SIZE_MAX            (MI_MEDIUM_PAGE_SIZE/4)  // 128kb on 64-bit
-#define MI_MEDIUM_OBJ_WSIZE_MAX           (MI_MEDIUM_OBJ_SIZE_MAX/MI_INTPTR_SIZE)   // 64kb on 64-bit
-
-#define MI_LARGE_OBJ_SIZE_MAX             (MI_SEGMENT_SIZE/2)      // 4mb on 64-bit
+#define MI_SMALL_OBJ_SIZE_MAX             (MI_SMALL_PAGE_SIZE/4)   // 8KiB on 64-bit
+#define MI_MEDIUM_OBJ_SIZE_MAX            (MI_MEDIUM_PAGE_SIZE/4)  // 128KiB on 64-bit
+#define MI_MEDIUM_OBJ_WSIZE_MAX           (MI_MEDIUM_OBJ_SIZE_MAX/MI_INTPTR_SIZE)   
+#define MI_LARGE_OBJ_SIZE_MAX             (MI_SEGMENT_SIZE/2)      // 32MiB on 64-bit
 #define MI_LARGE_OBJ_WSIZE_MAX            (MI_LARGE_OBJ_SIZE_MAX/MI_INTPTR_SIZE)
-
-#define MI_HUGE_OBJ_SIZE_MAX              (2*MI_INTPTR_SIZE*MI_SEGMENT_SIZE)        // (must match MI_REGION_MAX_ALLOC_SIZE in memory.c)
 
 // Maximum number of size classes. (spaced exponentially in 12.5% increments)
 #define MI_BIN_HUGE  (73U)
 
 #if (MI_MEDIUM_OBJ_WSIZE_MAX >= 655360)
-#error "define more bins"
+#error "mimalloc internal: define more bins"
+#endif
+#if (MI_ALIGNMENT_MAX > MI_SEGMENT_SIZE/2)
+#error "mimalloc internal: the max aligned boundary is too large for the segment size"
+#endif
+#if (MI_ALIGNED_MAX % MI_SEGMENT_SLICE_SIZE != 0)
+#error "mimalloc internal: the max aligned boundary must be an integral multiple of the segment slice size"
 #endif
 
-// Maximum slice offset (7)
-#define MI_MAX_SLICE_OFFSET               ((MI_MEDIUM_PAGE_SIZE / MI_SEGMENT_SLICE_SIZE) - 1)
+// Maximum slice offset (15)
+#define MI_MAX_SLICE_OFFSET               ((MI_ALIGNMENT_MAX / MI_SEGMENT_SLICE_SIZE) - 1)
 
 // Used as a special value to encode block sizes in 32 bits.
-#define MI_HUGE_BLOCK_SIZE                ((uint32_t)MI_HUGE_OBJ_SIZE_MAX)
+#define MI_HUGE_BLOCK_SIZE                ((uint32_t)(2*MI_GiB))
 
+// blocks up to this size are always allocated aligned
+#define MI_MAX_ALIGN_GUARANTEE            (8*MI_MAX_ALIGN_SIZE)  
+
+
+
+
+// ------------------------------------------------------
+// Mimalloc pages contain allocated blocks
+// ------------------------------------------------------
 
 // The free lists use encoded next fields
 // (Only actually encodes when MI_ENCODED_FREELIST is defined.)
-typedef uintptr_t mi_encoded_t;
+typedef uintptr_t  mi_encoded_t;
+
+// thread id's
+typedef size_t     mi_threadid_t;
 
 // free lists contain blocks
 typedef struct mi_block_s {
@@ -260,10 +303,10 @@ typedef struct mi_page_s {
 
 
 typedef enum mi_page_kind_e {
-  MI_PAGE_SMALL,    // small blocks go into 64kb pages inside a segment
-  MI_PAGE_MEDIUM,   // medium blocks go into 512kb pages inside a segment
+  MI_PAGE_SMALL,    // small blocks go into 64KiB pages inside a segment
+  MI_PAGE_MEDIUM,   // medium blocks go into medium pages inside a segment
   MI_PAGE_LARGE,    // larger blocks go into a page of just one block
-  MI_PAGE_HUGE,     // huge blocks (>16mb) are put into a single page in a single segment.
+  MI_PAGE_HUGE,     // huge blocks (> 16 MiB) are put into a single page in a single segment.
 } mi_page_kind_t;
 
 typedef enum mi_segment_kind_e {
@@ -271,17 +314,35 @@ typedef enum mi_segment_kind_e {
   MI_SEGMENT_HUGE,   // > MI_LARGE_SIZE_MAX segment with just one huge page inside.
 } mi_segment_kind_t;
 
-#define MI_COMMIT_SIZE    (MI_SEGMENT_SIZE/MI_INTPTR_BITS)
+// ------------------------------------------------------
+// A segment holds a commit mask where a bit is set if
+// the corresponding MI_COMMIT_SIZE area is committed.
+// The MI_COMMIT_SIZE must be a multiple of the slice
+// size. If it is equal we have the most fine grained 
+// decommit (but setting it higher can be more efficient).
+// The MI_MINIMAL_COMMIT_SIZE is the minimal amount that will
+// be committed in one go which can be set higher than
+// MI_COMMIT_SIZE for efficiency (while the decommit mask
+// is still tracked in fine-grained MI_COMMIT_SIZE chunks)
+// ------------------------------------------------------
 
-#if (((1 << MI_SEGMENT_SHIFT)/MI_COMMIT_SIZE) > 8*MI_INTPTR_SIZE)
-#error "not enough commit bits to cover the segment size"
+#define MI_MINIMAL_COMMIT_SIZE      (2*MI_MiB)
+#define MI_COMMIT_SIZE              (MI_SEGMENT_SLICE_SIZE)              // 64KiB
+#define MI_COMMIT_MASK_BITS         (MI_SEGMENT_SIZE / MI_COMMIT_SIZE)  
+#define MI_COMMIT_MASK_FIELD_BITS    MI_SIZE_BITS
+#define MI_COMMIT_MASK_FIELD_COUNT  (MI_COMMIT_MASK_BITS / MI_COMMIT_MASK_FIELD_BITS)
+
+#if (MI_COMMIT_MASK_BITS != (MI_COMMIT_MASK_FIELD_COUNT * MI_COMMIT_MASK_FIELD_BITS))
+#error "the segment size must be exactly divisible by the (commit size * size_t bits)"
 #endif
 
-typedef mi_page_t  mi_slice_t;
+typedef struct mi_commit_mask_s {
+  size_t mask[MI_COMMIT_MASK_FIELD_COUNT];
+} mi_commit_mask_t;
 
+typedef mi_page_t  mi_slice_t;
 typedef int64_t    mi_msecs_t;
 
-typedef uintptr_t  mi_commit_mask_t;
 
 // Segments are large allocated memory blocks (8mb on 64 bit) from
 // the OS. Inside segments we allocated fixed size _pages_ that
@@ -312,7 +373,7 @@ typedef struct mi_segment_s {
 
   // layout like this to optimize access in `mi_free`
   mi_segment_kind_t kind;
-  _Atomic(uintptr_t) thread_id;          // unique id of the thread owning this segment
+  _Atomic(mi_threadid_t) thread_id;      // unique id of the thread owning this segment
   size_t            slice_entries;       // entries in the `slices` array, at most `MI_SLICES_PER_SEGMENT`
   mi_slice_t        slices[MI_SLICES_PER_SEGMENT];
 } mi_segment_t;
@@ -351,7 +412,7 @@ typedef struct mi_random_cxt_s {
 } mi_random_ctx_t;
 
 
-// In debug mode there is a padding stucture at the end of the blocks to check for buffer overflows
+// In debug mode there is a padding structure at the end of the blocks to check for buffer overflows
 #if (MI_PADDING)
 typedef struct mi_padding_s {
   uint32_t canary; // encoded block value to check validity of the padding (in case of overflow)
@@ -373,7 +434,7 @@ struct mi_heap_s {
   mi_page_t*            pages_free_direct[MI_PAGES_DIRECT];  // optimize: array where every entry points a page with possibly free blocks in the corresponding queue for that size.
   mi_page_queue_t       pages[MI_BIN_FULL + 1];              // queue of pages for each size class (or "bin")
   _Atomic(mi_block_t*)  thread_delayed_free;
-  uintptr_t             thread_id;                           // thread this heap belongs too
+  mi_threadid_t         thread_id;                           // thread this heap belongs too
   uintptr_t             cookie;                              // random cookie to verify pointers (see `_mi_ptr_cookie`)
   uintptr_t             keys[2];                             // two random keys used to encode the `thread_delayed_free` list
   mi_random_ctx_t       random;                              // random number context used for secure allocation
@@ -390,9 +451,15 @@ struct mi_heap_s {
 // Debug
 // ------------------------------------------------------
 
+#if !defined(MI_DEBUG_UNINIT)
 #define MI_DEBUG_UNINIT     (0xD0)
+#endif
+#if !defined(MI_DEBUG_FREED)
 #define MI_DEBUG_FREED      (0xDF)
+#endif
+#if !defined(MI_DEBUG_PADDING)
 #define MI_DEBUG_PADDING    (0xDE)
+#endif
 
 #if (MI_DEBUG)
 // use our own assertion to print without memory allocation
@@ -513,9 +580,6 @@ typedef struct mi_segments_tld_s {
   size_t              peak_count;   // peak number of segments
   size_t              current_size; // current size of all segments
   size_t              peak_size;    // peak size of all segments
-  size_t              cache_count;  // number of segments in the cache
-  size_t              cache_size;   // total size of all segments in the cache
-  mi_segment_t*       cache;        // (small) cache of segments
   mi_stats_t*         stats;        // points to tld stats
   mi_os_tld_t*        os;           // points to os stats
 } mi_segments_tld_t;

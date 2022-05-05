@@ -9,14 +9,17 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"1.15.0"
-#define FAMSA_DATE		"2022-04-28"
+#define FAMSA_VER		"1.16.0"
+#define FAMSA_DATE		"2022-04-29"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+1.16.0 (2022-04-29):
+ - mimalloc added as a single source library (no external linking).
 
 1.15.0 (2022-04-28):
 1.14.0 (2022-04-22):
