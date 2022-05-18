@@ -212,7 +212,7 @@ endif
 .c.o:
 	$(CXX) $(CFLAGS) -c $< -o $@
 
-famsa: src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS)
+famsa: deflate src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS)
 	$(CXX) $(CLINK) -o $@ src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS) $(LIB_FILES)
 
 clean:
