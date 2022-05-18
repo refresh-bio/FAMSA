@@ -21,10 +21,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     
-    - name: copy sl->mp references
+    - name: copy sl->slink references
       run: |
-        cp ./test/adeno_fiber/sl.fasta ./test/adeno_fiber/mp.fasta
-        cp ./test/hemopexin/medoid-sl.fasta ./test/hemopexin/medoid-mp.fasta
+        cp ./test/adeno_fiber/sl.fasta ./test/adeno_fiber/slink.fasta
+        cp ./test/hemopexin/medoid-sl.fasta ./test/hemopexin/medoid-slink.fasta
       
           
   ########################################################################################
@@ -65,7 +65,7 @@ jobs:
       matrix:
         machine: [xeon, tripper]
         compiler: [g++-9, g++-10, g++-11]
-        tree: [sl, upgma, mp]
+        tree: [sl, upgma, slink]
         # additional ARM configurations
         include:
         - machine: raspberry
@@ -76,7 +76,7 @@ jobs:
           tree: upgma
         - machine: raspberry
           compiler: g++
-          tree: mp
+          tree: slink
           
     
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
@@ -118,7 +118,7 @@ jobs:
       matrix:
         machine: [xeon, tripper]
         compiler: [g++-9, g++-10, g++-11]
-        tree: [sl, upgma, mp, nj]
+        tree: [sl, upgma, slink, nj]
         # additional ARM configurations
         include:
         - machine: raspberry
@@ -129,7 +129,7 @@ jobs:
           tree: upgma
         - machine: raspberry
           compiler: g++
-          tree: mp
+          tree: slink
         - machine: raspberry
           compiler: g++
           tree: nj

@@ -1,6 +1,6 @@
 /*
 This file is a part of FAMSA software distributed under GNU GPL 3 licence.
-The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
+The homepage of the FAMSA project is https://github.com/refresh-bio/FAMSA
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
@@ -9,14 +9,18 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"1.16.0"
-#define FAMSA_DATE		"2022-04-29"
+#define FAMSA_VER		"2.0.0-rc"
+#define FAMSA_DATE		"2022-05-17"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+2.0.0-rc:
+- default algorithm for single linkage trees changed from SLINK to MST Prim,
+- small fixes.
 
 1.16.0 (2022-04-29):
  - mimalloc added as a single source library (no external linking).

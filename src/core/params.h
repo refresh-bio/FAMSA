@@ -1,6 +1,6 @@
 /*
 This file is a part of FAMSA software distributed under GNU GPL 3 licence.
-The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
+The homepage of the FAMSA project is https://github.com/refresh-bio/FAMSA
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
@@ -45,7 +45,7 @@ public:
 	uint32_t thr_refinement					= 1000;
 	uint32_t thr_internal_refinement		= 0;
 	
-	GT::Method gt_method			= GT::SLINK;
+	GT::Method gt_method			= GT::MST_Prim;
 	GT::Heuristic gt_heuristic		= GT::None;
 	Distance distance				= Distance::indel_div_lcs;
 	int heuristic_threshold			= 0;

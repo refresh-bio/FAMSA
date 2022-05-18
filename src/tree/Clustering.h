@@ -10,6 +10,8 @@ public:
 		int n_medoids, 
 		int n_fixed_medoids, 
 		int* centers) = 0;
+
+	virtual ~IClustering() {}
 };
 
 class CLARANS : public IClustering {

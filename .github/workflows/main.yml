@@ -9,8 +9,8 @@ on:
  
 jobs:
   
-  linux-test:
-    name: Linux test
+  linux-make:
+    name: Linux - make
     runs-on: ubuntu-latest
     env: 
       REF_DIR: ./test/adeno_fiber
@@ -20,96 +20,140 @@ jobs:
     - uses: actions/checkout@v2
     - name: make
       run: make -j2
-    
-      ########################################################################################    
-    
-    - name: single linkage (tree only)
-      run: |
-        ./famsa -gt_export ${INPUT} sl.dnd
-        cmp sl.dnd ${REF_DIR}/sl.dnd
-    
-    - name: single linkage (complete alignment)
-      run: |
-        ./famsa ${INPUT} sl.fasta
-        cmp sl.fasta ${REF_DIR}/sl.fasta
-     
-    - name: single linkage (from tree)
-      run: |
-        ./famsa -gt import sl.dnd ${INPUT} sl.dnd.fasta
-        cmp sl.dnd.fasta ${REF_DIR}/sl.fasta
         
-    ########################################################################################        
+    - name: copy sl->slink references
+      run: |
+        cp ./test/adeno_fiber/sl.fasta ./test/adeno_fiber/slink.fasta
+        cp ./test/hemopexin/medoid-sl.fasta ./test/hemopexin/medoid-slink.fasta  
+    
+    - name: tar artifacts
+      run: tar -cvf famsa.tar ./famsa ./test   
+    
+    - uses: actions/upload-artifact@v2
+      with:
+        name: executable-artifact
+        path: ./famsa.tar    
       
-    - name: prim (tree only)
-      run: |
-        ./famsa -gt mp -gt_export ${INPUT} mp.dnd
-        cmp sl.dnd ${REF_DIR}/sl.dnd
     
-    - name: prim (complete alignment)
-      run: |
-        ./famsa -gt mp ${INPUT} mp.fasta
-        cmp mp.fasta ${REF_DIR}/sl.fasta
-     
-    - name: prim (from tree)
-      run: |
-        ./famsa -gt import mp.dnd ${INPUT} mp.dnd.fasta
-        cmp mp.dnd.fasta ${REF_DIR}/sl.fasta    
+  ########################################################################################    
     
-    ########################################################################################    
+  full-tree:
+    name: Linux - full tree (adeno-fiber)
+    needs: linux-make
+    strategy:
+      fail-fast: false
+      matrix:
+        tree: [sl, upgma]
+
+    runs-on: ubuntu-latest
         
+    env: 
+      REF_DIR: ./test/adeno_fiber
+      INPUT: ./test/adeno_fiber/adeno_fiber
  
-    - name: upgma (tree only)
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: executable-artifact
+        path: ./
+        
+    - name: untar artifacts
+      run: tar -xf famsa.tar   
+
+    - name: ${{matrix.tree}} (tree only)
       run: |
-        ./famsa -gt upgma -gt_export ${INPUT} upgma.dnd
-        cmp upgma.dnd ${REF_DIR}/upgma.dnd
+        ./famsa -gt ${{matrix.tree}} -gt_export ${INPUT} ${{matrix.tree}}.dnd
+        cmp ${{matrix.tree}}.dnd ${REF_DIR}/${{matrix.tree}}.dnd
     
-    - name: upgma (complete alignment)
+    - name: ${{matrix.tree}} (complete alignment)
       run: |
-        ./famsa -gt upgma ${INPUT} upgma.fasta
-        cmp upgma.fasta ${REF_DIR}/upgma.fasta
+        ./famsa -gt ${{matrix.tree}} ${INPUT} ${{matrix.tree}}.fasta
+        cmp ${{matrix.tree}}.fasta ${REF_DIR}/${{matrix.tree}}.fasta
      
-    - name: upgma (from tree)
+    - name: ${{matrix.tree}} (from tree)
       run: |
-        ./famsa -gt import upgma.dnd ${INPUT} upgma.dnd.fasta
-        cmp upgma.dnd.fasta ${REF_DIR}/upgma.fasta
+        ./famsa -gt import ${{matrix.tree}}.dnd ${INPUT} ${{matrix.tree}}.dnd.fasta
+        cmp ${{matrix.tree}}.dnd.fasta ${REF_DIR}/${{matrix.tree}}.fasta
         
-    ########################################################################################    
-        
-    - name: medoid + single linkage (tree only)
+    - name: ${{matrix.tree}} (gzip)
       run: |
-        ./famsa -medoidtree -gt_export ${INPUT} medoid-sl.dnd
-        cmp  medoid-sl.dnd ${REF_DIR}/medoid-sl.dnd
+        ./famsa -gz -gt ${{matrix.tree}} ${INPUT} ${{matrix.tree}}.fasta.gz
+        pigz -f -d ${{matrix.tree}}.fasta.gz
+        cmp ${{matrix.tree}}.fasta ${REF_DIR}/${{matrix.tree}}.fasta
+        
+  ########################################################################################            
     
-    - name: medoid + single linkage (complete alignment)
-      run: |
-        ./famsa -medoidtree ${INPUT} medoid-sl.fasta
-        cmp medoid-sl.fasta ${REF_DIR}/medoid-sl.fasta
-     
-    - name: medoid + single linkage (from tree)
-      run: |
-        ./famsa -gt import medoid-sl.dnd ${INPUT} medoid-sl.fasta
-        cmp medoid-sl.fasta ${REF_DIR}/medoid-sl.fasta
+  medoid-tree:
+    name: Linux - medoid tree (hemopexin)
+    needs: full-tree
+    strategy:
+      fail-fast: false
+      matrix:
+        tree: [sl, upgma, nj]
+
+    runs-on: ubuntu-latest
+      
+    env: 
+      REF_DIR: ./test/hemopexin
+      INPUT: ./test/hemopexin/hemopexin
+ 
+    steps:  
+    - uses: actions/download-artifact@v2
+      with:
+        name: executable-artifact
+        path: ./
         
-    ########################################################################################        
-        
-    - name: medoid + upgma (tree only)
+    - name: untar artifacts
+      run: tar -xf famsa.tar       
+
+    - name: medoid + ${{matrix.tree}}  (tree only)
       run: |
-        ./famsa -gt upgma -medoidtree -gt_export ${INPUT} medoid-upgma.dnd
-        cmp medoid-upgma.dnd ${REF_DIR}/medoid-upgma.dnd
+        ./famsa -medoidtree -gt ${{matrix.tree}} -gt_export ${INPUT} medoid-${{matrix.tree}}.dnd
+        cmp  medoid-${{matrix.tree}}.dnd ${REF_DIR}/medoid-${{matrix.tree}}.dnd
     
-    - name: medoid + upgma (complete alignment)
+    - name: medoid + ${{matrix.tree}}  (complete alignment)
       run: |
-        ./famsa -gt upgma -medoidtree ${INPUT} medoid-upgma.fasta
-        cmp medoid-upgma.fasta ${REF_DIR}/medoid-upgma.fasta
+        ./famsa -medoidtree -gt ${{matrix.tree}} ${INPUT} medoid-${{matrix.tree}}.fasta
+        cmp medoid-${{matrix.tree}}.fasta ${REF_DIR}/medoid-${{matrix.tree}}.fasta
      
-    - name: medoid + upgma (from tree)
+    - name: medoid + ${{matrix.tree}}  (from tree)
       run: |
-        ./famsa -gt import medoid-upgma.dnd ${INPUT} medoid-upgma.fasta
-        cmp medoid-upgma.fasta ${REF_DIR}/medoid-upgma.fasta
+        ./famsa -gt import medoid-${{matrix.tree}}.dnd ${INPUT} medoid-${{matrix.tree}}.dnd.fasta
+        cmp medoid-${{matrix.tree}}.dnd.fasta ${REF_DIR}/medoid-${{matrix.tree}}.fasta
         
+    - name: medoid + ${{matrix.tree}}  (non-default params)
+      run: |
+        ./famsa -medoidtree -gt ${{matrix.tree}} -gt_export -subtree_size 10 -sample_size 100 -cluster_fraction 0.2 -cluster_iters 1 ${INPUT} medoid-${{matrix.tree}}-params.dnd
+        cmp  medoid-${{matrix.tree}}-params.dnd ${REF_DIR}/medoid-${{matrix.tree}}-params.dnd
         
-    ########################################################################################    
+  ########################################################################################        
+         
+  other-tests:
+    name: Linux - other tests (adeno-fiber)
+    needs: medoid-tree
+    strategy:
+      fail-fast: false
+ 
+    runs-on: ubuntu-latest    
         
+    env: 
+      REF_DIR: ./test/adeno_fiber
+      INPUT: ./test/adeno_fiber/adeno_fiber
+     
+    steps:
+    - uses: actions/download-artifact@v2
+      with:
+        name: executable-artifact
+        path: ./
+        
+    - name: untar artifacts
+      run: tar -xf famsa.tar   
+    
+    - name: non-default gaps
+      run: |
+        ./famsa -go 10 -ge 2 -tgo 0.5 -tge 1.0 -gsd 3 -gsl 30 ${INPUT} gaps.fasta
+        cmp gaps.fasta ${REF_DIR}/gaps.fasta
+    
     - name: export distance
       run: |
         ./famsa -dist_export ${INPUT} dist.csv
@@ -134,11 +178,11 @@ jobs:
   ########################################################################################    
       
   macos-build:
-    name: macOS test
+    name: macOS make
     runs-on: macOS-latest
 
     steps:
     - uses: actions/checkout@v2
     - name: make
-      run: make
+      run: make -j2
 

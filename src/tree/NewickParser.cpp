@@ -1,6 +1,6 @@
 /*
 This file is a part of FAMSA software distributed under GNU GPL 3 licence.
-The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
+The homepage of the FAMSA project is https://github.com/refresh-bio/FAMSA
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
@@ -76,7 +76,7 @@ void NewickParser::store(
 	oss << ",";
 	storeBranch(sequences, guideTree, guideTree.back().second, oss);
 	oss << ");";
-	description = std::move(oss.str());
+	description = oss.str();
 }
 
 std::ostream& NewickParser::storeBranch(const std::vector<CSequence>& sequences, const std::vector<pair<int, int>>& guideTree, int index, std::ostream& oss) {

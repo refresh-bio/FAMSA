@@ -1,6 +1,6 @@
 /*
 This file is a part of FAMSA software distributed under GNU GPL 3 licence.
-The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
+The homepage of the FAMSA project is https://github.com/refresh-bio/FAMSA
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
@@ -54,62 +54,74 @@ int main(int argc, char *argv[])
 	// ***** Read input file
 	LOG_VERBOSE << "Processing: " << params.input_file_name << "\n";
 
+	memory_monotonic_safe mma(16 << 20, 64);
+	
 	vector<CGappedSequence*> result;
 	vector<CSequence> sequences;
-	memory_monotonic_safe mma(16 << 20, 64);
 
 	size_t input_seq_cnt = IOService::loadFasta(params.input_file_name, sequences, &mma);
-//	size_t input_seq_cnt = IOService::loadFasta(params.input_file_name, sequences);
-    if(input_seq_cnt == 0){			
-    	LOG_NORMAL << "Error: no (or incorrect) input file\n";
-		return -1;
-	} else if (input_seq_cnt == 1){
-        CGappedSequence resultSeq(std::move(sequences[0]));
+	
+	bool ok = true;
+	
+	if (input_seq_cnt == 0) {
+		// no sequences loaded - signal error
+		LOG_NORMAL << "Error: no (or incorrect) input file\n";
+		ok = false;
+	}
+	else if (input_seq_cnt == 1) {
+		// single input sequence - write without alignment
+		CGappedSequence resultSeq(std::move(sequences[0]));
 		result.push_back(&resultSeq);
-		return IOService::saveAlignment(params.output_file_name, result, params.n_threads, -1);
+		ok = IOService::saveAlignment(params.output_file_name, result, params.n_threads, -1);
+	}
+	else {
+		// multitple input sequences - run alignment
+		CFAMSA famsa(params);
+		famsa.getStatistics().put("input.n_sequences", sequences.size());
+
+		if (famsa.ComputeMSA(sequences)) {
+			timer_saving.StartTimer();
+
+			// Save alignment if it was generated
+			if (famsa.GetAlignment(result)) {
+
+				famsa.getStatistics().put("alignment.length", result[0]->gapped_size);
+
+				LOG_VERBOSE << "Saving alignment in " << params.output_file_name;
+				if (params.gzippd_output)
+					ok = IOService::saveAlignment(params.output_file_name, result, params.n_threads, params.gzip_level);
+				else
+					ok = IOService::saveAlignment(params.output_file_name, result, params.n_threads, -1);
+
+				LOG_VERBOSE << " [OK]" << endl;
+			}
+
+			timer_saving.StopTimer();
+			timer.StopTimer();
+			LOG_NORMAL << "Done!\n";
+
+			if (params.verbose_mode || params.very_verbose_mode) {
+				famsa.getStatistics().put("time.save", timer_saving.GetElapsedTime());
+				famsa.getStatistics().put("time.total", timer.GetElapsedTime());
+
+				string stats = famsa.getStatistics().toString();
+
+				LOG_VERBOSE << endl << endl << "Statistics:" << endl << stats << endl;
+
+				std::ofstream ofs("famsa.stats");
+				ofs << "[stats]" << endl << stats;
+				ofs.close();
+			}
+
+		}
+		else {
+			LOG_NORMAL << "Some interal error occured!\n";
+			ok = false;
+		}
 	}
 
-	// ***** Load sequences to FAMSA
-	CFAMSA famsa(params);
-	famsa.getStatistics().put("input.n_sequences", sequences.size());
-	if(!famsa.ComputeMSA(sequences))
-	{
-		LOG_NORMAL << "Some interal error occured!\n";
-		return -1;
-	}
+	sequences.clear();
 
-	timer_saving.StartTimer();
-
-	if (famsa.GetAlignment(result)) {
-		
-		famsa.getStatistics().put("alignment.length", result[0]->gapped_size);
-
-		LOG_VERBOSE << "Saving alignment in " << params.output_file_name;		
-		if(params.gzippd_output)
-			IOService::saveAlignment(params.output_file_name, result, params.n_threads, params.gzip_level);
-		else
-			IOService::saveAlignment(params.output_file_name, result, params.n_threads, -1);
-
-		LOG_VERBOSE << " [OK]" << endl;		
-	}
-
-	timer_saving.StopTimer();
-	timer.StopTimer();
-	LOG_NORMAL << "Done!\n";
-
-	if (params.verbose_mode || params.very_verbose_mode) {
-		famsa.getStatistics().put("time.save", timer_saving.GetElapsedTime());
-		famsa.getStatistics().put("time.total", timer.GetElapsedTime());
-
-		string stats = famsa.getStatistics().toString();
-		
-		LOG_VERBOSE << endl << endl << "Statistics:" << endl << stats << endl;
-		
-		std::ofstream ofs("famsa.stats");
-		ofs << "[stats]" << endl << stats;
-		ofs.close();
-	}
-
-	return 0;
+	return ok ? 0 : -1;
 }
 

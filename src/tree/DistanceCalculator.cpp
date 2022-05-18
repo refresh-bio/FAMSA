@@ -26,7 +26,7 @@ void DistanceCalculator<_distance>::run(std::vector<CSequence>& sequences, tree_
 
 	// run workers
 	for (int tid = 0; tid < n_threads; ++tid) {
-		workers[tid] = thread([&queue, tid, this]() {
+		workers[tid] = thread([&queue, this]() {
 
 			CLCSBP lcsbp(instruction_set);
 			int row_id;

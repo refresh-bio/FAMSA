@@ -1,6 +1,6 @@
 /*
 This file is a part of FAMSA software distributed under GNU GPL 3 licence.
-The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
+The homepage of the FAMSA project is https://github.com/refresh-bio/FAMSA
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
@@ -67,9 +67,8 @@ void CParams::show_usage(bool expert)
 		<< "  -t <value> - no. of threads, 0 means all available (default: " << n_threads << ")\n"
 		<< "  -v - verbose mode, show timing information (default: disabled)\n\n"
 
-		<< "  -gt <sl | mp | upgma | nj | import <file>> - guide tree method (default: sl):\n"
-		<< "      * sl - single linkage (SLINK)\n"
-		<< "      * mp - single linkage (MST Prim)\n"
+		<< "  -gt <sl | upgma | nj | import <file>> - guide tree method (default: sl):\n"
+		<< "      * sl - single linkage \n"
 		<< "      * upgma - UPGMA\n"
 		<< "      * nj - neighbour joining\n"
 		<< "      * import <file> - imported from a Newick file\n"
@@ -78,7 +77,6 @@ void CParams::show_usage(bool expert)
 	//	<< "      * sqrt_indel_div_lcs\n\n"
 
 		<< "  -medoidtree - use MedoidTree heuristic for speeding up tree construction (default: disabled)\n"
-		//	<< "  -parttree - use PartTree heuristic for speeding up tree construction (default: disabled)\n"
 		<< "  -medoid_threshold <n_seqs> - if specified, medoid trees are used only for sets with <n_seqs> or more\n"
 		<< "  -gt_export - export a guide tree to output file in Newick format\n"
 		<< "  -dist_export - export a distance matrix to output file in CSV format\n"
@@ -88,7 +86,7 @@ void CParams::show_usage(bool expert)
 		<< "  -gz - enable gzipped output (default: " << bool2str[gzippd_output] << ")\n"
 		<< "  -gz-lev <value> - gzip compression level [0-9] (default: " << gzip_level << ")\n\n";
 
-	/*
+	
 	if (expert) {
 		LOG_NORMAL << "Advanced options:\n"
 			<< "  -r <value> - no. of refinement iterations (default: " << n_refinements << ")\n"
@@ -109,7 +107,7 @@ void CParams::show_usage(bool expert)
 #endif
 		LOG_NORMAL << endl;
 	}
-	*/
+	
 }
 
 

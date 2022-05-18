@@ -1,6 +1,6 @@
 /*
 This file is a part of FAMSA software distributed under GNU GPL 3 licence.
-The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
+The homepage of the FAMSA project is https://github.com/refresh-bio/FAMSA
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
@@ -128,7 +128,7 @@ public:
 	{
 		unique_lock<mutex> lck(mtx);
 
-		bool was_empty = n_elements == 0;
+		//bool was_empty = n_elements == 0;
 		q.emplace(priority, data);
 		++n_elements;
 
@@ -253,7 +253,7 @@ public:
 		unique_lock<mutex> lck(mtx);
 		cv_queue_full.wait(lck, [this, &priority] {return this->q.size() < this->size_limit || priority == this->current_priority; });
 
-		bool was_empty = n_elements == 0;
+		//bool was_empty = n_elements == 0;
 		q.emplace(priority, data);
 		++n_elements;
 

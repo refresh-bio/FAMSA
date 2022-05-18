@@ -1,6 +1,6 @@
 /*
 This file is a part of FAMSA software distributed under GNU GPL 3 licence.
-The homepage of the FAMSA project is http://sun.aei.polsl.pl/REFRESH/famsa
+The homepage of the FAMSA project is https://github.com/refresh-bio/FAMSA
 
 Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
@@ -60,8 +60,8 @@ public:
 	
 	static std::string toString(Method v) {
 		switch (v) {
-		case SLINK:				return "sl (single linkage) - SLINK";
-		case MST_Prim:			return "mp (single linkage) - MST+Prim";
+		case SLINK:				return "single linkage (SLINK)";
+		case MST_Prim:			return "single linkage (MST+Prim)";
 		case UPGMA:				return "upgma";
 		case UPGMA_modified:	return "upgma_modified";
 		case NJ:				return "nj";
@@ -87,8 +87,8 @@ public:
 	}
 
 	static Method fromString(const std::string& name) {
-		if (name == "sl") { return SLINK; }
-		if (name == "mp") { return MST_Prim; }
+		if (name == "sl") { return MST_Prim; }
+		if (name == "slink") { return SLINK; }
 		if (name == "upgma") { return UPGMA; }
 		if (name == "upgma_modified") { return UPGMA_modified; }
 		if (name == "nj") { return NJ; }

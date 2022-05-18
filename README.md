@@ -12,7 +12,18 @@
 ![Linux](https://img.shields.io/static/v1?label=%E2%80%8B&message=Linux&color=00A98F&logo=linux&logoColor=white)
 ![macOS](https://img.shields.io/badge/%E2%80%8B-macOS-00A98F?logo=apple)
 
-Progressive algorithm for large-scale multiple sequence alignments (3 million ABC transporters in 5 minutes and less than 30GB of RAM)
+Progressive algorithm for large-scale multiple sequence alignments.
+
+## New features in FAMSA 2 release candidate
+In version 2.0.0-rc the following important changes have been introduced:
+* Fast guide tree heuristic called Medoid Tree (`-medoidtree` switch) for ultra-scale alignments:
+  * the entire Pfam-A v33.1 in its largest NCBI variant (over 18 thousand families, 60 GB of raw FASTA files) was analyzed in 8 hours,	
+  * the famility PF00005 of 3 million ABC transporters was aligned in 5 minutes and 24 GB of RAM.
+* Remarkable time and memory optimizations - SLINK has been replaced with Prim’s minimum spanning tree algorithm when constructing default (single linkage) guide trees. NOTE: This may change quality results slightly compared to FAMSA 1 due to different ties resolution.
+* Neighbour joining guide trees (`-gt nj` option). NOTE: Neighbour joining trees are calculated with a use of original *O*(*N*<sup>3</sup>) algorithm, thus their applicability on large sets is limited (unless they are used as subtrees with Medoid Tree heuristic), 
+* Option for compressing output aligment to gzip (`-gz` switch).
+* Compatibility with ARM64 8 architecture (including Apple M1).
+
 
 ## Quick start
 
@@ -23,7 +34,7 @@ cd FAMSA && make
 # align sequences with default parameters (single linkage tree)
 ./famsa ./test/adeno_fiber/adeno_fiber sl.aln
 
-# align sequences using UPGMA tree with 8 computing threads, store the result in the GZ archive
+# align sequences using UPGMA tree with 8 computing threads, store the result in a GZ archive
 ./famsa -gt upgma -t 8 -gz ./test/adeno_fiber/adeno_fiber upgma.aln.gz
 
 # export a neighbour joining guide tree to the Newick format
@@ -89,7 +100,7 @@ Options:
 * `-t <value>` - no. of threads, 0 means all available (default: 0)
 * `-v` - verbose mode, show timing information (default: disabled)
 
-* `-gt <sl | upgma | import <file>>` - the guide tree method (default: sl):
+* `-gt <sl | upgma | nj | import <file>>` - the guide tree method (default: sl):
     * `sl` - single linkage,
     * `upgma` - UPGMA,
     * `nj` - neighbour joining,
@@ -106,11 +117,7 @@ Options:
 
 ### Guide tree import and export
 
-FAMSA has the ability to import/export alignment guide trees in Newick format. From version 1.5.0, the interface for tree management has changed:
-* `-gt_export` option does not require an additional parameter with file name. Instead, the name of the output file (`<output_file_name>`) is used. Note, that the output alignment is not produced.
-* `-gt_import` option is deprecated. Instead, use a syntax for specifying a tree type `-gt import <file>` where `file` is a Newick file name.
-
-E.g., in order to generate a UPGMA tree from the *input.fasta* file and store it in the *tree.dnd* file, run:
+FAMSA has the ability to import/export alignment guide trees in Newick format. E.g., in order to generate a UPGMA tree from the *input.fasta* file and store it in the *tree.dnd* file, run:
 ```
 famsa -gt upgma -gt_export input.fasta tree.dnd
 ``` 
@@ -130,12 +137,35 @@ Note, that when importing the tree, the branch lengths are not taken into accoun
 ## Algorithms
 The major algorithmic features in FAMSA are:
 * Pairwise distances based on the longest common subsequence (LCS). Thanks to the bit-level parallelism and utilization of SIMD extensions, LCS can be computed very fast. 
-* Single-linkage guide trees. While being very accurate, single-linkage trees can be established without storing entire distance matrix, which makes them suitable for large alignments. Although, alternative guide tree algorithms like UPGMA and neigbour joining ale also provided.
-* The new heuristic based on K-Medoid clustering for generating fast guide trees. Medoid trees can be calculated in O(NlogN) time and work with all types of subtrees (single linkage, UPGMA, NJ). The heuristic can be enabled with `-medoidtree` switch. Medoid trees allows ultra-scale alignments (e.g., the family of 3 million ABC transporters was processed in five minutes).
-
+* Single-linkage guide trees. While being very accurate, single-linkage trees can be established without storing entire distance matrix, which makes them suitable for large alignments. Although, the alternative guide tree algorithms like UPGMA and neighbour joining are also provided.
+* The new heuristic based on K-Medoid clustering for generating fast guide trees. Medoid trees can be calculated in *O*(*N* log*N*) time and work with all types of subtrees (single linkage, UPGMA, NJ). The heuristic can be enabled with `-medoidtree` switch and allow aligning millions of sequences in minutes.
 
 ## Experimental results
+The analysis was performed on our extHomFam 2 benchmark produced by combining Homstrad (March 2020) references with Pfam 33.1 families (NCBI variant). The data set was deposited at Zenodo: [https://zenodo.org/record/6524237](https://zenodo.org/record/6524237). The following algorithms were investigated:
 
+| Name  | Version  | Command line  |
+|---|---|---|
+| Clustal&Omega;  | 1.2.4 |  `clustalo --threads=32 -i <input> -o <output>` |
+| Clustal&Omega; iter2  | 1.2.4   | `clustalo --threads=32 --iter 2 -i <input> -o <output>` |
+| MAFFT PartTree  |  7.453 | `mafft --thread 32 --anysymbol --quiet --parttree <input> -o <output>` |
+| MAFFT DPPartTree  |  7.453 |  `mafft --thread 32 --anysymbol --quiet --dpparttree <input> -o <output>` |
+| FAMSA  | 1.6.2  | `famsa -t 32 <input> <output>`  |
+| FAMSA 2-rc | 2.0.0-rc  | `famsa -t 32 -gz <input> <output>`  |
+| FAMSA 2-rc Medoid | 2.0.0-rc  | `famsa -t 32 -medoidtree -gt upgma -gz <input> <output>`  |
+
+
+The tests were performed with 32 computing threads on a machine with AMD Ryzen Threadripper 3990X CPU and 256 GB of RAM. For each extHomFam 2 subset we measured a fraction of properly aligned columns (TC score) as well as a total running time and a maximum memory requirements. The results are presented in the figure below. Notches at boxplots indicate 95% confidence interval for median, triangle represent means. The missing series for some algorithm-set pairs indicate that either the algorithm failed to complete all the families in a set or the running times exceeded a week. FAMSA 2 alignments were stored in gzip format (`-gz` switch). 
+
+![extHomFam-v2-comparison](https://user-images.githubusercontent.com/14868954/168980595-a059edd1-9b1c-4d0f-9ba9-04fa2f17d5b4.png)
+
+
+The most important observations are as follows: 
+* FAMSA 2 was superior in terms of accuracy to both Clustal&Omega; and MAFFT. Only on the smallest families (*N* < 10k) Clustal&Omega; kept up with our algorithm.
+* The advantage of FAMSA 2 increased with the number of sequences and reached 20-30 percent points for (100k, 250k] subset. 
+* FAMSA 2 in default configuration was one to few orders of magnitude faster than the competitors and about 1/3 faster than its predecessor.
+* FAMSA 2 with medoid trees offered astonishing throughput (a famility PF00005 of 3 million ABC transporters was aligned in 5 minutes) with accuracy only slightly inferior to that of the default single linkage trees.
+* None of the competing algorithms was able to investigate the largest [250k, 3M) subset.
+* The memory requirements of FAMSA 2 allow ultra-scale analyzes at a desktop computer (24 GB for 3M sequences).
 
 
 ## Citing
