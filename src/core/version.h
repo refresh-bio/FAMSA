@@ -9,8 +9,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"2.0.0-rc"
-#define FAMSA_DATE		"2022-05-17"
+#define FAMSA_VER		"2.0.1"
+#define FAMSA_DATE		"2022-05-19"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
@@ -18,9 +18,12 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 /*
 Version history:
 
+2.0.1:
+- Several fixes for bioconda.
+
 2.0.0-rc:
-- default algorithm for single linkage trees changed from SLINK to MST Prim,
-- small fixes.
+- Default algorithm for single linkage trees changed from SLINK to MST Prim,
+- Small fixes.
 
 1.16.0 (2022-04-29):
  - mimalloc added as a single source library (no external linking).

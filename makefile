@@ -11,9 +11,11 @@ UNAME_S := $(shell uname -s)
 ifeq ($(UNAME_S),Darwin)
 	GCC_VERSION=8
 	ABI_FLAG =
+	CLINK_FLAGS =
 else
 	GCC_VERSION = $(shell $(CXX) -dumpversion | cut -f1 -d.)
 	ABI_FLAG = -fabi-version=0 
+	CLINK_FLAGS = -lrt
 endif
 
 
@@ -100,16 +102,16 @@ endif
  
  
 ifeq ($(STATIC_LINK), true) 
-	CFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 -$(COMMON_FLAGS) $(DEFINE_FLAGS) -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD) -I $(LIBS_DIR)
+	CXXFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 -$(COMMON_FLAGS) $(DEFINE_FLAGS) -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD) -I $(LIBS_DIR)
 	CLINK	= -lm -static -O3 -msse4 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD)
 else
-	CFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 $(COMMON_FLAGS) $(DEFINE_FLAGS) -std=$(CPP_STD) -pthread -I $(LIBS_DIR)
-	CLINK	= -lm -O3 $(COMMON_FLAGS) -std=$(CPP_STD) -pthread 
+	CXXFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 $(COMMON_FLAGS) $(DEFINE_FLAGS) -std=$(CPP_STD) -pthread -I $(LIBS_DIR)
+	CLINK	= -lm $(CLINK_FLAGS) -O3 $(COMMON_FLAGS) -std=$(CPP_STD) -pthread 
 endif
  
-CFLAGS_AVX = $(CFLAGS) -mavx ${ABI_FLAG} -mpopcnt -funroll-loops
-CFLAGS_AVX2 = $(CFLAGS) -mavx2 ${ABI_FLAG} -mpopcnt -funroll-loops
-CFLAGS_NEON = $(CFLAGS) ${ABI_FLAG} -funroll-loops
+CXXFLAGS_AVX = $(CXXFLAGS) -mavx ${ABI_FLAG} -mpopcnt -funroll-loops
+CXXFLAGS_AVX2 = $(CXXFLAGS) -mavx2 ${ABI_FLAG} -mpopcnt -funroll-loops
+CXXFLAGS_NEON = $(CXXFLAGS) ${ABI_FLAG} -funroll-loops
 
 
 
@@ -136,7 +138,7 @@ COMMON_OBJS := src/msa.o \
 	libs/mimalloc/static.o
 		
 src/lcs/lcsbp_classic.o : src/lcs/lcsbp_classic.cpp
-	$(CXX) $(CFLAGS) -c src/lcs/lcsbp_classic.cpp -o $@
+	$(CXX) $(CXXFLAGS) -c src/lcs/lcsbp_classic.cpp -o $@
 
 ifeq ($(SIMD), NONE) 
 LCS_OBJS := src/lcs/lcsbp.o \
@@ -144,9 +146,9 @@ LCS_OBJS := src/lcs/lcsbp.o \
 UTILS_OBJS := src/utils/utils.o 
 
 src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
-	$(CXX) $(CFLAGS) -c src/lcs/lcsbp.cpp -o $@
+	$(CXX) $(CXXFLAGS) -c src/lcs/lcsbp.cpp -o $@
 src/utils/utils.o : src/utils/utils.cpp
-	$(CXX) $(CFLAGS) -c src/utils/utils.cpp -o $@
+	$(CXX) $(CXXFLAGS) -c src/utils/utils.cpp -o $@
 
 else ifeq ($(SIMD), AVX1)
 LCS_OBJS := src/lcs/lcsbp.o \
@@ -156,14 +158,14 @@ UTILS_OBJS := src/utils/utils.o \
 	src/utils/utils_avx.o 
 
 src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
-	$(CXX) $(CFLAGS) -c src/lcs/lcsbp.cpp -o $@
+	$(CXX) $(CXXFLAGS) -c src/lcs/lcsbp.cpp -o $@
 src/lcs/lcsbp_avx_intr.o : src/lcs/lcsbp_avx_intr.cpp
-	$(CXX) $(CFLAGS_AVX) -c src/lcs/lcsbp_avx_intr.cpp -o $@
+	$(CXX) $(CXXFLAGS_AVX) -c src/lcs/lcsbp_avx_intr.cpp -o $@
 
 src/utils/utils.o : src/utils/utils.cpp
-	$(CXX) $(CFLAGS) -c src/utils/utils.cpp -o $@
+	$(CXX) $(CXXFLAGS) -c src/utils/utils.cpp -o $@
 src/utils/utils_avx.o : src/utils/utils_avx.cpp
-	$(CXX) $(CFLAGS_AVX) -c src/utils/utils_avx.cpp -o $@
+	$(CXX) $(CXXFLAGS_AVX) -c src/utils/utils_avx.cpp -o $@
 else ifeq ($(SIMD), NEON)
 LCS_OBJS := src/lcs/lcsbp.o \
 	src/lcs/lcsbp_classic.o \
@@ -172,14 +174,14 @@ UTILS_OBJS := src/utils/utils.o \
 	src/utils/utils_neon.o 
 
 src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
-	$(CXX) $(CFLAGS) -c src/lcs/lcsbp.cpp -o $@
+	$(CXX) $(CXXFLAGS) -c src/lcs/lcsbp.cpp -o $@
 src/lcs/lcsbp_avx_intr.o : src/lcs/lcsbp_avx_intr.cpp
-	$(CXX) $(CFLAGS_NEON) -c src/lcs/lcsbp_neon_intr.cpp -o $@
+	$(CXX) $(CXXFLAGS_NEON) -c src/lcs/lcsbp_neon_intr.cpp -o $@
 
 src/utils/utils.o : src/utils/utils.cpp
-	$(CXX) $(CFLAGS) -c src/utils/utils.cpp -o $@
+	$(CXX) $(CXXFLAGS) -c src/utils/utils.cpp -o $@
 src/utils/utils_neon.o : src/utils/utils_neon.cpp
-	$(CXX) $(CFLAGS_NEON) -c src/utils/utils_neon.cpp -o $@
+	$(CXX) $(CXXFLAGS_NEON) -c src/utils/utils_neon.cpp -o $@
 else
 LCS_OBJS := src/lcs/lcsbp.o \
 	src/lcs/lcsbp_classic.o \
@@ -191,26 +193,23 @@ UTILS_OBJS := src/utils/utils.o \
 	src/utils/utils_avx2.o
 
 src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
-	$(CXX) $(CFLAGS) -c src/lcs/lcsbp.cpp -o $@
+	$(CXX) $(CXXFLAGS) -c src/lcs/lcsbp.cpp -o $@
 src/lcs/lcsbp_avx_intr.o : src/lcs/lcsbp_avx_intr.cpp
-	$(CXX) $(CFLAGS_AVX) -c src/lcs/lcsbp_avx_intr.cpp -o $@
+	$(CXX) $(CXXFLAGS_AVX) -c src/lcs/lcsbp_avx_intr.cpp -o $@
 src/lcs/lcsbp_avx2_intr.o : src/lcs/lcsbp_avx2_intr.cpp
-	$(CXX) $(CFLAGS_AVX2) -c src/lcs/lcsbp_avx2_intr.cpp -o $@
+	$(CXX) $(CXXFLAGS_AVX2) -c src/lcs/lcsbp_avx2_intr.cpp -o $@
 
 src/utils/utils.o : src/utils/utils.cpp
-	$(CXX) $(CFLAGS) -c src/utils/utils.cpp -o $@
+	$(CXX) $(CXXFLAGS) -c src/utils/utils.cpp -o $@
 src/utils/utils_avx.o : src/utils/utils_avx.cpp
-	$(CXX) $(CFLAGS_AVX) -c src/utils/utils_avx.cpp -o $@
+	$(CXX) $(CXXFLAGS_AVX) -c src/utils/utils_avx.cpp -o $@
 src/utils/utils_avx2.o : src/utils/utils_avx2.cpp
-	$(CXX) $(CFLAGS_AVX2) -c src/utils/utils_avx2.cpp -o $@
+	$(CXX) $(CXXFLAGS_AVX2) -c src/utils/utils_avx2.cpp -o $@
 endif
 
 
 .cpp.o:
-	$(CXX) $(CFLAGS) -c $< -o $@
-
-.c.o:
-	$(CXX) $(CFLAGS) -c $< -o $@
+	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 famsa: deflate src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS)
 	$(CXX) $(CLINK) -o $@ src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS) $(LIB_FILES)
@@ -222,6 +221,6 @@ clean:
 	-rm src/tree/*.o
 	-rm src/utils/*.o
 	-rm src/*.o
-	-rm lib/mimalloc/*.o
+	-rm libs/mimalloc/*.o
 	-rm famsa
 

@@ -14,11 +14,11 @@
 
 Progressive algorithm for large-scale multiple sequence alignments.
 
-## New features in FAMSA 2 release candidate
+## New features in FAMSA 2
 In version 2.0.0-rc the following important changes have been introduced:
 * Fast guide tree heuristic called Medoid Tree (`-medoidtree` switch) for ultra-scale alignments:
   * the entire Pfam-A v33.1 in its largest NCBI variant (over 18 thousand families, 60 GB of raw FASTA files) was analyzed in 8 hours,	
-  * the famility PF00005 of 3 million ABC transporters was aligned in 5 minutes and 24 GB of RAM.
+  * the family PF00005 of 3 million ABC transporters was aligned in 5 minutes and 24 GB of RAM.
 * Remarkable time and memory optimizations - SLINK has been replaced with Prim’s minimum spanning tree algorithm when constructing default (single linkage) guide trees. NOTE: This may change quality results slightly compared to FAMSA 1 due to different ties resolution.
 * Neighbour joining guide trees (`-gt nj` option). NOTE: Neighbour joining trees are calculated with a use of original *O*(*N*<sup>3</sup>) algorithm, thus their applicability on large sets is limited (unless they are used as subtrees with Medoid Tree heuristic), 
 * Option for compressing output aligment to gzip (`-gz` switch).
@@ -150,8 +150,8 @@ The analysis was performed on our extHomFam 2 benchmark produced by combining Ho
 | MAFFT PartTree  |  7.453 | `mafft --thread 32 --anysymbol --quiet --parttree <input> -o <output>` |
 | MAFFT DPPartTree  |  7.453 |  `mafft --thread 32 --anysymbol --quiet --dpparttree <input> -o <output>` |
 | FAMSA  | 1.6.2  | `famsa -t 32 <input> <output>`  |
-| FAMSA 2-rc | 2.0.0-rc  | `famsa -t 32 -gz <input> <output>`  |
-| FAMSA 2-rc Medoid | 2.0.0-rc  | `famsa -t 32 -medoidtree -gt upgma -gz <input> <output>`  |
+| FAMSA 2 | 2.0.1  | `famsa -t 32 -gz <input> <output>`  |
+| FAMSA 2 Medoid | 2.0.1  | `famsa -t 32 -medoidtree -gt upgma -gz <input> <output>`  |
 
 
 The tests were performed with 32 computing threads on a machine with AMD Ryzen Threadripper 3990X CPU and 256 GB of RAM. For each extHomFam 2 subset we measured a fraction of properly aligned columns (TC score) as well as a total running time and a maximum memory requirements. The results are presented in the figure below. Notches at boxplots indicate 95% confidence interval for median, triangle represent means. The missing series for some algorithm-set pairs indicate that either the algorithm failed to complete all the families in a set or the running times exceeded a week. FAMSA 2 alignments were stored in gzip format (`-gz` switch). 
