@@ -15,7 +15,6 @@
 Progressive algorithm for large-scale multiple sequence alignments.
 
 ## New features in FAMSA 2
-In version 2.0.0-rc the following important changes have been introduced:
 * Fast guide tree heuristic called Medoid Tree (`-medoidtree` switch) for ultra-scale alignments:
   * the entire Pfam-A v33.1 in its largest NCBI variant (over 18 thousand families, 60 GB of raw FASTA files) was analyzed in 8 hours,	
   * the family PF00005 of 3 million ABC transporters was aligned in 5 minutes and 24 GB of RAM.
@@ -156,7 +155,7 @@ The analysis was performed on our extHomFam 2 benchmark produced by combining Ho
 
 The tests were performed with 32 computing threads on a machine with AMD Ryzen Threadripper 3990X CPU and 256 GB of RAM. For each extHomFam 2 subset we measured a fraction of properly aligned columns (TC score) as well as a total running time and a maximum memory requirements. The results are presented in the figure below. Notches at boxplots indicate 95% confidence interval for median, triangle represent means. The missing series for some algorithm-set pairs indicate that either the algorithm failed to complete all the families in a set or the running times exceeded a week. FAMSA 2 alignments were stored in gzip format (`-gz` switch). 
 
-![extHomFam-v2-comparison](https://user-images.githubusercontent.com/14868954/168980595-a059edd1-9b1c-4d0f-9ba9-04fa2f17d5b4.png)
+![extHomFam-v2-comparison](https://user-images.githubusercontent.com/14868954/169275333-b15700f6-3431-4c87-9a7f-b52712d2788c.png)
 
 
 The most important observations are as follows: 
@@ -167,6 +166,11 @@ The most important observations are as follows:
 * None of the competing algorithms was able to investigate the largest [250k, 3M) subset.
 * The memory requirements of FAMSA 2 allow ultra-scale analyzes at a desktop computer (24 GB for 3M sequences).
 
+## Datasets
+
+Benchmark data sets developed and used in the FAMSA study:
+* extHomFam: [https://doi.org/10.7910/DVN/BO2SVW](https://doi.org/10.7910/DVN/BO2SVW)
+* extHomFam 2: [https://zenodo.org/record/6524237](https://zenodo.org/record/6524237)
 
 ## Citing
 [Deorowicz, S., Debudaj-Grabysz, A., Gudyś, A. (2016) FAMSA: Fast and accurate multiple sequence alignment of huge protein families. 
