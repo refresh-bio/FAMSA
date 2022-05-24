@@ -45,6 +45,7 @@ size_t IOService::loadFasta(const std::string& file_name, std::vector<CSequence>
 	while (in->good())
 	{
 		getline(*in, s);
+	
 		while (!s.empty() && (s[s.length() - 1] == '\n' || s[s.length() - 1] == '\r'))
 			s.pop_back();
 		if (s.empty())
@@ -59,8 +60,10 @@ size_t IOService::loadFasta(const std::string& file_name, std::vector<CSequence>
 			}
 			id = s;
 		}
-		else
+		else {
+			s.erase(std::remove(s.begin(), s.end(), '-'), s.end());
 			seq += s;
+		}
 	}
 
 	if (!id.empty() && !seq.empty())

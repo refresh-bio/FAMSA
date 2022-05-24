@@ -211,6 +211,11 @@ jobs:
       run: |
         ./famsa-${{matrix.compiler}} -dist_export -square_matrix -pid ${INPUT} pid_sq.csv
         cmp pid_sq.csv ${REF_DIR}/pid_sq.csv
+        
+    - name: align the alignment
+      run: |
+        ./famsa-${{matrix.compiler}} ${REF_DIR}/upgma.fasta upgma2sl.fasta
+        cmp upgma2sl.fasta ${REF_DIR}/sl.fasta
       
 ########################################################################################
   noavx-tests:
