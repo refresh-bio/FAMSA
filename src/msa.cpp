@@ -527,8 +527,6 @@ bool CFAMSA::GetAlignment(vector<CGappedSequence*> &result)
 
 	result = final_profile->data;
 
-	sort(result.begin(), result.end(), [](CGappedSequence *p, CGappedSequence *q){return p->id < q->id;});
-
 	return !result.empty();
 }
 
@@ -594,6 +592,7 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 		<< " Instruction set: " << instr_names[(int)instruction_set] << endl << endl;
 
 
+	std::vector<int> shuffled2true(sequences.size());
 	GuideTree tree;
 
 	bool goOn = true;
@@ -604,11 +603,6 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 		
 		std::shared_ptr<AbstractTreeGenerator> calculator = createTreeGenerator(params);
 		tree_structure tree;
-
-		// update sequence identifiers
-		for (int i = 0; i < (int)sequences.size(); ++i) {
-			sequences[i].sequence_no = i;
-		}
 
 		(*calculator)(sequences, tree);
 		LOG_VERBOSE << " [OK]" << endl;
@@ -633,8 +627,9 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 			LOG_VERBOSE << " [OK]" << endl;
 		}
 
-		// update sequence identifiers
+		// store mappings and temporarily reset numerical identifiers (to make medoid trees work)
 		for (int i = 0; i < (int)sequences.size(); ++i) {
+			shuffled2true[i] = sequences[i].sequence_no;
 			sequences[i].sequence_no = i;
 		}
 		timers[TIMER_SORTING].StopTimer();
@@ -683,8 +678,11 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 	if (goOn) {
 		// Convert sequences into gapped sequences
 		gapped_sequences.reserve(sequences.size());
-		for (auto &p : sequences)
-			gapped_sequences.emplace_back(std::move(p));
+		for (int i = 0; i < sequences.size(); ++i) {
+			// restore proper numerical identifiers
+			sequences[i].sequence_no = shuffled2true[i];
+			gapped_sequences.emplace_back(std::move(sequences[i]));
+		}
 		std::vector<CSequence>().swap(sequences); // clear input vector
 
 		timers[TIMER_ALIGNMENT].StartTimer();
@@ -704,6 +702,14 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 		if (final_profile->Size() != gapped_sequences.size()) {
 			throw std::runtime_error("Error: incomplete guide tree - report a bug");
 		}
+
+		// restore original ordering in profile
+		std::vector<CGappedSequence*> ordered_profile(gapped_sequences.size(), nullptr);
+		for (int i = 0; i < ordered_profile.size(); ++i) {
+			int true_id = final_profile->data[i]->sequence_no;
+			ordered_profile[true_id] = final_profile->data[i];
+		}
+		final_profile->data = std::move(ordered_profile);
 	}
 
 	if (params.verbose_mode || params.very_verbose_mode) {

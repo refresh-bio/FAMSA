@@ -9,14 +9,17 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"2.0.2"
-#define FAMSA_DATE		"2022-05-24"
+#define FAMSA_VER		"2.0.3"
+#define FAMSA_DATE		"2022-05-26"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+2.0.3:
+- The ordering of the input sequences preserved in the final alignment.
 
 2.0.2:
 - Alignment allowed as an input (gaps are removed).

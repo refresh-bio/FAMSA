@@ -41,7 +41,7 @@ public:
 	
 public:
 	CSequence() = delete;
-	CSequence(const string& _id, const string& seq, memory_monotonic_safe *mma = nullptr);
+	CSequence(const string& _id, const string& seq, int sequence_no = -1, memory_monotonic_safe *mma = nullptr);
 	
 	// sequences are not copyable
 	CSequence(const CSequence& x) noexcept = delete;
@@ -90,6 +90,7 @@ public:
 
 	size_t dps_size;
 	size_t dps_size_div2;
+	int sequence_no;
 
     vector<uint32_t> n_gaps;
     vector<uint32_t> dps;        // dynamic position statistics (DSP) for the sequence

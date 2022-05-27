@@ -41,6 +41,7 @@ size_t IOService::loadFasta(const std::string& file_name, std::vector<CSequence>
 
 	string s;
 	string id, seq;
+	int seq_no = 0;
 
 	while (in->good())
 	{
@@ -55,7 +56,7 @@ size_t IOService::loadFasta(const std::string& file_name, std::vector<CSequence>
 		{
 			if (!id.empty() && !seq.empty())
 			{
-				sequences.emplace_back(id, seq, mma);
+				sequences.emplace_back(id, seq, seq_no++, mma);
 				seq.clear();
 			}
 			id = s;
@@ -67,7 +68,7 @@ size_t IOService::loadFasta(const std::string& file_name, std::vector<CSequence>
 	}
 
 	if (!id.empty() && !seq.empty())
-		sequences.emplace_back(id, seq, mma);
+		sequences.emplace_back(id, seq, seq_no++, mma);
 
 	return sequences.size();
 }

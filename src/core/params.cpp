@@ -136,6 +136,7 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 			showExpert = true;
 			return false;
 		}
+		// advanced params
 		else if (cur_par == "-go")
 			gap_open_base = atof(argv[argno++]);
 		else if (cur_par == "-ge")
@@ -159,10 +160,14 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 			n_refinements = atoi(argv[argno++]);
 		else if (cur_par == "-fr")
 			enable_auto_refinement = false;
-		else if (cur_par == "-t")
-			n_threads = atoi(argv[argno++]);
+		else if (cur_par == "-rt")
+			thr_refinement = atoi(argv[argno++]);
 		else if (cur_par == "-ri")
 			thr_internal_refinement = atoi(argv[argno++]);
+		
+		// user params
+		else if (cur_par == "-t")
+			n_threads = atoi(argv[argno++]);
 		else if (cur_par == "-gt")
 		{
 			string name(argv[argno++]);
