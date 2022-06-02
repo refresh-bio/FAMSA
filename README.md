@@ -33,7 +33,7 @@ cd FAMSA && make
 # align sequences with default parameters (single linkage tree)
 ./famsa ./test/adeno_fiber/adeno_fiber sl.aln
 
-# align sequences using UPGMA tree with 8 computing threads, store the result in a GZ archive
+# align sequences using UPGMA tree with 8 computing threads, store the result in a gzip archive
 ./famsa -gt upgma -t 8 -gz ./test/adeno_fiber/adeno_fiber upgma.aln.gz
 
 # export a neighbour joining guide tree to the Newick format
@@ -148,22 +148,22 @@ The analysis was performed on our extHomFam 2 benchmark produced by combining Ho
 | Clustal&Omega; iter2  | 1.2.4   | `clustalo --threads=32 --iter 2 -i <input> -o <output>` |
 | MAFFT PartTree  |  7.453 | `mafft --thread 32 --anysymbol --quiet --parttree <input> -o <output>` |
 | MAFFT DPPartTree  |  7.453 |  `mafft --thread 32 --anysymbol --quiet --dpparttree <input> -o <output>` |
+| Kalign3 | 3.3.2 | `kalign -i <input> -o <output>` | 
 | FAMSA  | 1.6.2  | `famsa -t 32 <input> <output>`  |
 | FAMSA 2 | 2.0.1  | `famsa -t 32 -gz <input> <output>`  |
 | FAMSA 2 Medoid | 2.0.1  | `famsa -t 32 -medoidtree -gt upgma -gz <input> <output>`  |
 
 
-The tests were performed with 32 computing threads on a machine with AMD Ryzen Threadripper 3990X CPU and 256 GB of RAM. For each extHomFam 2 subset we measured a fraction of properly aligned columns (TC score) as well as a total running time and a maximum memory requirements. The results are presented in the figure below. Notches at boxplots indicate 95% confidence interval for median, triangle represent means. The missing series for some algorithm-set pairs indicate that either the algorithm failed to complete all the families in a set or the running times exceeded a week. FAMSA 2 alignments were stored in gzip format (`-gz` switch). 
+The tests were performed with 32 computing threads on a machine with AMD Ryzen Threadripper 3990X CPU and 256 GB of RAM. For each extHomFam 2 subset we measured a fraction of properly aligned columns (TC score) as well as a total running time and a maximum memory requirements. The results are presented in the figure below. Notches at boxplots indicate 95% confidence interval for median, triangle represent means. The missing series for some algorithm-set pairs indicate that the running times exceeded a week. Kalign3 failed to process 10 families (5 in second, 3 in fourth, and 2 in the largest subset). FAMSA 2 alignments were stored in gzip format (`-gz` switch). 
 
-![extHomFam-v2-comparison](https://user-images.githubusercontent.com/14868954/169275333-b15700f6-3431-4c87-9a7f-b52712d2788c.png)
+![extHomFam-v2-TC-comparison](https://user-images.githubusercontent.com/14868954/171652224-af88d980-5b49-4dcc-95e7-4de5dc152fb3.png)
 
 
 The most important observations are as follows: 
-* FAMSA 2 was superior in terms of accuracy to both Clustal&Omega; and MAFFT. Only on the smallest families (*N* < 10k) Clustal&Omega; kept up with our algorithm.
+* FAMSA 2 was superior in terms of accuracy to all the competitors. Only on the smallest families (*N* < 10k) Clustal&Omega; kept up with our algorithm.
 * The advantage of FAMSA 2 increased with the number of sequences and reached 20-30 percent points for (100k, 250k] subset. 
-* FAMSA 2 in default configuration was one to few orders of magnitude faster than the competitors and about 1/3 faster than its predecessor.
-* FAMSA 2 with medoid trees offered astonishing throughput (a famility PF00005 of 3 million ABC transporters was aligned in 5 minutes) with accuracy only slightly inferior to that of the default single linkage trees.
-* None of the competing algorithms was able to investigate the largest [250k, 3M) subset.
+* FAMSA 2 with medoid trees offered astonishing throughput (a familiy PF00005 of 3 million ABC transporters was aligned in 5 minutes) with accuracy only slightly inferior to that of the default single linkage trees.
+* None of the competing algorithms was able to complete all the families in the largest [250k, 3M) subset.
 * The memory requirements of FAMSA 2 allow ultra-scale analyzes at a desktop computer (24 GB for 3M sequences).
 
 ## Datasets
