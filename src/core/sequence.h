@@ -99,6 +99,7 @@ public:
 	vector<bool> uppercase;
 
 	CGappedSequence() = delete;
+  CGappedSequence(const string& _id, const string& seq);
     CGappedSequence(CSequence &&_sequence);
     CGappedSequence(const CGappedSequence &_gapped_sequence);
     CGappedSequence(CGappedSequence &&_gapped_sequence) noexcept;

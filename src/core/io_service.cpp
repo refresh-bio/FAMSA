@@ -74,6 +74,58 @@ size_t IOService::loadFasta(const std::string& file_name, std::vector<CSequence>
 }
 
 // *******************************************************************
+
+size_t IOService::loadProfile(const std::string& file_name, std::vector<CSequence>& sequences, std::vector<CGappedSequence>& profile_sequences, int seq_no, memory_monotonic_safe* mma)
+{
+  istream *in;
+  ifstream infile;
+
+  if (file_name=="STDIN"){
+    in=&cin;
+  }
+  else {
+    infile.open(file_name, ios_base::in);
+    if (!infile.good())
+      return 0;
+    in=&infile;
+  }
+
+  string s;
+  string id, seq;
+  string reduced_sequence;
+
+  while (in->good())
+    {
+      getline(*in, s);
+      while (!s.empty() && (s[s.length()-1]=='\n' || s[s.length()-1]=='\r'))
+	s.pop_back();
+      if (s.empty())
+	continue;
+      if (s[0]=='>')
+	{
+	  if (!id.empty() && !seq.empty())
+	    {
+	      reduced_sequence=seq.erase(std::remove(seq.begin(), seq.end(),'-'), seq.end());
+	      sequences.emplace_back(id, reduced_sequence, seq_no, mma);
+	      profile_sequences.emplace_back(id, seq, seq_no, mma);
+	      seq_no++;
+	      seq.clear();
+	      reduced_sequence.clear();
+	    }
+	  id=s;
+	}
+      else
+	seq+=s;
+    }
+  if (!id.empty() && !seq.empty()){
+    sequences.push_back(CSequence(id, seq, seq_no, mma));
+    profile_sequences.push_back(CGappedSequence(id, seq, seq_no, mma));
+    seq_no++;
+  }
+  return profile_sequences.size();
+}
+// *******************************************************************
+
 bool IOService::saveAlignment(const std::string& file_name, vector<CGappedSequence*>& sequences, int no_threads, int gzip_level)
 {
 	string s;

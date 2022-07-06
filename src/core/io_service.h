@@ -17,5 +17,6 @@ class IOService {
 
 public:
 	static size_t loadFasta(const std::string& file_name, std::vector<CSequence>& sequences, memory_monotonic_safe* mma = nullptr);
+  static size_t loadProfile(const std::string& file_name, std::vector<CSequence>& sequences, std::vector<CGappedSequence>* profile_sequences, int seq_no, memory monotonic_safe* mma=nullptr);
 	static bool saveAlignment(const std::string& file_name, vector<CGappedSequence*> & sequences, int no_threads, int gzip_level);
 };

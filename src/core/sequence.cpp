@@ -185,6 +185,62 @@ void CSequence::ReleaseBitMasks()
 // *******************************************************************
 
 // *******************************************************************
+CGappedSequence::CGappedSequence(const string& _id, const& seq, int seq_no, memory_monotonic_safe* mma) : id(_id), mma(mma), sequence_no(seq_no)
+{
+  
+  string reduced_seq;
+  gapped_size=seq.size();
+  for (auto &ch : seq)
+    {
+      if (ch!='-')
+	{
+	  reduced_seq.push_back(ch)
+	    }
+    }
+  size_t length=reduced_seq.length();
+  symbols.resize(length);
+  uppercase.resize(length);
+
+  for (size_t i=0; i<length; ++i)
+    {
+      char c=reduced_seq[i];
+      if (c>'Z')
+	{
+	  c-=32;
+	  uppercase[i]=false;
+	}
+      else
+	{
+	  uppercase[i]=true;
+	}
+      char *q = find(mapping_table, mapping_table+25, c);
+      if (q==mapping_table+25)
+	{
+	  symbols[i]=(symbol_t) UNKNOWN_SYMBOL;
+	}
+      else
+	symbols[i]=(symbol_t) (q-mapping_table);
+    }
+  size=symbols.size();
+  n_gaps.resize(size+1,0);
+  int place=0;
+  int counter=0;
+  for (auto &ch: seq)
+    {
+      if (ch=='-')
+	{counter++;
+	}
+      else {
+	n_gaps.at(place)=counter;
+	counter=0;
+	place++;
+      }
+    }
+  n_gaps.at(place)=counter;
+  InitialiseDPS();
+}
+//*******************88******************************************************************************************************************************************************************************************************************************************************
+
 CGappedSequence::CGappedSequence(CSequence&& _sequence)
 {
 	id = std::move(_sequence.id);
