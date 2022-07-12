@@ -52,9 +52,80 @@ int main(int argc, char *argv[])
 	}
 
 	// ***** Read input file
-	LOG_VERBOSE << "Processing: " << params.input_file_name << "\n";
-
+	
 	memory_monotonic_safe mma(16 << 20, 64);
+
+	memory_monotonic_safe mma1(16 << 20, 64);
+
+	memory_monotonic_safe mma2(16 << 20, 64);
+
+	vector<CGappedSequence*> aligned_result;
+
+	if (params.profile_aligning)
+	  {
+	    vector<CGappedSequence> first_gapped_seq_set;
+	    vector<CSequence> first_seq_set;
+
+	    int seq_no=0;
+
+	    size_t aligned_cnt_1=IOService::loadProfile(params.input_prof1, first_seq_set, first_gapped_seq_set, seq_no, &mma1);
+
+	    vector<CGappedSequence*> test;
+
+	    string seq;
+
+
+   	    vector<CGappedSequence> second_gapped_seq_set;
+	    vector<CSequence> second_seq_set;
+
+	    seq_no= static_cast<int>(aligned_cnt_1);
+
+	    size_t aligned_cnt_2=IOService::loadProfile(params.input_prof2, second_seq_set, second_gapped_seq_set, seq_no, &mma2);
+	    CFAMSA profile_aligner(params);
+
+	    profile_aligner.adjustParams((int)(aligned_cnt_1+aligned_cnt_2));	  
+
+	    CGappedSequence* gs;
+
+	    vector<CGappedSequence>* first_gapped_sequence_pointer=&first_gapped_seq_set;
+	    vector<CGappedSequence>* second_gapped_sequence_pointer=&second_gapped_seq_set;
+
+	    CProfile prof_1=CProfile(&profile_aligner.params);
+
+	    CProfile prof_2=CProfile(&profile_aligner.params);
+
+	    for (int i=0; i<aligned_cnt_1;i++){
+	      gs=&((*first_gapped_sequence_pointer)[i]);
+	      prof_1.AppendRawSequence(*gs);
+	    }
+	    std::cout<<"appended the raw sequences"<<'\n';
+	    prof_1.CalculateCountersScores();
+	    std::cout<<"calculated counter and scores"<<'\n';
+
+	    for (int i=0; i<aligned_cnt_2; i++){
+	      gs=&((*second_gapped_sequence_pointer)[i]);
+	      prof_2.AppendRawSequence(*gs);
+	    }
+	    std::cout<<"appended the raw sequences"<<'\n';
+	    prof_2.CalculateCountersScores();
+	    std::cout<<"calculated the counter and scores"<<'\n';
+	    uint32_t no_threads=1;
+	    uint32_t no_rows_per_box=0;
+
+	    CProfile merged_profile=CProfile(&prof_1, &prof_2, &profile_aligner.params, no_threads, no_rows_per_box);
+
+	    std::cout<<"merged profiles"<<'\n';
+
+	    aligned_result=merged_profile.data;
+
+	    sort(aligned_result.begin(), aligned_result.end(), [](CGappedSequence *p, CGappedSequence *q){return p-> id < q->id;});
+	    IOService::saveAlignment(params.output_prof_align, aligned_result, params.n_threads, -1);
+	    return 0;
+	  }	
+
+
+	LOG_VERBOSE << "Processing"<<params.input_file_name<<'\n';
+	    
 	
 	vector<CGappedSequence*> result;
 	vector<CSequence> sequences;

@@ -38,12 +38,12 @@ protected:
 	static const int TIMER_REFINMENT = 3;
 	static const int TIMER_TREE_STORE = 4;
 
-	CParams params;
+  //CParams params;
 	static double SM_MIQS[24][24];
-	vector<vector<score_t>> score_matrix;
+  //vector<vector<score_t>> score_matrix;
 	vector<score_t> score_vector;
 
-	instruction_set_t instruction_set;
+  //instruction_set_t instruction_set;
 	vector<CGappedSequence> gapped_sequences;
 
 	score_t avg_sim;
@@ -64,7 +64,7 @@ protected:
 #endif
 	
 	void initScoreMatrix();
-	void adjustParams(int n_seqs);
+  //void adjustParams(int n_seqs);
 
 #ifdef DEVELOPER_MODE
 	vector<CSequence> ref_sequences;
@@ -77,6 +77,9 @@ protected:
 	std::shared_ptr<AbstractTreeGenerator> createTreeGenerator(const CParams& params);
 
 public:
+  CParams params;
+  instruction_set_t instruction_set;
+  vector<vector<score_t>> score_matrix;
 	CFAMSA(CParams& _params);
 	~CFAMSA();
 
@@ -88,6 +91,7 @@ public:
 #endif
 
 	bool GetAlignment(vector<CGappedSequence*> &result);
+  void adjustParams(int n_seqs);
 	
 	score_t GetScore() { return final_profile != nullptr ? final_profile->total_score : 0;  }
 	

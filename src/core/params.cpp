@@ -85,6 +85,7 @@ void CParams::show_usage(bool expert)
 
 		<< "  -gz - enable gzipped output (default: " << bool2str[gzippd_output] << ")\n"
 		<< "  -gz-lev <value> - gzip compression level [0-9] (default: " << gzip_level << ")\n\n";
+	//<< " -ppalign aligns two user-defined alignment files. Takes arguments as ./famsa -ppalign prof1.fasta prof2.fasta profs_aligned.fasta allseq.fasta all_aligned.fasta\n";
 
 	
 	if (expert) {
@@ -137,6 +138,18 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 			return false;
 		}
 		// advanced params
+		else if (cur_par == "-ppalign"){
+		  profile_aligning=true;
+		  input_prof1=argv[argno++];
+		  input_prof2=argv[argno++];
+		  output_prof_align=argv[argno++];
+		}
+		else if (cur_par == "-psalign"){
+		  seq_aligning=true;
+		  input_prof1=argv[argno++];
+		  input_prof2=argv[argno++];
+		  output_prof_align=argv[argno++];
+		}
 		else if (cur_par == "-go")
 			gap_open_base = atof(argv[argno++]);
 		else if (cur_par == "-ge")
@@ -250,15 +263,17 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 		}
 	}
 
-	if (argno + 2 > argc)
+	if (argno + 2 > argc && (!profile_aligning))
 	{
 		LOG_NORMAL << "No file name gives\n";
 		return false;
 	}
 
+	if (!profile_aligning)
+	  {
 	input_file_name = string(argv[argno++]);
 	output_file_name = string(argv[argno++]);
-
+	  }
 
 #ifdef HUGE_ALIGNMENTS
 	gap_open = -gap_open_base;

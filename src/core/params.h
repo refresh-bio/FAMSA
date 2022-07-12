@@ -40,6 +40,8 @@ public:
 	bool enable_gap_optimization			= true;
 	bool enable_total_score_calculation		= true;
 	bool enable_auto_refinement				= true;
+	bool profile_aligning                   = false;
+	bool seq_aligning                       = false;
 	
 	uint32_t n_refinements					= 100;
 	uint32_t thr_refinement					= 1000;
@@ -78,6 +80,9 @@ public:
 	bool very_verbose_mode = false;
 
 	string input_file_name;
+  string input_prof1;
+  string input_prof2;
+  string output_prof_align;
 	string output_file_name;
 
 	vector<vector<score_t>> score_matrix;

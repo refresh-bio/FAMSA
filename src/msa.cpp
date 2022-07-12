@@ -551,7 +551,6 @@ bool CFAMSA::LoadRefSequences()
 bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 {
 	adjustParams((int)sequences.size());
-	
 	LOG_VERBOSE 
 		<< "Params:\n"
 		<< "  no. of threads: " << params.n_threads << "\n"
@@ -590,7 +589,6 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 	LOG_VERBOSE << "Hardware configuration: " << endl
 		<< " Number of threads: " << params.n_threads << endl
 		<< " Instruction set: " << instr_names[(int)instruction_set] << endl << endl;
-
 
 	std::vector<int> shuffled2true(sequences.size());
 	GuideTree tree;
@@ -649,7 +647,8 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 		timers[TIMER_TREE_BUILD].StopTimer();
 	}
 
-	// store guide tree in Newick format 
+	// store guide tree in Newick format
+	std::cout<<"making tree"<<'\n';
 	if (params.export_tree) {
 		timers[TIMER_TREE_STORE].StartTimer();
 		LOG_VERBOSE << "Storing guide tree in: " << params.output_file_name;

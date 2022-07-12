@@ -1,3 +1,4 @@
+
 /*
 This file is a part of FAMSA software distributed under GNU GPL 3 licence.
 The homepage of the FAMSA project is https://github.com/refresh-bio/FAMSA
@@ -105,12 +106,11 @@ size_t IOService::loadProfile(const std::string& file_name, std::vector<CSequenc
 	{
 	  if (!id.empty() && !seq.empty())
 	    {
-	      reduced_sequence=seq.erase(std::remove(seq.begin(), seq.end(),'-'), seq.end());
-	      sequences.emplace_back(id, reduced_sequence, seq_no, mma);
-	      profile_sequences.emplace_back(id, seq, seq_no, mma);
+	      //reduced_sequence=seq.erase(std::remove(seq.begin(), seq.end(),'-'), seq.end());
+	      sequences.emplace_back(id, seq, seq_no, mma);
+	      profile_sequences.emplace_back(id,seq,seq_no,mma);
 	      seq_no++;
 	      seq.clear();
-	      reduced_sequence.clear();
 	    }
 	  id=s;
 	}
@@ -118,8 +118,8 @@ size_t IOService::loadProfile(const std::string& file_name, std::vector<CSequenc
 	seq+=s;
     }
   if (!id.empty() && !seq.empty()){
-    sequences.push_back(CSequence(id, seq, seq_no, mma));
-    profile_sequences.push_back(CGappedSequence(id, seq, seq_no, mma));
+    sequences.emplace_back(id, seq, seq_no, mma);
+    profile_sequences.emplace_back(id, seq, seq_no, mma);
     seq_no++;
   }
   return profile_sequences.size();

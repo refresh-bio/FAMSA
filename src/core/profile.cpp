@@ -342,10 +342,10 @@ void CProfile::AppendRawSequence(const CGappedSequence &gs)
 		if (curr_size != width)
 			assert(0);
 	}
-
 	data.push_back(new CGappedSequence(gs));
 	if(*(gs.symbols) != GUARD)
-		data.back()->InsertFront(GUARD);
+	  data.back()->InsertFront(GUARD);
+	  
 }
 
 // ****************************************************************************

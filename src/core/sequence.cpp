@@ -185,7 +185,7 @@ void CSequence::ReleaseBitMasks()
 // *******************************************************************
 
 // *******************************************************************
-CGappedSequence::CGappedSequence(const string& _id, const& seq, int seq_no, memory_monotonic_safe* mma) : id(_id), mma(mma), sequence_no(seq_no)
+CGappedSequence::CGappedSequence(const string& _id, const string& seq, int seq_no, memory_monotonic_safe* mma) : id(_id), mma(mma), sequence_no(seq_no)
 {
   
   string reduced_seq;
@@ -194,13 +194,27 @@ CGappedSequence::CGappedSequence(const string& _id, const& seq, int seq_no, memo
     {
       if (ch!='-')
 	{
-	  reduced_seq.push_back(ch)
+	  reduced_seq.push_back(ch);
 	    }
     }
+
   size_t length=reduced_seq.length();
-  symbols.resize(length);
+  //symbols.resize(length);
   uppercase.resize(length);
 
+
+  if (length)
+    {
+      if (mma)
+	{ symbols=(symbol_t*)mma->allocate(length+1);}
+      else
+	{symbols=new symbol_t[length+1];}
+    }
+  else
+    {symbols=nullptr;}
+  
+
+  
   for (size_t i=0; i<length; ++i)
     {
       char c=reduced_seq[i];
@@ -221,8 +235,9 @@ CGappedSequence::CGappedSequence(const string& _id, const& seq, int seq_no, memo
       else
 	symbols[i]=(symbol_t) (q-mapping_table);
     }
-  size=symbols.size();
-  n_gaps.resize(size+1,0);
+  size=uppercase.size();
+  symbols_size=uppercase.size();
+  n_gaps.resize(symbols_size+1,0);
   int place=0;
   int counter=0;
   for (auto &ch: seq)
@@ -277,11 +292,13 @@ CGappedSequence::CGappedSequence(const CGappedSequence& _gapped_sequence)
 	dps_size_div2 = _gapped_sequence.dps_size_div2;
 	mma = _gapped_sequence.mma;
 
+
 	if (mma)
 		symbols = (symbol_t*)mma->allocate(symbols_size + 1);
 	else
 		symbols = new symbol_t[symbols_size + 1];
 
+	
 	copy_n(_gapped_sequence.symbols, symbols_size, symbols);
 
 	n_gaps = _gapped_sequence.n_gaps;
