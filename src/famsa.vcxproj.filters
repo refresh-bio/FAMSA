@@ -137,9 +137,6 @@
     <ClInclude Include="utils\meta_oper.h">
       <Filter>utils</Filter>
     </ClInclude>
-    <ClInclude Include="tree\TreeGrammar.h">
-      <Filter>tree</Filter>
-    </ClInclude>
     <ClInclude Include="utils\timer.h">
       <Filter>utils</Filter>
     </ClInclude>

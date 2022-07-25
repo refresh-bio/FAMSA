@@ -340,7 +340,6 @@
     <ClInclude Include="utils\pooled_threads.h" />
     <ClInclude Include="utils\statistics.h" />
     <ClInclude Include="utils\timer.h" />
-    <ClInclude Include="tree\TreeGrammar.h" />
     <ClInclude Include="core\version.h" />
     <ClInclude Include="utils\utils.h" />
   </ItemGroup>

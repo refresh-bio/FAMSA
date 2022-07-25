@@ -9,8 +9,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"2.0.3"
-#define FAMSA_DATE		"2022-05-26"
+#define FAMSA_VER		"2.0.4"
+#define FAMSA_DATE		"2022-07-25"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
@@ -18,16 +18,20 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 /*
 Version history:
 
-2.0.3:
+2.0.4 (2022-07-25)
+- Fixed stack overflow exception when saving/loading large Newick trees 
+	(boost-based algorithm replaced with own non-recursive approach).
+
+2.0.3 (2022-05-27):
 - The ordering of the input sequences preserved in the final alignment.
 
-2.0.2:
+2.0.2 (2022-05-24): 
 - Alignment allowed as an input (gaps are removed).
 
-2.0.1:
+2.0.1 (2022-05-18):
 - Several fixes for bioconda.
 
-2.0.0-rc:
+2.0.0-rc (2022-05-18)::
 - Default algorithm for single linkage trees changed from SLINK to MST Prim,
 - Small fixes.
 
