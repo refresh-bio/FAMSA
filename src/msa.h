@@ -44,7 +44,7 @@ protected:
 	vector<score_t> score_vector;
 
 	instruction_set_t instruction_set;
-	vector<CGappedSequence> gapped_sequences;
+	//vector<CGappedSequence> gapped_sequences;
 
 	score_t avg_sim;
 
@@ -75,12 +75,15 @@ protected:
 	void RefineMostEmptyAndFullColumn(CProfile *profile_to_refine, vector<size_t> &dest_prof_id, vector<size_t> &gap_stats, bool valid_gap_stats);
 
 	std::shared_ptr<AbstractTreeGenerator> createTreeGenerator(const CParams& params);
+	void extendSequences(std::vector<CSequence>& sequences);
+	void shrinkSequences(std::vector<CSequence>& sequences);
+
 
 public:
 	CFAMSA(CParams& _params);
 	~CFAMSA();
 
-	bool ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree);
+	CProfile* ComputeAlignment(std::vector<CGappedSequence*>& gapped_sequences, tree_structure& guide_tree);
 #ifdef DEBUG_MODE
 	bool RefineAlignment(string output_file_name = "");
 #else

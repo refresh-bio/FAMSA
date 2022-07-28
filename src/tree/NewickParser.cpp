@@ -80,7 +80,7 @@ void NewickParser::parse(
 			// branch length
 			++p;
 			char* len_end;
-			float len = strtof(p, &len_end);
+			strtof(p, &len_end);
 			p = len_end;
 		}
 		else if (isspace(*p)) {
@@ -111,8 +111,7 @@ void NewickParser::store(
 	std::vector<int> prevs(guideTree.size() + 1, -1);
 	std::vector<int> num_visits(guideTree.size() + 1, 0);
 	int cur_pos = guideTree.size() - 1;
-	bool justStarted = true;
-
+	
 	while (true) {
 		
 		if (cur_pos < (int)sequences.size()) {

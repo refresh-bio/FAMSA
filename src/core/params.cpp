@@ -81,7 +81,9 @@ void CParams::show_usage(bool expert)
 		<< "  -gt_export - export a guide tree to output file in Newick format\n"
 		<< "  -dist_export - export a distance matrix to output file in CSV format\n"
 		<< "  -square_matrix - generate a square distance matrix instead of a default triangle\n"
-		<< "  -pid - generate percent identity instead of distance\n\n"
+		<< "  -pid - generate percent identity instead of distance\n"
+		<< "  -keep-duplicates - keep duplicated sequences during alignment\n"
+		<< "                     (default: disabled - duplicates are removed prior and restored after the alignment).\n\n"
 
 		<< "  -gz - enable gzipped output (default: " << bool2str[gzippd_output] << ")\n"
 		<< "  -gz-lev <value> - gzip compression level [0-9] (default: " << gzip_level << ")\n\n";
@@ -229,6 +231,10 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 			}
 
 			gzip_level = g_lev;
+		}
+		else if (cur_par == "-keep-duplicates")
+		{
+			keepDuplicates = true;
 		}
 #ifdef DEVELOPER_MODE
 		else if (cur_par == "-shuffle") {

@@ -12,8 +12,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <cstdlib>
 #include <cstdint>
 
-#include "version.h"
-
 // Uncomment for huge alignments (e.g., no of sequences > 10^6 and final alignemnt length > 10^5), when
 // the default int64_t type for storing alignment scores could be too small
 //#define HUGE_ALIGNMENTS

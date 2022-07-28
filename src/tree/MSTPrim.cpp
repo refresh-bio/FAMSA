@@ -37,7 +37,7 @@ using namespace std;
 //#pragma GCC optimize("align-loops=16")
 // *******************************************************************
 template <Distance _distance>
-void MSTPrim<_distance>::run_view(std::vector<CSequence>& sequences, tree_structure& tree)
+void MSTPrim<_distance>::run_view(std::vector<CSequence*>& sequences, tree_structure& tree)
 {
 	int n_seq = (int)sequences.size();
 	int c_seq = 0;
@@ -77,9 +77,9 @@ void MSTPrim<_distance>::run_view(std::vector<CSequence>& sequences, tree_struct
 	mst_partitioner.InitPartition(n_seq);
 
 	mst_partitioner.Remove(cur_seq_id);
-	prepare_bit_masks_for_sequence(sequences[cur_seq_id], ref_seq.p_bit_masks, ref_seq.p_bv_len);		// the only allocation of ref_bm is here
-	ref_seq.length = sequences[cur_seq_id].length;
-	ref_seq.sequence_no = sequences[cur_seq_id].sequence_no;
+	prepare_bit_masks_for_sequence(*sequences[cur_seq_id], ref_seq.p_bit_masks, ref_seq.p_bv_len);		// the only allocation of ref_bm is here
+	ref_seq.length = sequences[cur_seq_id]->length;
+	ref_seq.sequence_no = sequences[cur_seq_id]->sequence_no;
 
 	workers.reserve(n_threads);
 
@@ -165,9 +165,9 @@ void MSTPrim<_distance>::run_view(std::vector<CSequence>& sequences, tree_struct
 
 							cur_no_parts = mst_partitioner.GetNoParts();
 
-							prepare_bit_masks_for_sequence(sequences[cur_seq_id], ref_seq.p_bit_masks, ref_seq.p_bv_len);
-							ref_seq.length = sequences[cur_seq_id].length;
-							ref_seq.sequence_no = sequences[cur_seq_id].sequence_no;
+							prepare_bit_masks_for_sequence(*sequences[cur_seq_id], ref_seq.p_bit_masks, ref_seq.p_bv_len);
+							ref_seq.length = sequences[cur_seq_id]->length;
+							ref_seq.sequence_no = sequences[cur_seq_id]->sequence_no;
 
 							if (++c_seq % (100) == 0)
 							{
@@ -321,7 +321,7 @@ void MSTPrim<_distance>::prepare_bit_masks_for_sequence(CSequence& seq, bit_vec_
 
 // *******************************************************************
 template <Distance _distance>
-void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& tree)
+void MSTPrim<_distance>::run(std::vector<CSequence*>& sequences, tree_structure& tree)
 {
 	run_view(sequences, tree);
 	return;
@@ -362,7 +362,7 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 	mst_partitioner.InitPartition(n_seq);
 
 	mst_partitioner.Remove(cur_seq_id);
-	sequences[cur_seq_id].ComputeBitMasks();
+	sequences[cur_seq_id]->ComputeBitMasks();
 
 	workers.reserve(n_threads);
 
@@ -407,7 +407,7 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 			int seq_id = cur_seq_id;
 			int no_parts = cur_no_parts;
 
-			cur_sequence_ptr = &sequences_data[seq_id];
+			cur_sequence_ptr = sequences_data[seq_id];
 
 			while (true)
 			{
@@ -423,7 +423,7 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 						a_cnt0 = n_threads - 1;
 
 						// All threads are over, so we can pick a new sequence
-						sequences[cur_seq_id].ReleaseBitMasks();
+						sequences[cur_seq_id]->ReleaseBitMasks();
 
 						int best_candidate_id = -1;
 						for (int j = 0; j < n_threads; ++j)
@@ -455,7 +455,7 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 
 							cur_no_parts = mst_partitioner.GetNoParts();
 
-							sequences[cur_seq_id].ComputeBitMasks();
+							sequences[cur_seq_id]->ComputeBitMasks();
 
 							if (++c_seq % (100) == 0)
 							{
@@ -507,7 +507,7 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 					seq_id = cur_seq_id;
 					no_parts = cur_no_parts;
 
-					cur_sequence_ptr = &sequences_data[seq_id];
+					cur_sequence_ptr = sequences_data[seq_id];
 
 					continue;
 				}
@@ -523,9 +523,9 @@ void MSTPrim<_distance>::run(std::vector<CSequence>& sequences, tree_structure& 
 				{
 					part_dist.resize(distance(ids_sub_range.begin(), ids_sub_range.end()));
 
-					calculateDistanceRange<CSequence, dist_value_t, vector<int>::iterator, decltype(transform)>(
+					calculateDistanceRange<CSequence*, dist_value_t, vector<int>::iterator, decltype(transform)>(
 						transform,
-						*cur_sequence_ptr,
+						cur_sequence_ptr,
 						sequences_data,
 						make_pair(ids_sub_range.begin(), ids_sub_range.end()),
 						part_dist.data(),
@@ -653,7 +653,7 @@ void MSTPrim<_distance>::mst_to_dendogram(vector<mst_edge_t>& mst_edges, vector<
 
 // *******************************************************************
 template <Distance _distance>
-void MSTPrim<_distance>::prepare_sequences_view(std::vector<CSequence>& sequences)
+void MSTPrim<_distance>::prepare_sequences_view(std::vector<CSequence*>& sequences)
 {
 	if (raw_sequence_views)
 		free(raw_sequence_views);
@@ -665,8 +665,8 @@ void MSTPrim<_distance>::prepare_sequences_view(std::vector<CSequence>& sequence
 
 	for (size_t i = 0; i < sequences.size(); ++i)
 	{
-		sequence_views[i].length = sequences[i].length;
-		sequence_views[i].data = sequences[i].data;
+		sequence_views[i].length = sequences[i]->length;
+		sequence_views[i].data = sequences[i]->data;
 	}
 }
 

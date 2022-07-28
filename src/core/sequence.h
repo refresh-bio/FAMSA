@@ -32,6 +32,7 @@ public:
 	bit_vec_t *p_bit_masks;
 	uint32_t p_bv_len;
 
+	const int original_no;
 	int sequence_no;
 	string id;
 
@@ -48,7 +49,7 @@ public:
 	CSequence& operator=(const CSequence& x) noexcept = delete;
 
 	CSequence(CSequence&& x) noexcept;
-	CSequence& operator=(CSequence&& x) noexcept; 
+	CSequence& operator=(CSequence&& x) noexcept = delete; 
 	
 	~CSequence();
 	
@@ -90,6 +91,7 @@ public:
 
 	size_t dps_size;
 	size_t dps_size_div2;
+	int original_no;
 	int sequence_no;
 
     vector<uint32_t> n_gaps;

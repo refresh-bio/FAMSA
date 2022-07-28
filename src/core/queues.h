@@ -23,7 +23,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 class CProfileQueue
 {
-	vector<CGappedSequence> *gapped_sequences;
+	vector<CGappedSequence*> *gapped_sequences;
 	map<size_t, CProfile*> *profiles;
 	vector<pair<int, int>> *guide_tree;
 
@@ -49,7 +49,7 @@ class CProfileQueue
 	void CheckAlignInParallel(CProfile *prof1, CProfile *prof2, uint32_t& no_threads, uint32_t& no_rows_per_box);
 
 public:
-	CProfileQueue(vector<CGappedSequence> *_gapped_sequences, map<size_t, CProfile*> *_profiles, vector<pair<int, int>> *_guide_tree, uint32_t _max_no_threads);
+	CProfileQueue(vector<CGappedSequence*> *_gapped_sequences, map<size_t, CProfile*> *_profiles, vector<pair<int, int>> *_guide_tree, uint32_t _max_no_threads);
 	~CProfileQueue();
 
 	bool GetTask(size_t &prof_id, CGappedSequence *&gs, CProfile *&prof1, CProfile *&prof2, uint32_t &no_threads, uint32_t &no_rows_per_block);

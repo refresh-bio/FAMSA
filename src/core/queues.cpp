@@ -14,7 +14,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 // *******************************************************************
 // CProfileQueue
 // *******************************************************************
-CProfileQueue::CProfileQueue(vector<CGappedSequence> *_gapped_sequences, map<size_t, CProfile*> *_profiles, vector<pair<int, int>> *_guide_tree, uint32_t _max_no_threads)
+CProfileQueue::CProfileQueue(vector<CGappedSequence*> *_gapped_sequences, map<size_t, CProfile*> *_profiles, vector<pair<int, int>> *_guide_tree, uint32_t _max_no_threads)
 {
 	gapped_sequences = _gapped_sequences;
 	profiles = _profiles;
@@ -136,7 +136,7 @@ bool CProfileQueue::GetTask(size_t &prof_id, CGappedSequence *&gs, CProfile *&pr
 
 	if ((*guide_tree)[prof_id].first == -1)
 	{
-		gs = &((*gapped_sequences)[prof_id]);
+		gs = (*gapped_sequences)[prof_id];
 		prof1 = nullptr;
 		prof2 = nullptr;
 		no_threads = 1;

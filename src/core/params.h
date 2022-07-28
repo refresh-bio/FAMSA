@@ -61,6 +61,7 @@ public:
 	bool export_tree					= false;
 	bool generate_square_matrix			= false;
 	bool calculate_pid					= false;
+	bool keepDuplicates					= false;
 	
 	bool test_ref_sequences				 = false;
 	uint64_t ref_seq_subtree_size = 0;

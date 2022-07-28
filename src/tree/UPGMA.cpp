@@ -36,7 +36,7 @@ struct Average<T, true> {
 
 // *******************************************************************
 template <Distance _distance>
-void UPGMA<_distance>::run(std::vector<CSequence>& sequences, tree_structure& tree) {
+void UPGMA<_distance>::run(std::vector<CSequence*>& sequences, tree_structure& tree) {
 	UPGMA_dist_t* distances = TriangleMatrix::allocate<UPGMA_dist_t>(sequences.size());
 	computeDistances(sequences, distances);
 	
@@ -72,7 +72,7 @@ void UPGMA<_distance>::runPartial(std::vector<CSequence*>& sequences, tree_struc
 
 // *******************************************************************
 template <Distance _distance>
-void UPGMA<_distance>::computeDistances(std::vector<CSequence>& sequences, UPGMA_dist_t *dist_matrix)
+void UPGMA<_distance>::computeDistances(std::vector<CSequence*>& sequences, UPGMA_dist_t *dist_matrix)
 {
 	size_t n_seq = sequences.size();
 
@@ -84,13 +84,13 @@ void UPGMA<_distance>::computeDistances(std::vector<CSequence>& sequences, UPGMA
 		workers[i] = new thread([&] {
 		CLCSBP lcsbp(instruction_set);
 		int row_id;
-		vector<CSequence> *sequences;
+		vector<CSequence*> *sequences;
 		UPGMA_dist_t *dist_row;
 		Transform< UPGMA_dist_t, _distance> transform;
 
 		while (slq.GetTask(row_id, sequences, dist_row))
 		{
-			calculateDistanceVector<CSequence, UPGMA_dist_t, decltype(transform)>(
+			calculateDistanceVector<CSequence*, UPGMA_dist_t, decltype(transform)>(
 				transform,
 				(*sequences)[row_id],
 				sequences->data(),

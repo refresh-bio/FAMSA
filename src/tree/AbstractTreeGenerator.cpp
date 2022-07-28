@@ -23,40 +23,13 @@ AbstractTreeGenerator::AbstractTreeGenerator(int n_threads, instruction_set_t in
 }
 
 // *******************************************************************
-void AbstractTreeGenerator::operator()(std::vector<CSequence>& sequences, tree_structure& tree)
+void AbstractTreeGenerator::operator()(std::vector<CSequence*>& sequences, tree_structure& tree)
 {
 	tree.clear();
 	tree.resize(sequences.size(), std::make_pair<int, int>(-1, -1));
 
-	// Temporarily resize the sequences by adding unknown symbols (just to simplify the pairwise comparison)
-	size_t max_seq_len =
-		max_element(sequences.begin(), sequences.end(), [](const CSequence &x, CSequence &y) {return x.length < y.length; })->length;
-
-	auto mma = sequences.front().get_mma();
-
-	if(mma)
-		mma->freeze();
-
-	int n_seqs = (int)sequences.size();
-	for (int i = 0; i < n_seqs; ++i) {
-		sequences[i].DataResize(max_seq_len, UNKNOWN_SYMBOL);
-	}
-
-	if (mma)
-		mma->release_freezed();
-
 	// build the tree
 	run(sequences, tree);
-
-	if (mma)
-		mma->freeze();
-
-	// Bring the sequences to the valid length
-	for (int i = 0; i < n_seqs; ++i)
-		sequences[i].DataResize(sequences[i].length, UNKNOWN_SYMBOL);
-
-	if (mma)
-		mma->release_freezed();
 }
 
 

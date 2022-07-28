@@ -8,13 +8,13 @@
 #include <thread>
 
 template <Distance _distance>
-void DistanceCalculator<_distance>::run(std::vector<CSequence>& sequences, tree_structure& tree) {
+void DistanceCalculator<_distance>::run(std::vector<CSequence*>& sequences, tree_structure& tree) {
 	
 	std::ofstream ofs(out_file);
 	// put header line only when full matrix is needed
 	if (generate_square_matrix) {
-		for (const CSequence& seq : sequences) {
-			ofs << ',' << seq.id.c_str() + 1;
+		for (const auto seq : sequences) {
+			ofs << ',' << seq->id.c_str() + 1;
 		}
 		ofs << endl;
 	}
@@ -30,7 +30,7 @@ void DistanceCalculator<_distance>::run(std::vector<CSequence>& sequences, tree_
 
 			CLCSBP lcsbp(instruction_set);
 			int row_id;
-			std::vector<CSequence>* sequences;
+			std::vector<CSequence*>* sequences;
 			vector<float>* dist_vector;
 			vector<float> loc_dist_vector;
 
@@ -41,7 +41,7 @@ void DistanceCalculator<_distance>::run(std::vector<CSequence>& sequences, tree_
 					loc_dist_vector.resize(dist_vector->size());
 					int to_calculate = generate_square_matrix ? (int)sequences->size() : row_id;
 
-					calculateDistanceVector<CSequence, float, decltype(transform)>(
+					calculateDistanceVector<CSequence*, float, decltype(transform)>(
 						transform,
 						(*sequences)[row_id],
 						sequences->data(),
@@ -63,7 +63,7 @@ void DistanceCalculator<_distance>::run(std::vector<CSequence>& sequences, tree_
 					loc_dist_vector.resize(dist_vector->size());
 					int to_calculate = generate_square_matrix ? (int)sequences->size() : row_id;
 
-					calculateDistanceVector<CSequence, float, decltype(transform)>(
+					calculateDistanceVector<CSequence*, float, decltype(transform)>(
 						transform,
 						(*sequences)[row_id],
 						sequences->data(),
@@ -96,7 +96,7 @@ void DistanceCalculator<_distance>::run(std::vector<CSequence>& sequences, tree_
 		//}
 
 		ptr = out_row;
-		ptr += sprintf(ptr, "%s,", sequences[row_id].id.c_str() + 1);
+		ptr += sprintf(ptr, "%s,", sequences[row_id]->id.c_str() + 1);
 
 		if (generate_square_matrix) {
 			ptr += num2str(dist_vector->data(), dist_vector->size(), ',', ptr);

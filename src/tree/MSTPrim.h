@@ -202,7 +202,7 @@ class MSTPrim : public AbstractTreeGenerator {
 	};
 
 	void mst_to_dendogram(vector<mst_edge_t>& mst_edges, vector<int>& v_prim_orders, tree_structure& tree);
-	void prepare_sequences_view(std::vector<CSequence>& sequences);
+	void prepare_sequences_view(std::vector<CSequence*>& sequences);
 	void prepare_bit_masks_for_sequence(CSequence& seq, bit_vec_t*& bm, uint32_t& p_bv_len);
 
 public:
@@ -223,8 +223,8 @@ public:
 			free(raw_sequence_views);
 	}
 
-	void run(std::vector<CSequence>& sequences, tree_structure& tree) override;
+	void run(std::vector<CSequence*>& sequences, tree_structure& tree) override;
 
-	void run_view(std::vector<CSequence>& sequences, tree_structure& tree);
+	void run_view(std::vector<CSequence*>& sequences, tree_structure& tree);
 };
 

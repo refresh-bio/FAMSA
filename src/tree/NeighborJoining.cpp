@@ -7,13 +7,13 @@
 
 // *******************************************************************
 template <Distance _distance>
-void NeighborJoining<_distance>::run(std::vector<CSequence>& sequences, tree_structure& tree) {
+void NeighborJoining<_distance>::run(std::vector<CSequence*>& sequences, tree_structure& tree) {
 	
 	float* distances = TriangleMatrix::allocate<float>(sequences.size());
 	CLCSBP lcsbp(instruction_set);
 
 	Transform<float, _distance> transform;
-	calculateDistanceMatrix<CSequence, float, decltype(transform)>(transform, sequences.data(), (int) sequences.size(), distances, lcsbp);
+	calculateDistanceMatrix<CSequence*, float, decltype(transform)>(transform, sequences.data(), (int) sequences.size(), distances, lcsbp);
 
 	computeTree(distances, sequences.size(), tree);
 
@@ -24,15 +24,7 @@ void NeighborJoining<_distance>::run(std::vector<CSequence>& sequences, tree_str
 template <Distance _distance>
 void NeighborJoining<_distance>::runPartial(std::vector<CSequence*>& sequences, tree_structure& tree) {
 	
-	float* distances = TriangleMatrix::allocate<float>(sequences.size());
-	CLCSBP lcsbp(instruction_set);
-
-	Transform<float, _distance> transform;
-	calculateDistanceMatrix<CSequence*, float, decltype(transform)>(transform, sequences.data(), (int) sequences.size(), distances, lcsbp);
-	
-	computeTree(distances, (int) sequences.size(), tree);
-
-	delete[] distances;
+	run(sequences, tree);
 }
 
 

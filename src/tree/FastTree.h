@@ -25,7 +25,7 @@ public:
 		std::shared_ptr<IClustering> clustering,
 		int sampleSize);
 
-	virtual void run(std::vector<CSequence>& sequences, tree_structure& tree) override;
+	virtual void run(std::vector<CSequence*>& sequences, tree_structure& tree) override;
 
 protected:
 	std::shared_ptr<IPartialGenerator> partialGenerator;

@@ -21,6 +21,6 @@ public:
 		calculate_pid(calculate_pid) {}
 
 protected:
-	void run(std::vector<CSequence>& sequences, tree_structure& tree) override;
+	void run(std::vector<CSequence*>& sequences, tree_structure& tree) override;
 
 };

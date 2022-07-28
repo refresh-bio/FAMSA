@@ -38,14 +38,10 @@ FastTree<_distance>::FastTree(
 
 // *******************************************************************
 template <Distance _distance>
-void FastTree<_distance>::run(std::vector<CSequence>& sequences, tree_structure& tree)
+void FastTree<_distance>::run(std::vector<CSequence*>& sequences, tree_structure& tree)
 {
-	// create vector of pointers to be passed to the recursion
-	std::vector<CSequence*> sequencePtrs(sequences.size());
-	std::transform(sequences.begin(), sequences.end(), sequencePtrs.begin(), [](CSequence& s)->CSequence* { return &s; });
-
 	tree_structure local_tree;
-	doStep(sequencePtrs, local_tree, tree.size(), true);
+	doStep(sequences, local_tree, tree.size(), true);
 	tree.insert(tree.end(), local_tree.begin(), local_tree.end());
 	
 }

@@ -99,6 +99,10 @@ $(info *** x86-64 with AVX2 extensions***)
 	SIMD=AVX2
 endif
  
+
+# get commit hash
+GIT_COMMIT = $(shell git describe --always --dirty) 
+DEFINE_FLAGS := $(DEFINE_FLAGS) -DGIT_COMMIT=$(GIT_COMMIT)
  
  
 ifeq ($(STATIC_LINK), true) 

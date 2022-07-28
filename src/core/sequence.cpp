@@ -22,6 +22,7 @@ char CGappedSequence::mapping_table[25] = "ARNDCQEGHILKMFPSTWYVBZX*";
 CSequence::CSequence(const string& _id, const string& seq, int sequence_no, memory_monotonic_safe* mma)
 	: 
 	length((uint32_t)seq.length()), 
+	original_no(sequence_no),
 	sequence_no(sequence_no),
 	id(_id),
 	mma(mma),
@@ -62,7 +63,9 @@ CSequence::CSequence(const string& _id, const string& seq, int sequence_no, memo
 }
 
 // *******************************************************************
-CSequence::CSequence(CSequence&& x) noexcept
+CSequence::CSequence(CSequence&& x) noexcept 
+	:
+	original_no(x.original_no)
 {
 	sequence_no = move(x.sequence_no);
 	length = move(x.length);
@@ -82,7 +85,9 @@ CSequence::CSequence(CSequence&& x) noexcept
 	p_bv_len = x.p_bv_len;
 }
 
+
 // *******************************************************************
+/*
 CSequence& CSequence::operator=(CSequence&& x) noexcept
 {
 	this->sequence_no = move(x.sequence_no);
@@ -104,6 +109,7 @@ CSequence& CSequence::operator=(CSequence&& x) noexcept
 
 	return *this;
 }
+*/
 
 // *******************************************************************
 CSequence::~CSequence()
@@ -185,23 +191,21 @@ void CSequence::ReleaseBitMasks()
 // *******************************************************************
 
 // *******************************************************************
-CGappedSequence::CGappedSequence(CSequence&& _sequence)
+CGappedSequence::CGappedSequence(CSequence&& _sequence) :
+	mma(_sequence.mma),
+	symbols(std::move(_sequence.data)),
+	size(_sequence.data_size),
+	original_no(_sequence.original_no),
+	sequence_no(_sequence.sequence_no),
+	id(std::move(_sequence.id)),
+	uppercase(_sequence.uppercase)
 {
-	id = std::move(_sequence.id);
-	sequence_no = _sequence.sequence_no;
-
-	symbols = std::move(_sequence.data);
+	
 	_sequence.data = nullptr;
-
-	mma = _sequence.mma;
 	_sequence.mma = nullptr;
-
-	uppercase = std::move(_sequence.uppercase);
 	delete_arr_ptr(_sequence.p_bit_masks);
 	
-	size = _sequence.data_size;
 	symbols_size = size;
-
 	gapped_size = size;
 	n_gaps.resize(size + 1, 0);
 
@@ -209,7 +213,8 @@ CGappedSequence::CGappedSequence(CSequence&& _sequence)
 }
 
 // *******************************************************************
-CGappedSequence::CGappedSequence(const CGappedSequence& _gapped_sequence)
+CGappedSequence::CGappedSequence(const CGappedSequence& _gapped_sequence) :
+	original_no(_gapped_sequence.original_no)
 {
 	id = _gapped_sequence.id;
 	sequence_no = _gapped_sequence.sequence_no;
@@ -234,7 +239,9 @@ CGappedSequence::CGappedSequence(const CGappedSequence& _gapped_sequence)
 }
 
 // *******************************************************************
-CGappedSequence::CGappedSequence(CGappedSequence&& _gapped_sequence) noexcept
+CGappedSequence::CGappedSequence(CGappedSequence&& _gapped_sequence) noexcept 
+	:
+	original_no(_gapped_sequence.original_no)
 {
 	id = move(_gapped_sequence.id);
 	sequence_no = _gapped_sequence.sequence_no;

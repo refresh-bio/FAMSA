@@ -25,7 +25,7 @@ public:
 
 	virtual ~AbstractTreeGenerator() {}
 	
-	void operator()(std::vector<CSequence>& sequences, tree_structure& tree);
+	void operator()(std::vector<CSequence*>& sequences, tree_structure& tree);
 		
 	template <class seq_type, class distance_type, typename Transform>
 	void calculateDistanceVector(
@@ -75,7 +75,7 @@ protected:
 	int n_threads;
 	instruction_set_t instruction_set;
 	
-	virtual void run(std::vector<CSequence>& sequences, tree_structure& tree) = 0;
+	virtual void run(std::vector<CSequence*>& sequences, tree_structure& tree) = 0;
 
 #ifdef DEVELOPER_MODE
 	size_t subTreeSize(

@@ -17,6 +17,9 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "./core/io_service.h"
 #include "./utils/log.h"
 
+#undef min
+#undef max
+
 #include <algorithm>
 #include <set>
 #include <random>
@@ -225,12 +228,69 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 }
 
 // *******************************************************************
-// Compute Alignment according to guide tree
-bool CFAMSA::ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree)
-{
-	final_profile = new CProfile(&params);
+void CFAMSA::extendSequences(std::vector<CSequence>& sequences) {
+	
+	// Temporarily resize the sequences by adding unknown symbols (just to simplify the pairwise comparison)
+	auto& max_seq = *max_element(sequences.begin(), sequences.end(),
+		[](const CSequence& x, const CSequence& y) { return x.length < y.length; });
 
-	final_profile->Clear();
+	size_t max_seq_len = max_seq.length;
+
+	auto mma = sequences.front().get_mma();
+
+	if (mma) {
+		mma->freeze();
+	}
+
+	int n_seqs = (int)sequences.size();
+	for (int i = 0; i < n_seqs; ++i) {
+		sequences[i].DataResize(max_seq_len, UNKNOWN_SYMBOL);
+		
+		/*
+		
+		if (i == representative.original_no) {
+			// non-duplicate -> extend
+			sequences[i].DataResize(max_seq_len, UNKNOWN_SYMBOL);
+		}
+		else {
+			// duplicate -> just reallocate to free memory later
+			sequences[i].DataResize(max_seq_len, UNKNOWN_SYMBOL);
+			//sequences[i].DataResize(sequences[i].length, UNKNOWN_SYMBOL);
+		}
+		*/
+	}
+
+	if (mma) {
+		mma->release_freezed();
+	}
+}
+
+// *******************************************************************
+void CFAMSA::shrinkSequences(std::vector<CSequence>& sequences) {
+	auto mma = sequences.front().get_mma();
+
+	if (mma) {
+		mma->freeze();
+	}
+
+	int n_seqs = (int)sequences.size();
+	for (int i = 0; i < n_seqs; ++i) {
+		sequences[i].DataResize(sequences[i].length, UNKNOWN_SYMBOL);
+	}
+
+	if (mma) {
+		mma->release_freezed();
+	}
+}
+
+
+// *******************************************************************
+// Compute Alignment according to guide tree
+CProfile* CFAMSA::ComputeAlignment(std::vector<CGappedSequence*>& gapped_sequences, tree_structure& guide_tree)
+{
+	CProfile* profile = new CProfile(&params);
+
+	profile->Clear();
 
 	CProfileQueue pq(&gapped_sequences, &profiles, &guide_tree, params.n_threads);
 
@@ -301,9 +361,9 @@ bool CFAMSA::ComputeAlignment(std::vector<std::pair<int,int>>& guide_tree)
 	}
 	workers.clear();
 
-	final_profile = profiles.begin()->second;
+	profile = profiles.begin()->second;
 
-	return true;
+	return profile;
 }
 
 // *******************************************************************
@@ -591,143 +651,184 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 		<< " Number of threads: " << params.n_threads << endl
 		<< " Instruction set: " << instr_names[(int)instruction_set] << endl << endl;
 
-
-	std::vector<int> shuffled2true(sequences.size());
+	std::vector<int> original2sorted(sequences.size());
 	GuideTree tree;
 
-	bool goOn = true;
+	std::vector<CSequence*> sorted_seqs(sequences.size());
+	std::transform(sequences.begin(), sequences.end(), sorted_seqs.begin(), [](CSequence& s) { return &s; });
 
 	// store distance matrix
 	if (params.export_distances) {
 		LOG_VERBOSE << "Calculating distances and storing in: " << params.output_file_name;
 		
 		std::shared_ptr<AbstractTreeGenerator> calculator = createTreeGenerator(params);
-		tree_structure tree;
-
-		(*calculator)(sequences, tree);
+		extendSequences(sequences);
+		(*calculator)(sorted_seqs, tree.raw());
+		shrinkSequences(sequences);
 		LOG_VERBOSE << " [OK]" << endl;
-		goOn = false; // break processing at this point
+		
 	}
+	else {
 
-
-	if (goOn) {
 		timers[TIMER_SORTING].StartTimer();
-		if (params.shuffle == -1) {
-			LOG_VERBOSE << "Sorting sequences...";
-			std::stable_sort(sequences.begin(), sequences.end(), [](const CSequence& a, const CSequence& b)->bool {
-				return a.length > b.length || 
-					(a.length == b.length && std::lexicographical_compare(a.data, a.data + a.data_size, b.data, b.data + b.data_size));
-			});
-			LOG_VERBOSE << " [OK]" << endl;
-		}
-		else {
-			LOG_VERBOSE << "Shuffling sequences...";
-			std::mt19937 mt(params.shuffle);
-			std::shuffle(sequences.begin(), sequences.end(), mt);
-			LOG_VERBOSE << " [OK]" << endl;
+		LOG_VERBOSE << "Sorting sequences...";
+
+		auto comparer = [](const CSequence* a, const CSequence* b)->bool {
+			return a->length > b->length ||
+				(a->length == b->length && std::lexicographical_compare(a->data, a->data + a->data_size, b->data, b->data + b->data_size));
+		};
+
+		std::stable_sort(sorted_seqs.begin(), sorted_seqs.end(), comparer);
+
+		// store original to sorted mappings
+		for (int is = 0; is < (int)sorted_seqs.size(); ++is) {
+			original2sorted[sorted_seqs[is]->original_no] = is;
 		}
 
-		// store mappings and temporarily reset numerical identifiers (to make medoid trees work)
-		for (int i = 0; i < (int)sequences.size(); ++i) {
-			shuffled2true[i] = sequences[i].sequence_no;
-			sequences[i].sequence_no = i;
-		}
 		timers[TIMER_SORTING].StopTimer();
+		LOG_VERBOSE << " [OK]" << endl;
 
+		// remove duplicates
+		int dups = 0;
+		if (!params.keepDuplicates) {
+			LOG_VERBOSE << "Duplicate removal... ";
+			auto eq_comparer = [](const CSequence* a, const CSequence* b)->bool {
+				return a->length == b->length && std::equal(a->data, a->data + a->length, b->data);
+			};
 
+			// update original2sorted mappings to take into account duplicates
+			int cur_sorted_index = 0;
+			for (int i = 1; i < (int)sorted_seqs.size(); ++i) {
+				if (!eq_comparer(sorted_seqs[i], sorted_seqs[i - 1])) {
+					++cur_sorted_index;
+				}
+
+				original2sorted[sorted_seqs[i]->original_no] = cur_sorted_index;
+			}
+
+			auto newend = std::unique(sorted_seqs.begin(), sorted_seqs.end(), eq_comparer);
+			sorted_seqs.erase(newend, sorted_seqs.end());
+			dups = sequences.size() - sorted_seqs.size();
+			LOG_VERBOSE << sorted_seqs.size() << "/" << sequences.size() << " sequences retained." << endl;
+		}
+		
+		// store mappings and temporarily reset numerical identifiers (to make medoid trees work)
+		for (int i = 0; i < (int)sorted_seqs.size(); ++i) {
+			sorted_seqs[i]->sequence_no = i;
+		}
+		
 		timers[TIMER_TREE_BUILD].StartTimer();
 		if (params.gt_method == GT::imported) {
 			LOG_VERBOSE << "Importing guide tree from: " << params.guide_tree_in_file;
 			tree.loadNewick(params.guide_tree_in_file, sequences);
+			tree.toUnique(original2sorted, (int)sorted_seqs.size());
 		}
 		else {
 			std::shared_ptr<AbstractTreeGenerator> gen = createTreeGenerator(params);
 			LOG_VERBOSE << "Computing guide tree...";
-			(*gen)(sequences, tree.raw());
+			extendSequences(sequences);
+			(*gen)(sorted_seqs, tree.raw());
+			shrinkSequences(sequences);
 		}
 		LOG_VERBOSE << " [OK]" << endl;
 		timers[TIMER_TREE_BUILD].StopTimer();
-	}
-
-	// store guide tree in Newick format 
-	if (params.export_tree) {
-		timers[TIMER_TREE_STORE].StartTimer();
-		LOG_VERBOSE << "Storing guide tree in: " << params.output_file_name;
-		tree.saveNewick(params.output_file_name, sequences);
-		LOG_VERBOSE << " [OK]" << endl;
-		timers[TIMER_TREE_STORE].StopTimer();
-		goOn = false; // break processing at this point
-	}
 
 
-#ifdef DEVELOPER_MODE
-	double monte_carlo_subtree_size;
-	if (params.test_ref_sequences)
-		params.ref_seq_subtree_size = tree.refSequencesSubTreeSize(
-			sequences,
-			ref_sequences,
-			&monte_carlo_subtree_size);
-#endif
-	int64_t sackin;
-	if (params.verbose_mode || params.very_verbose_mode) {
-		sackin = tree.calculateSackinIndex();
-		statistics.put("guide_tree.sackin", sackin);
-		statistics.put("guide_tree.sackin_norm", sackin / (double)sequences.size());
-	}
-
-	if (goOn) {
-		// Convert sequences into gapped sequences
-		gapped_sequences.reserve(sequences.size());
-		for (int i = 0; i < sequences.size(); ++i) {
-			// restore proper numerical identifiers
-			sequences[i].sequence_no = shuffled2true[i];
-			gapped_sequences.emplace_back(std::move(sequences[i]));
+		if (params.export_tree) {
+			// store guide tree in Newick format...
+			timers[TIMER_TREE_STORE].StartTimer();
+			LOG_VERBOSE << "Storing guide tree in: " << params.output_file_name;
+			tree.fromUnique(original2sorted);
+			tree.saveNewick(params.output_file_name, sequences);
+			LOG_VERBOSE << " [OK]" << endl;
+			timers[TIMER_TREE_STORE].StopTimer();
 		}
-		std::vector<CSequence>().swap(sequences); // clear input vector
+		else {
+			// ... or perform an alignment
+			std::vector<CGappedSequence> gapped_sequences;
+			std::vector<CGappedSequence*> sorted_gapped_seqs(sorted_seqs.size());
+			std::vector<int> sorted2original(sorted_seqs.size());
 
-		timers[TIMER_ALIGNMENT].StartTimer();
-		LOG_VERBOSE << "Computing alignment...";
-		if (!ComputeAlignment(tree.raw()))
-			return false;
-		LOG_VERBOSE << "[OK]" << endl;
-		timers[TIMER_ALIGNMENT].StopTimer();
+			// store sorted to original mappings
+			for (int is = 0; is < (int)sorted_seqs.size(); ++is) {
+				sorted2original[is] = sorted_seqs[is]->original_no;
+			}
+			sorted_seqs.clear();
+			
+			// convert sequences into gapped sequences
+			gapped_sequences.reserve(sequences.size());
+			for (int i = 0; i < (int)sequences.size(); ++i) {
+				gapped_sequences.emplace_back(std::move(sequences[i]));
+			}
+			std::vector<CSequence>().swap(sequences); // clear input vector
 
-		timers[TIMER_REFINMENT].StartTimer();
-		LOG_VERBOSE << "Computing refinement...";
-		if (!RefineAlignment(final_profile))
-			return false;
-		LOG_VERBOSE << "[OK]" << endl;
-		timers[TIMER_REFINMENT].StopTimer();
+			// restore pointers
+			for (int is = 0; is < (int)sorted_gapped_seqs.size(); ++is) {
+				sorted_gapped_seqs[is] = &gapped_sequences[sorted2original[is]];
+			}
 
-		if (final_profile->Size() != gapped_sequences.size()) {
-			throw std::runtime_error("Error: incomplete guide tree - report a bug");
+			timers[TIMER_ALIGNMENT].StartTimer();
+			LOG_VERBOSE << "Computing alignment...";
+			final_profile = ComputeAlignment(sorted_gapped_seqs, tree.raw());
+			if (!final_profile) {
+				return false;
+			}
+			LOG_VERBOSE << "[OK]" << endl;
+			timers[TIMER_ALIGNMENT].StopTimer();
+
+			timers[TIMER_REFINMENT].StartTimer();
+			LOG_VERBOSE << "Computing refinement...";
+			if (!RefineAlignment(final_profile))
+				return false;
+			LOG_VERBOSE << "[OK]" << endl;
+			timers[TIMER_REFINMENT].StopTimer();
+
+			if (final_profile->Size() != sorted_gapped_seqs.size()) {
+				throw std::runtime_error("Error: incomplete guide tree - report a bug");
+			}
+
+			// compose ordered alignment of unique sequences (without duplicates)
+			std::vector<CGappedSequence*> ordered_unique_alignment(final_profile->data.size(), nullptr);
+			for (int is = 0; is < (int)final_profile->data.size(); ++is) {
+				ordered_unique_alignment[final_profile->data[is]->sequence_no] = final_profile->data[is];
+			}
+
+			// compose final ordered alignment 
+			std::vector<CGappedSequence*> ordered_alignment(gapped_sequences.size(), nullptr);
+			for (int i = 0; i < (int)gapped_sequences.size(); ++i) {
+				CGappedSequence& current = gapped_sequences[i];
+				CGappedSequence* representative = ordered_unique_alignment[original2sorted[i]];
+
+				if (current.original_no == representative->original_no) {
+					// unique sequence - put representative in profile
+					ordered_alignment[i] = representative;
+				}
+				else {
+					// duplicate - make a copy of a representative
+					CGappedSequence* duplicate = new CGappedSequence(*representative);
+					duplicate->id = std::move(current.id);
+					duplicate->original_no = current.original_no;
+					ordered_alignment[i] = duplicate;
+				}
+			}
+
+			final_profile->data = std::move(ordered_alignment);
 		}
 
-		// restore original ordering in profile
-		std::vector<CGappedSequence*> ordered_profile(gapped_sequences.size(), nullptr);
-		for (int i = 0; i < ordered_profile.size(); ++i) {
-			int true_id = final_profile->data[i]->sequence_no;
-			ordered_profile[true_id] = final_profile->data[i];
+		// store stats
+		if (params.verbose_mode || params.very_verbose_mode) {
+			int64_t sackin;
+			sackin = tree.calculateSackinIndex();
+			statistics.put("input.n_duplicates", dups);
+			statistics.put("guide_tree.sackin", sackin);
+			statistics.put("guide_tree.sackin_norm", sackin / (double)sequences.size());
+			statistics.put("time.sort", timers[TIMER_SORTING].GetElapsedTime());
+			statistics.put("time.tree_build", timers[TIMER_TREE_BUILD].GetElapsedTime());
+			statistics.put("time.tree_store", timers[TIMER_TREE_STORE].GetElapsedTime());
+			statistics.put("time.alignment", timers[TIMER_ALIGNMENT].GetElapsedTime());
+			statistics.put("time.refinement", timers[TIMER_REFINMENT].GetElapsedTime());
 		}
-		final_profile->data = std::move(ordered_profile);
 	}
-
-	if (params.verbose_mode || params.very_verbose_mode) {
-		statistics.put("time.sort", timers[TIMER_SORTING].GetElapsedTime());
-		statistics.put("time.tree_build", timers[TIMER_TREE_BUILD].GetElapsedTime());
-		statistics.put("time.tree_store", timers[TIMER_TREE_STORE].GetElapsedTime());
-		statistics.put("time.alignment", timers[TIMER_ALIGNMENT].GetElapsedTime());
-		statistics.put("time.refinement", timers[TIMER_REFINMENT].GetElapsedTime());
-	}
-
-#ifdef DEVELOPER_MODE
-	if (params.test_ref_sequences)
-	{
-		LOG_VERBOSE
-			<< "Ref. seq. subtree size: " << params.ref_seq_subtree_size << "\n"
-			<< "Monte Carlo subtree size: " << monte_carlo_subtree_size << "\n";
-	}
-#endif
 
 	return true;
 }

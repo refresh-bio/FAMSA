@@ -110,6 +110,7 @@ Options:
 * `-dist_export` - export a distance matrix to output file in CSV format
 * `-square_matrix` - generate a square distance matrix instead of a default triangle
 * `-pid` - generate percent identity instead of distance
+* `-keep-duplicates` - keep duplicated sequences during alignment (default: disabled - duplicates are removed prior and restored after the alignment)
 * `-gz` - enable gzipped output (default: disabled)
 * `-gz-lev <value>` - gzip compression level [0-9] (default: 7)
 

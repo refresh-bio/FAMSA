@@ -32,6 +32,9 @@ public:
 
 	int64_t calculateSackinIndex();
 
+	void toUnique(const std::vector<int>& original2unique, int n_uniques);
+	void fromUnique(const std::vector<int>& original2unique);
+
 protected:
 
 	tree_structure guide_tree;

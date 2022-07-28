@@ -108,6 +108,46 @@ jobs:
         pigz -f -d ${{matrix.tree}}.fasta.gz
         cmp ${{matrix.tree}}.fasta ${REF_DIR}/${{matrix.tree}}.fasta
         
+  ########################################################################################    
+
+  full-tree-duplicates:
+    name: adeno-fiber - duplicates
+    needs: make-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: [xeon, tripper]
+        compiler: [g++-9, g++-11]
+        tree: [sl]
+        # additional ARM configurations
+        include:
+        - machine: raspberry
+          compiler: g++
+          tree: sl
+     
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
+        
+    env: 
+      REF_DIR: ./test/adeno_fiber_duplicates
+      INPUT: ./test/adeno_fiber_duplicates/adeno_fiber_duplicates
+ 
+    steps:  
+
+    - name: ${{matrix.tree}} (tree only)
+      run: |
+        ./famsa-${{matrix.compiler}} -gt ${{matrix.tree}} -gt_export ${INPUT} ${{matrix.tree}}.dnd
+        cmp ${{matrix.tree}}.dnd ${REF_DIR}/${{matrix.tree}}.dnd
+    
+    - name: ${{matrix.tree}} (complete alignment)
+      run: |
+        ./famsa-${{matrix.compiler}} -gt ${{matrix.tree}} ${INPUT} ${{matrix.tree}}.fasta
+        cmp ${{matrix.tree}}.fasta ${REF_DIR}/${{matrix.tree}}.fasta
+     
+    - name: ${{matrix.tree}} (from tree)
+      run: |
+        ./famsa-${{matrix.compiler}} -gt import ${{matrix.tree}}.dnd ${INPUT} ${{matrix.tree}}.dnd.fasta
+        cmp ${{matrix.tree}}.dnd.fasta ${REF_DIR}/${{matrix.tree}}.fasta
+        
  ########################################################################################    
     
   medoid-tree:
@@ -162,12 +202,68 @@ jobs:
       run: |
         ./famsa-${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} -gt_export -subtree_size 10 -sample_size 100 -cluster_fraction 0.2 -cluster_iters 1 ${INPUT} medoid-${{matrix.tree}}-params.dnd
         cmp  medoid-${{matrix.tree}}-params.dnd ${REF_DIR}/medoid-${{matrix.tree}}-params.dnd
+  
+  ########################################################################################    
+
+  medoid-tree-duplicates:
+    name: hemopexin - duplicates
+    needs: full-tree
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: [xeon, tripper]
+        compiler: [g++-9, g++-11]
+        tree: [sl]
+        # additional ARM configurations
+        include:
+        - machine: raspberry
+          compiler: g++
+          tree: sl
+     
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
         
+    env: 
+      REF_DIR: ./test/hemopexin_duplicates
+      INPUT: ./test/hemopexin_duplicates/hemopexin_duplicates
+ 
+    steps:  
+
+    - name: medoid + ${{matrix.tree}}  (tree only)
+      run: |
+        ./famsa-${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} -gt_export ${INPUT} medoid-${{matrix.tree}}.dnd
+        cmp  medoid-${{matrix.tree}}.dnd ${REF_DIR}/medoid-${{matrix.tree}}.dnd
+    
+    - name: medoid + ${{matrix.tree}}  (complete alignment)
+      run: |
+        ./famsa-${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} ${INPUT} medoid-${{matrix.tree}}.fasta
+        cmp medoid-${{matrix.tree}}.fasta ${REF_DIR}/medoid-${{matrix.tree}}.fasta
+     
+    - name: medoid + ${{matrix.tree}}  (from tree)
+      run: |
+        ./famsa-${{matrix.compiler}} -gt import medoid-${{matrix.tree}}.dnd ${INPUT} medoid-${{matrix.tree}}.dnd.fasta
+        cmp medoid-${{matrix.tree}}.dnd.fasta ${REF_DIR}/medoid-${{matrix.tree}}.fasta
+        
+        
+    - name: medoid + ${{matrix.tree}} + keep duplicates (tree only)
+      run: |
+        ./famsa-${{matrix.compiler}} -keep-duplicates -medoidtree -gt ${{matrix.tree}} -gt_export ${INPUT} medoid-${{matrix.tree}}-dups.dnd
+        cmp  medoid-${{matrix.tree}}-dups.dnd ${REF_DIR}/medoid-${{matrix.tree}}-dups.dnd
+    
+    - name: medoid + ${{matrix.tree}} + keep duplicates (complete alignment)
+      run: |
+        ./famsa-${{matrix.compiler}} -keep-duplicates -medoidtree -gt ${{matrix.tree}} ${INPUT} medoid-${{matrix.tree}}-dups.fasta
+        cmp medoid-${{matrix.tree}}-dups.fasta ${REF_DIR}/medoid-${{matrix.tree}}-dups.fasta
+     
+    - name: medoid + ${{matrix.tree}} + keep duplicates (from tree)
+      run: |
+        ./famsa-${{matrix.compiler}} -keep-duplicates -gt import medoid-${{matrix.tree}}-dups.dnd ${INPUT} medoid-${{matrix.tree}}-dups.dnd.fasta
+        cmp medoid-${{matrix.tree}}-dups.dnd.fasta ${REF_DIR}/medoid-${{matrix.tree}}-dups.fasta    
+  
   ########################################################################################        
          
   other-tests:
     name: adeno-fiber - other tests
-    needs: medoid-tree
+    needs: make-tests
     strategy:
       fail-fast: false
       matrix:
@@ -243,3 +339,34 @@ jobs:
         ./famsa -dist_export ${INPUT} dist.csv
         cmp dist.csv ${REF_DIR}/dist.csv 
 
+########################################################################################
+  huge-tree:
+    name: LRR - 100k trees
+    runs-on: [self-hosted, famsa, tripper]
+    needs: full-tree
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: [xeon, tripper]
+        compiler: [g++-9, g++-11]
+        tree: [sl]
+          
+    env: 
+      REF_DIR: ./test/LRR
+      INPUT: ./test/LRR/LRR
+        
+    steps:
+    - name: ${{matrix.tree}} (tree only)
+      run: |
+        ./famsa-${{matrix.compiler}} -gt ${{matrix.tree}} -gt_export ${INPUT} ${{matrix.tree}}.dnd
+        cmp ${{matrix.tree}}.dnd ${REF_DIR}/${{matrix.tree}}.dnd
+    
+    - name: ${{matrix.tree}} (full alignment)
+      run: |
+         ./famsa-${{matrix.compiler}} -gt ${{matrix.tree}} ${{matrix.tree}}.fasta
+    
+    - name: ${{matrix.tree}} (from tree)
+      run: |
+         ./famsa-${{matrix.compiler}} -gt import ${{matrix.tree}}.dnd ${{matrix.tree}}.dnd.fasta
+          cmp ${{matrix.tree}}.dnd.fasta ${{matrix.tree}}.fasta
+        

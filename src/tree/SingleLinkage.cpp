@@ -28,7 +28,7 @@ using namespace std;
 
 // *******************************************************************
 template <Distance _distance>
-void SingleLinkage<_distance>::run(std::vector<CSequence>& sequences, tree_structure& tree) {
+void SingleLinkage<_distance>::run(std::vector<CSequence*>& sequences, tree_structure& tree) {
 	int next;
 	int n_seq = (int)sequences.size();
 
@@ -49,7 +49,7 @@ void SingleLinkage<_distance>::run(std::vector<CSequence>& sequences, tree_struc
 		workers[i] = new thread([&] {
 		CLCSBP lcsbp(instruction_set);
 		int row_id;
-		vector<CSequence> *sequences;
+		vector<CSequence*> *sequences;
 		vector<slink_dist_t> *dist_vector;
 		Transform<double, _distance> transform;
 
@@ -59,7 +59,7 @@ void SingleLinkage<_distance>::run(std::vector<CSequence>& sequences, tree_struc
 		{
 			loc_dist_vector.resize(dist_vector->size());
 
-			calculateDistanceVector<CSequence, double, decltype(transform)>(
+			calculateDistanceVector<CSequence*, double, decltype(transform)>(
 				transform,
 				(*sequences)[row_id],
 				sequences->data(),
