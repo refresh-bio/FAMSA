@@ -175,7 +175,7 @@ UTILS_OBJS := src/utils/utils.o \
 
 src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
 	$(CXX) $(CXXFLAGS) -c src/lcs/lcsbp.cpp -o $@
-src/lcs/lcsbp_avx_intr.o : src/lcs/lcsbp_avx_intr.cpp
+src/lcs/lcsbp_neon_intr.o : src/lcs/lcsbp_neon_intr.cpp
 	$(CXX) $(CXXFLAGS_NEON) -c src/lcs/lcsbp_neon_intr.cpp -o $@
 
 src/utils/utils.o : src/utils/utils.cpp
