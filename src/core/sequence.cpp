@@ -55,8 +55,10 @@ CSequence::CSequence(const string& _id, const string& seq, int sequence_no, memo
 			uppercase[i] = true;
 
 		char *q = find(mapping_table, mapping_table+25, c);
-		if(q == mapping_table+25)
-			data[i] = (symbol_t) UNKNOWN_SYMBOL;
+		if (q == mapping_table + 25) {	
+			extra_symbols.emplace_back(i, c); // save non-standard symbol
+			data[i] = (symbol_t)UNKNOWN_SYMBOL;
+		}
 		else
 			data[i] = (symbol_t) (q - mapping_table);
 	}
@@ -79,6 +81,7 @@ CSequence::CSequence(CSequence&& x) noexcept
 	x.mma = nullptr;
 
 	uppercase = move(x.uppercase);
+	extra_symbols = move(x.extra_symbols);
 
 	p_bit_masks = move(x.p_bit_masks);
 	x.p_bit_masks = nullptr;
@@ -123,6 +126,7 @@ CSequence::~CSequence()
 }
 
 // *******************************************************************
+/*
 string CSequence::DecodeSequence()
 {
 	string s;
@@ -134,10 +138,11 @@ string CSequence::DecodeSequence()
 		else if(data[i] == GAP)
 			s += "-";
 		else
-			s += mapping_table[data[i]];
+				s += mapping_table[data[i]];
 
 	return s;
 }
+*/
 
 // *******************************************************************
 void CSequence::DataResize(uint32_t new_size, symbol_t new_symbol)
@@ -198,7 +203,8 @@ CGappedSequence::CGappedSequence(CSequence&& _sequence) :
 	original_no(_sequence.original_no),
 	sequence_no(_sequence.sequence_no),
 	id(std::move(_sequence.id)),
-	uppercase(_sequence.uppercase)
+	uppercase(_sequence.uppercase),
+	extra_symbols(_sequence.extra_symbols)
 {
 	
 	_sequence.data = nullptr;
@@ -236,6 +242,7 @@ CGappedSequence::CGappedSequence(const CGappedSequence& _gapped_sequence) :
 	n_gaps = _gapped_sequence.n_gaps;
 	dps = _gapped_sequence.dps;
 	uppercase = _gapped_sequence.uppercase;
+	extra_symbols = _gapped_sequence.extra_symbols;
 }
 
 // *******************************************************************
@@ -261,6 +268,7 @@ CGappedSequence::CGappedSequence(CGappedSequence&& _gapped_sequence) noexcept
 	n_gaps = move(_gapped_sequence.n_gaps);
 	dps = move(_gapped_sequence.dps);
 	uppercase = move(_gapped_sequence.uppercase);
+	extra_symbols = move(_gapped_sequence.extra_symbols);
 }
 
 // *******************************************************************
@@ -341,15 +349,25 @@ string CGappedSequence::Decode()
 {
 	string s;
 
+	// decode symbols
+	for (int i = 1; i <= (int)size; ++i) {
+		symbols[i] = mapping_table[symbols[i]];
+	}
+
+	// replace extra characters
+	for (auto it = extra_symbols.begin(); it < extra_symbols.end(); ++it) {
+		symbols[it->first + 1] = it->second;
+	}
+
 	s.reserve(gapped_size);
 
 	// Starting gaps
 	s.append(n_gaps[0], '-');
 
 	for (int i = 1; i <= (int) size; ++i)
-	{
-		char symbol = mapping_table[symbols[i]];
-
+	{	
+		char symbol = symbols[i];
+		
 		if (!uppercase[i - 1])
 			symbol += 32;		// change to lowercase
 
@@ -362,6 +380,7 @@ string CGappedSequence::Decode()
 }
 
 // *******************************************************************
+/*
 void CGappedSequence::DecodeRaw(symbol_t* seq)
 {
 	uint32_t seq_pos = 1;
@@ -379,7 +398,7 @@ void CGappedSequence::DecodeRaw(symbol_t* seq)
 			seq[seq_pos++] = GAP;
 	}
 }
-
+*/
 // *******************************************************************
 void CGappedSequence::InsertGap(uint32_t pos)
 {

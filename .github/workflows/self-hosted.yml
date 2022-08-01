@@ -312,6 +312,11 @@ jobs:
       run: |
         ./famsa-${{matrix.compiler}} ${REF_DIR}/upgma.fasta upgma2sl.fasta
         cmp upgma2sl.fasta ${REF_DIR}/sl.fasta
+        
+    - name: non-standard symbols
+      run: |
+        ./famsa-${{matrix.compiler}} ./test/adeno_fiber_extra/adeno_fiber_extra out.fasta
+        cmp out.fasta ./test/adeno_fiber_extra/ref.fasta
       
 ########################################################################################
   noavx-tests:

@@ -39,6 +39,7 @@ public:
 	memory_monotonic_safe *mma;
 
 	vector<bool> uppercase;
+	vector<std::pair<int, char>> extra_symbols;
 	
 public:
 	CSequence() = delete;
@@ -57,7 +58,7 @@ public:
 
 	void ComputeBitMasks();
 	void ReleaseBitMasks();
-	string DecodeSequence();
+	//string DecodeSequence();
 
 	memory_monotonic_safe* get_mma()
 	{
@@ -99,6 +100,7 @@ public:
 
 	string id;
 	vector<bool> uppercase;
+	vector<std::pair<int, char>> extra_symbols;
 
 	CGappedSequence() = delete;
     CGappedSequence(CSequence &&_sequence);
@@ -116,7 +118,7 @@ public:
     void RemoveGaps(size_t pos, uint32_t n);
 	symbol_t GetSymbol(size_t pos);
 
-    void DecodeRaw(symbol_t *seq);
+   // void DecodeRaw(symbol_t *seq);
     string Decode();
 	uint32_t NoSymbols();
 
