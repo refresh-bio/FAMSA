@@ -19,9 +19,10 @@ Progressive algorithm for large-scale multiple sequence alignments.
   * the entire Pfam-A v33.1 in its largest NCBI variant (over 18 thousand families, 60 GB of raw FASTA files) was analyzed in 8 hours,	
   * the family PF00005 of 3 million ABC transporters was aligned in 5 minutes and 24 GB of RAM.
 * Remarkable time and memory optimizations - SLINK has been replaced with Prim’s minimum spanning tree algorithm when constructing default (single linkage) guide trees. NOTE: This may change quality results slightly compared to FAMSA 1 due to different ties resolution.
-* Neighbour joining guide trees (`-gt nj` option). NOTE: Neighbour joining trees are calculated with a use of original *O*(*N*<sup>3</sup>) algorithm, thus their applicability on large sets is limited (unless they are used as subtrees with Medoid Tree heuristic), 
+* Neighbour joining guide trees (`-gt nj` option). NOTE: Neighbour joining trees are calculated with a use of original *O*(*N*<sup>3</sup>) algorithm, thus their applicability on large sets is limited (unless they are used as subtrees with Medoid Tree heuristic).
 * Option for compressing output aligment to gzip (`-gz` switch).
 * Compatibility with ARM64 8 architecture (including Apple M1).
+* Duplicate removal - redundant sequences are by default removed prior the alignment and restored afterwards (feature introduced in revision 2.1.0). This can change output alignments when a family contains duplicates. The old behaviour can be obtained by using `-keep-duplicates` switch.
 
 
 ## Quick start

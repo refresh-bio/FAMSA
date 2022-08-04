@@ -9,14 +9,17 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"2.1.1"
-#define FAMSA_DATE		"2022-08-01"
+#define FAMSA_VER		"2.1.2"
+#define FAMSA_DATE		"2022-08-04"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+2.1.2 (2022-08-04):
+- Makefile updates improving cross-platform compilation.
 
 2.1.1 (2022-08-01):
 - Preserving non-standard amino acid symbols in the output alignment (instead of replacing with X).

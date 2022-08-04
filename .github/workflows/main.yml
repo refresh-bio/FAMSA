@@ -9,9 +9,13 @@ on:
  
 jobs:
   
-  linux-make:
-    name: Linux - make
-    runs-on: ubuntu-latest
+  make-tests:
+    name: Make
+    strategy:
+      matrix:
+        machine: [ubuntu-latest, macOS-12]
+    runs-on: ['${{ matrix.machine }}']
+    
     env: 
       REF_DIR: ./test/adeno_fiber
       INPUT: ./test/adeno_fiber/adeno_fiber
@@ -19,7 +23,9 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: make
-      run: make -j2
+      run: |
+        g++ --version
+        make -j
         
     - name: copy sl->slink references
       run: |
@@ -31,22 +37,23 @@ jobs:
     
     - uses: actions/upload-artifact@v2
       with:
-        name: executable-artifact
+        name: executable-artifact-${{ matrix.machine }}
         path: ./famsa.tar    
       
     
   ########################################################################################    
     
   full-tree:
-    name: Linux - full tree (adeno-fiber)
-    needs: linux-make
+    name: Full tree (adeno-fiber)
+    needs: make-tests
     strategy:
       fail-fast: false
       matrix:
         tree: [sl, upgma]
-
-    runs-on: ubuntu-latest
-        
+        machine: [ubuntu-latest, macOS-12]
+   
+    runs-on: ['${{ matrix.machine }}']
+  
     env: 
       REF_DIR: ./test/adeno_fiber
       INPUT: ./test/adeno_fiber/adeno_fiber
@@ -54,7 +61,7 @@ jobs:
     steps:
     - uses: actions/download-artifact@v2
       with:
-        name: executable-artifact
+        name: executable-artifact-${{ matrix.machine }}
         path: ./
         
     - name: untar artifacts
@@ -62,36 +69,31 @@ jobs:
 
     - name: ${{matrix.tree}} (tree only)
       run: |
-        ./famsa -gt ${{matrix.tree}} -gt_export ${INPUT} ${{matrix.tree}}.dnd
+        ./famsa -v -gt ${{matrix.tree}} -gt_export ${INPUT} ${{matrix.tree}}.dnd
         cmp ${{matrix.tree}}.dnd ${REF_DIR}/${{matrix.tree}}.dnd
+    
+    - name: ${{matrix.tree}} (from tree)
+      run: |
+        ./famsa -v -gt import ${{matrix.tree}}.dnd ${INPUT} ${{matrix.tree}}.dnd.fasta
+        cmp ${{matrix.tree}}.dnd.fasta ${REF_DIR}/${{matrix.tree}}.fasta
     
     - name: ${{matrix.tree}} (complete alignment)
       run: |
-        ./famsa -gt ${{matrix.tree}} ${INPUT} ${{matrix.tree}}.fasta
+        ./famsa -v -gt ${{matrix.tree}} ${INPUT} ${{matrix.tree}}.fasta
         cmp ${{matrix.tree}}.fasta ${REF_DIR}/${{matrix.tree}}.fasta
-     
-    - name: ${{matrix.tree}} (from tree)
-      run: |
-        ./famsa -gt import ${{matrix.tree}}.dnd ${INPUT} ${{matrix.tree}}.dnd.fasta
-        cmp ${{matrix.tree}}.dnd.fasta ${REF_DIR}/${{matrix.tree}}.fasta
-        
-    - name: ${{matrix.tree}} (gzip)
-      run: |
-        ./famsa -gz -gt ${{matrix.tree}} ${INPUT} ${{matrix.tree}}.fasta.gz
-        pigz -f -d ${{matrix.tree}}.fasta.gz
-        cmp ${{matrix.tree}}.fasta ${REF_DIR}/${{matrix.tree}}.fasta
-        
+         
   ########################################################################################            
     
   medoid-tree:
-    name: Linux - medoid tree (hemopexin)
+    name: Medoid tree (hemopexin)
     needs: full-tree
     strategy:
       fail-fast: false
       matrix:
         tree: [sl, upgma, nj]
-
-    runs-on: ubuntu-latest
+        machine: [ubuntu-latest, macOS-12]
+   
+    runs-on: ['${{ matrix.machine }}']
       
     env: 
       REF_DIR: ./test/hemopexin
@@ -100,7 +102,7 @@ jobs:
     steps:  
     - uses: actions/download-artifact@v2
       with:
-        name: executable-artifact
+        name: executable-artifact-${{ matrix.machine }}
         path: ./
         
     - name: untar artifacts
@@ -129,12 +131,14 @@ jobs:
   ########################################################################################        
          
   other-tests:
-    name: Linux - other tests (adeno-fiber)
+    name: Other tests (adeno-fiber)
     needs: medoid-tree
     strategy:
       fail-fast: false
- 
-    runs-on: ubuntu-latest    
+      matrix:
+        machine: [ubuntu-latest, macOS-12]
+   
+    runs-on: ['${{ matrix.machine }}']
         
     env: 
       REF_DIR: ./test/adeno_fiber
@@ -143,7 +147,7 @@ jobs:
     steps:
     - uses: actions/download-artifact@v2
       with:
-        name: executable-artifact
+        name: executable-artifact-${{ matrix.machine }}
         path: ./
         
     - name: untar artifacts
@@ -177,12 +181,4 @@ jobs:
 
   ########################################################################################    
       
-  macos-build:
-    name: macOS make
-    runs-on: macOS-latest
-
-    steps:
-    - uses: actions/checkout@v2
-    - name: make
-      run: make -j2
 

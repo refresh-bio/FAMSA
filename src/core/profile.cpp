@@ -75,7 +75,7 @@ CProfile::~CProfile()
 }
 
 // ****************************************************************************
-bool CProfile::operator==(const CProfile &profile)
+bool CProfile::operator==(const CProfile &profile) const
 {
 	if (data.size() != profile.data.size())
 		return false;

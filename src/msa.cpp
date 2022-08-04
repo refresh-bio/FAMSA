@@ -234,7 +234,7 @@ void CFAMSA::extendSequences(std::vector<CSequence>& sequences) {
 	auto& max_seq = *max_element(sequences.begin(), sequences.end(),
 		[](const CSequence& x, const CSequence& y) { return x.length < y.length; });
 
-	size_t max_seq_len = max_seq.length;
+	uint32_t max_seq_len = max_seq.length;
 
 	auto mma = sequences.front().get_mma();
 
@@ -400,7 +400,7 @@ void CFAMSA::RefineMostEmptyAndFullColumn(CProfile *profile_to_refine, vector<si
 			tmp.emplace_back(i, x);
 	}
 
-	sort(tmp.begin(), tmp.end(), [](const pair<size_t, size_t> &x, const pair<size_t, size_t> &y){
+	stable_sort(tmp.begin(), tmp.end(), [](const pair<size_t, size_t> &x, const pair<size_t, size_t> &y){
 		if(x.second != y.second)
 			return x.second < y.second;
 		else

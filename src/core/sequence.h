@@ -108,7 +108,7 @@ public:
     CGappedSequence(CGappedSequence &&_gapped_sequence) noexcept;
 	~CGappedSequence();
 
-	bool operator==(const CGappedSequence &gs);
+	bool operator==(const CGappedSequence &gs) const;
 
     void InsertGap(uint32_t pos);
     void InsertGaps(uint32_t pos, uint32_t n);

@@ -15,7 +15,7 @@ jobs:
     name: checkout
     strategy:
       matrix:
-        machine: [xeon, tripper, raspberry]
+        machine: [xeon, tripper, raspberry, m1, old]
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
     
     steps:
@@ -44,6 +44,23 @@ jobs:
         - machine: raspberry
           compiler: g++
           platform: arm8
+          
+        - machine: m1
+          compiler: g++
+          platform: m1
+          
+        - machine: old
+          compiler: g++-5
+          platform: avx2
+        - machine: old
+          compiler: g++-6
+          platform: avx2
+        - machine: old
+          compiler: g++-7
+          platform: avx2
+        - machine: old
+          compiler: g++-8
+          platform: avx2
  
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
 
@@ -77,8 +94,30 @@ jobs:
         - machine: raspberry
           compiler: g++
           tree: slink
+
+        - machine: m1
+          compiler: g++
+          tree: sl
+        - machine: m1
+          compiler: g++
+          tree: upgma
+        - machine: m1
+          compiler: g++
+          tree: slink
+   
+        - machine: old
+          compiler: g++-5
+          tree: sl
+        - machine: old
+          compiler: g++-6
+          tree: sl
+        - machine: old
+          compiler: g++-7
+          tree: sl
+        - machine: old
+          compiler: g++-8
+          tree: sl
           
-    
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
         
     env: 
@@ -122,6 +161,10 @@ jobs:
         # additional ARM configurations
         include:
         - machine: raspberry
+          compiler: g++
+          tree: sl
+          
+        - machine: m1
           compiler: g++
           tree: sl
      
@@ -174,6 +217,19 @@ jobs:
           compiler: g++
           tree: nj
           
+        - machine: m1
+          compiler: g++
+          tree: sl
+        - machine: m1
+          compiler: g++
+          tree: upgma
+        - machine: m1
+          compiler: g++
+          tree: slink
+        - machine: m1
+          compiler: g++
+          tree: nj
+          
           
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
       
@@ -217,6 +273,10 @@ jobs:
         # additional ARM configurations
         include:
         - machine: raspberry
+          compiler: g++
+          tree: sl
+        
+        - machine: m1
           compiler: g++
           tree: sl
      
@@ -272,6 +332,9 @@ jobs:
         # additional ARM configurations
         include:
         - machine: raspberry
+          compiler: g++
+          
+        - machine: m1
           compiler: g++
         
      
@@ -347,7 +410,7 @@ jobs:
 ########################################################################################
   huge-tree:
     name: LRR - 100k trees
-    runs-on: [self-hosted, famsa, tripper]
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
     needs: full-tree
     strategy:
       fail-fast: false
@@ -355,6 +418,11 @@ jobs:
         machine: [xeon, tripper]
         compiler: [g++-9, g++-11]
         tree: [sl]
+        
+        include:
+        - machine: m1
+          compiler: g++
+          tree: sl
           
     env: 
       REF_DIR: ./test/LRR

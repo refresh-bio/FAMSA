@@ -471,7 +471,7 @@ public:
 	CProfile(CProfile *profile1, CProfile *profile2, CParams *_params, uint32_t no_threads, uint32_t no_rows_per_box);
 	~CProfile();
 
-	bool operator==(const CProfile &profile);
+	bool operator==(const CProfile &profile) const;
 
 	void Align(CProfile *profile1, CProfile *profile2, uint32_t no_threads, uint32_t no_rows_per_box, vector<int> *column_mapping1 = nullptr, vector<int> *column_mapping2 = nullptr);
 

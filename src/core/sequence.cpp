@@ -281,7 +281,7 @@ CGappedSequence::~CGappedSequence()
 }
 
 // *******************************************************************
-bool CGappedSequence::operator==(const CGappedSequence& gs)
+bool CGappedSequence::operator==(const CGappedSequence& gs) const
 {
 	bool r = 
 		id == gs.id &&

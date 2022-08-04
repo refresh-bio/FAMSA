@@ -8,12 +8,12 @@ LIBS_DIR = libs
 LIB_FILES := libs/libdeflate/libdeflate.a
 
 UNAME_S := $(shell uname -s)
+GCC_VERSION= $(shell $(CXX) -dumpversion | cut -f1 -d.)
+
 ifeq ($(UNAME_S),Darwin)
-	GCC_VERSION=8
 	ABI_FLAG =
 	CLINK_FLAGS =
 else
-	GCC_VERSION = $(shell $(CXX) -dumpversion | cut -f1 -d.)
 	ABI_FLAG = -fabi-version=0 
 	CLINK_FLAGS = -lrt
 endif
@@ -45,13 +45,23 @@ $(info *** Detecting g++ version 10 ***)
 	DEFINE_FLAGS = -DOLD_ATOMIC_FLAG
 else ifeq ($(GCC_VERSION), 11)
 $(info *** Detecting g++ version 11 ***)
-	CPP_STD=c++20
-	DEFINE_FLAGS = 
+	ifeq ($(UNAME_S),Darwin)
+		CPP_STD=c++2a
+		DEFINE_FLAGS = -DOLD_ATOMIC_FLAG
+	else
+		CPP_STD=c++20
+		DEFINE_FLAGS = 
+	endif
 else
 $(info *** Detecting g++ version 12 or higher ***)
-	CPP_STD=c++20
+	ifeq ($(UNAME_S),Darwin)
+		CPP_STD=c++2a
+		DEFINE_FLAGS = -DOLD_ATOMIC_FLAG
+	else
+		CPP_STD=c++20
+		DEFINE_FLAGS = 
+	endif
 #	DEFINE_FLAGS = -DUSE_NATIVE_BARRIERS
-	DEFINE_FLAGS = 
 endif
 
 SIMD_NONE=0
