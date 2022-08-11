@@ -11,6 +11,7 @@
 ![Windows](https://img.shields.io/badge/%E2%80%8B-Windows-00A98F?logo=windows)
 ![Linux](https://img.shields.io/static/v1?label=%E2%80%8B&message=Linux&color=00A98F&logo=linux&logoColor=white)
 ![macOS](https://img.shields.io/badge/%E2%80%8B-macOS-00A98F?logo=apple)
+[![PyPI](https://img.shields.io/pypi/v/pyfamsa?label=PyFAMSA)](https://pypi.org/project/pyfamsa)
 
 Progressive algorithm for large-scale multiple sequence alignments.
 
@@ -61,8 +62,9 @@ The software is also available on [Bioconda](https://anaconda.org/bioconda/famsa
 ```
 conda install -c bioconda famsa
 ```
-For detailed instructions how to set up Bioconda, please refer to the [Bioconda manual](https://bioconda.github.io/user/install.html#install-conda).
-FAMSA can be also built from the sources distributed as:
+For detailed instructions how to set up Bioconda, please refer to the [Bioconda manual](https://bioconda.github.io/user/install.html#install-conda). 
+A user-friendly [PyFAMSA](https://github.com/althonos/pyfamsa) module authored by [Martin Larralde](https://github.com/althonos/) allows running analyzes directly from Python.
+Finally, FAMSA can be built from the sources distributed as:
 
 * Visual Studio 2019 solution for Windows,
 * MAKE project for Linux and OS X (g++-5 required, g++-8 recommended).
