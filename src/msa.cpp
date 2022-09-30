@@ -711,6 +711,16 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 			dups = sequences.size() - sorted_seqs.size();
 			LOG_VERBOSE << sorted_seqs.size() << "/" << sequences.size() << " sequences retained." << endl;
 		}
+
+		// only one unique sequence - move input to output end exit
+		if (sorted_seqs.size() == 1) {
+			final_profile = new CProfile(&params);
+			for (int i = 0; i < (int)sequences.size(); ++i) {
+				final_profile->AppendRawSequence(CGappedSequence(move(sequences[i])));
+			}
+			return true;
+		}
+
 		
 		// store mappings and temporarily reset numerical identifiers (to make medoid trees work)
 		for (int i = 0; i < (int)sorted_seqs.size(); ++i) {

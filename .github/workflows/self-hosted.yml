@@ -71,12 +71,58 @@ jobs:
         cp ./famsa ./famsa-${{matrix.compiler}}
         make clean
         
+  ########################################################################################        
+         
+  small-tests:
+    name: small tests
+    needs: make-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: [xeon, tripper]
+        compiler: [g++-9, g++-10, g++-11]
+        # additional ARM configurations
+        include:
+        - machine: raspberry
+          compiler: g++
+          
+        - machine: m1
+          compiler: g++
+        
+     
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']    
+    
+    steps:
+    - name: single sequence
+      run: |
+        ./famsa-${{matrix.compiler}} ./test/dummy/one-seq out.fasta
+        cmp out.fasta ./test/dummy/one-seq.aln
+        
+    - name: two duplicates
+      run: |
+        ./famsa-${{matrix.compiler}} ./test/dummy/two-seq out.fasta
+        cmp out.fasta ./test/dummy/two-seq.aln
+        
+    - name: two duplicates (kept)
+      run: |
+        ./famsa-${{matrix.compiler}} -keep-duplicates ./test/dummy/two-seq out.fasta
+        cmp out.fasta ./test/dummy/two-seq.aln   
+        
+    - name: many duplicates
+      run: |
+        ./famsa-${{matrix.compiler}} ./test/dummy/many-seq out.fasta
+        cmp out.fasta ./test/dummy/many-seq.aln 
+        
+    - name: many duplicates (kept)
+      run: |
+        ./famsa-${{matrix.compiler}} -keep-duplicates ./test/dummy/many-seq out.fasta
+        cmp out.fasta ./test/dummy/many-seq.aln    
   
   ########################################################################################    
     
   full-tree:
     name: adeno-fiber - full tree
-    needs: make-tests
+    needs: small-tests
     strategy:
       fail-fast: false
       matrix:
@@ -151,7 +197,7 @@ jobs:
 
   full-tree-duplicates:
     name: adeno-fiber - duplicates
-    needs: make-tests
+    needs: small-tests
     strategy:
       fail-fast: false
       matrix:
@@ -323,7 +369,7 @@ jobs:
          
   other-tests:
     name: adeno-fiber - other tests
-    needs: make-tests
+    needs: small-tests
     strategy:
       fail-fast: false
       matrix:
@@ -385,7 +431,7 @@ jobs:
   noavx-tests:
     name: distances only - different TRipper SIMD extensions 
     runs-on: [self-hosted, famsa, tripper]
-    needs: make-tests
+    needs: small-tests
     strategy:
       fail-fast: false
       matrix:

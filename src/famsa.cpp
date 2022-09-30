@@ -81,14 +81,8 @@ int main(int argc, char *argv[])
 			LOG_NORMAL << "Error: no (or incorrect) input file\n";
 			ok = false;
 		}
-		else if (input_seq_cnt == 1) {
-			// single input sequence - write without alignment
-			CGappedSequence resultSeq(std::move(sequences[0]));
-			result.push_back(&resultSeq);
-			ok = IOService::saveAlignment(params.output_file_name, result, params.n_threads, -1);
-		}
 		else {
-			// multitple input sequences - run alignment
+			// at least one input sequences - run alignment
 			CFAMSA famsa(params);
 			famsa.getStatistics().put("input.n_sequences", sequences.size());
 
