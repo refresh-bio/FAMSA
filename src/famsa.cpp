@@ -97,8 +97,7 @@ int main(int argc, char *argv[])
 
 		if (input_seq_cnt == 0) {
 			// no sequences loaded - signal error
-			LOG_NORMAL << "Error: no (or incorrect) input file\n";
-			ok = false;
+			throw(std::runtime_error("No (or incorrect) input file."));
 		}
 		else {
 			// at least one input sequences - run alignment
@@ -139,15 +138,15 @@ int main(int argc, char *argv[])
 
 			}
 			else {
-				LOG_NORMAL << "Some interal error occured!\n";
-				ok = false;
+				throw(std::runtime_error("Some interal error occured"));
 			}
 		}
 
 		sequences.clear();
 	}
 	catch (std::runtime_error& err) {
-		LOG_NORMAL << "Error: " << err.what() << endl;
+		LOG_NORMAL << endl << "[ERROR] " << err.what() << endl;
+		ok = false;
 	}
 
 	return ok ? 0 : -1;

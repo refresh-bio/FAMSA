@@ -25,6 +25,7 @@ Progressive algorithm for large-scale multiple sequence alignments.
 * Option for compressing output aligment to gzip (`-gz` switch).
 * Compatibility with ARM64 8 architecture (including Apple M1).
 * Duplicate removal - redundant sequences are by default removed prior the alignment and restored afterwards (feature introduced in revision 2.1.0). This can change output alignments when a family contains duplicates. The old behaviour can be obtained by using `-keep-duplicates` switch.
+* Profile-profile alignments (available by specifying two input FASTA files; introduced in revision 2.2.0).
 
 
 ## Quick start
@@ -115,7 +116,7 @@ Options:
 * `-gt_export` - export a guide tree to output file in the Newick format
 * `-dist_export` - export a distance matrix to output file in CSV format
 * `-square_matrix` - generate a square distance matrix instead of a default triangle
-* `-pid` - generate percent identity instead of distance
+* `-pid` - calculate percent identity (the number of matching residues divided by the shorter sequence length) instead of distance
 * `-keep-duplicates` - keep duplicated sequences during alignment (default: disabled - duplicates are removed prior and restored after the alignment)
 * `-gz` - enable gzipped output (default: disabled)
 * `-gz-lev <value>` - gzip compression level [0-9] (default: 7)

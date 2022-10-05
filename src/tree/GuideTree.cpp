@@ -23,6 +23,7 @@ bool GuideTree::loadNewick(
 	ifstream newickFile;
 	newickFile.open(file_name);
 	if (!newickFile.good()) {
+		throw std::runtime_error("Unable to open Newick file: " + file_name);
 		return false;
 	}
 

@@ -35,7 +35,7 @@ void DistanceCalculator<_distance>::run(std::vector<CSequence*>& sequences, tree
 			vector<float> loc_dist_vector;
 
 			if (calculate_pid) {
-				DistanceToSimilarity<double, _distance> transform;
+				Transform<float, Distance::pairwise_identity> transform;
 
 				while (queue.GetTask(row_id, sequences, dist_vector)) {
 					loc_dist_vector.resize(dist_vector->size());

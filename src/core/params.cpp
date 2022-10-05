@@ -84,7 +84,7 @@ void CParams::show_usage(bool expert)
 		<< "  -gt_export - export a guide tree to output file in Newick format\n"
 		<< "  -dist_export - export a distance matrix to output file in CSV format\n"
 		<< "  -square_matrix - generate a square distance matrix instead of a default triangle\n"
-		<< "  -pid - generate percent identity instead of distance\n"
+		<< "  -pid - generate pairwise identity (the number of matching residues divided by the shorter sequence length) instead of distance\n"
 		<< "  -keep-duplicates - keep duplicated sequences during alignment\n"
 		<< "                     (default: disabled - duplicates are removed prior and restored after the alignment).\n\n"
 

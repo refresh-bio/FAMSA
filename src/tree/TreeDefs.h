@@ -23,6 +23,7 @@ enum class Distance {
 	neg_lcs_div_indel,
 	neg_lcs_div_minlen,
 	neg_lcs_div_len_corrected,
+	pairwise_identity
 };
 
 inline static Distance str2dist(const std::string& s) {

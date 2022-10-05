@@ -70,6 +70,13 @@ struct Transform<T, Distance::indel_div_lcs> {
 	}
 };
 
+template <class T>
+struct Transform<T, Distance::pairwise_identity> {
+	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) {
+		return (T)lcs / std::min(len1, len2);
+	}
+};
+
 /*template <class T>
 struct Transform<T, Distance::neg_lcs_div_indel> {
 	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) {

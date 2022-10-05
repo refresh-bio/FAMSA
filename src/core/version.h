@@ -9,7 +9,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"2.2.0"
+#define FAMSA_VER		"2.2.1"
 #define FAMSA_DATE		"2022-10-05"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
@@ -17,6 +17,9 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 /*
 Version history:
+2.2.1 (2022-10-05):
+- Pairwise identity (-pid switch) properly calculated as the number of matching residues divided by the shorter sequence length.
+
 2.2.0 (2022-10-05):
 - Added possibility to align two pre-aligned profiles (two input files specified).
 

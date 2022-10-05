@@ -29,8 +29,7 @@ void NewickParser::parse(
 		throw std::runtime_error("Error while parsing Newick tree: empty description.");
 	}
 
-	LOG_VERBOSE << "Parsing guide tree..." << endl
-		<< "Description length: " << description.length() << endl;
+	LOG_VERBOSE << endl << "Newick description length: " << description.length() << endl;
 
 	// map sequence names to ids
 	std::map<std::string, int> sequencesToIds;
