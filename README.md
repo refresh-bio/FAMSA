@@ -54,6 +54,9 @@ cd FAMSA && make
 
 # export a pairwise identity (PID) matrix to the CSV format (square) 
 ./famsa -dist_export -pid -square_matrix ./test/adeno_fiber/adeno_fiber pid.csv
+
+# profile-profile alignment without refining output 
+./famsa -refine_mode off ./test/adeno_fiber/upgma.no_refine.part1.fasta ./test/adeno_fiber/upgma.no_refine.part2.fasta pp.fasta
 ```
 
 
@@ -120,6 +123,7 @@ Options:
 * `-keep-duplicates` - keep duplicated sequences during alignment (default: disabled - duplicates are removed prior and restored after the alignment)
 * `-gz` - enable gzipped output (default: disabled)
 * `-gz-lev <value>` - gzip compression level [0-9] (default: 7)
+* `-refine_mode <on | off | auto>` - refinement mode (default: `auto` - the refinement is enabled for sets <= 1000 seq.)
 
 
 ### Guide tree import and export

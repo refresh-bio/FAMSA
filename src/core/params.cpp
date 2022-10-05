@@ -89,12 +89,13 @@ void CParams::show_usage(bool expert)
 		<< "                     (default: disabled - duplicates are removed prior and restored after the alignment).\n\n"
 
 		<< "  -gz - enable gzipped output (default: " << bool2str[gzippd_output] << ")\n"
-		<< "  -gz-lev <value> - gzip compression level [0-9] (default: " << gzip_level << ")\n\n";
+		<< "  -gz-lev <value> - gzip compression level [0-9] (default: " << gzip_level << ")\n"
+		<< "  -refine_mode <on | off | auto> - refinement mode (default: auto - the refinement is enabled for sets <= " << thr_refinement << " seq.)\n\n";
+
 		
 	if (expert) {
 		LOG_NORMAL << "Advanced options:\n"
 			<< "  -r <value> - no. of refinement iterations (default: " << n_refinements << ")\n"
-			<< "  -refine_mode <on|off|auto> - refinement mode (default: auto - the refinement is disabled for sets larger than " << thr_refinement << " seq.)\n"
 			<< "  -go <value> - gap open cost (default: " << gap_open << ")\n"
 			<< "  -ge <value> - gap extension cost (default: " << gap_ext << ")\n"
 			<< "  -tgo <value> - terminal gap open cost (default: " << gap_term_open << ")\n"

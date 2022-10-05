@@ -20,3 +20,6 @@
 
 # export pairwise identity (PID) matrix to CSV format (square) 
 ./famsa -dist_export -pid -square_matrix ./test/adeno_fiber/adeno_fiber pid.csv
+
+# profile-profile alignment without refining output 
+./famsa -refine_mode off ./test/adeno_fiber/upgma.no_refine.part1.fasta ./test/adeno_fiber/upgma.no_refine.part2.fasta pp.fasta
