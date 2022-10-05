@@ -110,7 +110,8 @@ void NewickParser::store(
 	
 	std::vector<int> prevs(guideTree.size() + 1, -1);
 	std::vector<int> num_visits(guideTree.size() + 1, 0);
-	int cur_pos = guideTree.size() - 1;
+	int last_pos = guideTree.size() - 1;
+	int cur_pos = last_pos;
 	
 	while (true) {
 		
@@ -148,7 +149,7 @@ void NewickParser::store(
 			}
 			else {
 				// two visits - node processed
-				if (cur_pos == guideTree.size() - 1) {
+				if (cur_pos == last_pos) {
 					// root processed
 					oss << ");";
 					break;

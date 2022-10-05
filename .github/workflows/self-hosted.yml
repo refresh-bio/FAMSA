@@ -396,6 +396,16 @@ jobs:
       run: |
         ./famsa-${{matrix.compiler}} -go 10 -ge 2 -tgo 0.5 -tge 1.0 -gsd 3 -gsl 30 ${INPUT} gaps.fasta
         cmp gaps.fasta ${REF_DIR}/gaps.fasta
+        
+    - name: no refinement
+      run: |
+        ./famsa-${{matrix.compiler}} -gt import upgma.dnd -refine_mode off ${INPUT} upgma.no_refine.fasta
+        cmp upgma.no_refine.fasta ${REF_DIR}/upgma.no_refine.fasta
+        
+    - name: profile-profile alignment
+      run: |
+        ./famsa-${{matrix.compiler}} -refine_mode off ${REF_DIR}/upgma.no_refine.part1.fasta ${REF_DIR}/upgma.no_refine.part2.fasta upgma.pp.fasta
+        cmp upgma.pp.fasta ${REF_DIR}/upgma.pp.fasta
     
     - name: export distance
       run: |

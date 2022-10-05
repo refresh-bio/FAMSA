@@ -38,15 +38,15 @@ protected:
 	static const int TIMER_REFINMENT = 3;
 	static const int TIMER_TREE_STORE = 4;
 
+ 	static double SM_MIQS[24][24];
+
 	CParams params;
-	static double SM_MIQS[24][24];
+	instruction_set_t instruction_set;
+	
 	vector<vector<score_t>> score_matrix;
 	vector<score_t> score_vector;
 
-	instruction_set_t instruction_set;
-	//vector<CGappedSequence> gapped_sequences;
-
-	score_t avg_sim;
+	vector<CGappedSequence> gapped_sequences;
 
 	map<size_t, CProfile*> profiles;
 	CProfile *final_profile;
@@ -64,8 +64,7 @@ protected:
 #endif
 	
 	void initScoreMatrix();
-	void adjustParams(int n_seqs);
-
+ 
 #ifdef DEVELOPER_MODE
 	vector<CSequence> ref_sequences;
 	bool LoadRefSequences();
@@ -80,6 +79,8 @@ protected:
 
 
 public:
+	
+	
 	CFAMSA(CParams& _params);
 	~CFAMSA();
 
@@ -91,6 +92,7 @@ public:
 #endif
 
 	bool GetAlignment(vector<CGappedSequence*> &result);
+  void adjustParams(int n_seqs);
 	
 	score_t GetScore() { return final_profile != nullptr ? final_profile->total_score : 0;  }
 	
@@ -105,6 +107,8 @@ public:
 #endif
 
 	bool ComputeMSA(vector<CSequence>& sequences);
+
+	bool alignProfiles(vector<CGappedSequence>& p1, vector<CGappedSequence>& p2);
 };
 
 

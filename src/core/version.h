@@ -9,14 +9,16 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"2.1.3"
-#define FAMSA_DATE		"2022-09-30"
+#define FAMSA_VER		"2.2.0"
+#define FAMSA_DATE		"2022-10-05"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+2.2.0 (2022-10-05):
+- Added possibility to align two pre-aligned profiles (two input files specified).
 
 2.1.3 (2022-09-30):
 - Fixed incorrect handling of single sequence sets (first residue cut) or sets containing only duplicates (hang).

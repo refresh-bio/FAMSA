@@ -89,10 +89,12 @@ The latest speed improvements in FAMSA limited the usefullness of the GPU mode. 
 
 ## Usage
 
-`famsa [options] <input_file> <output_file>`
+`famsa [options] <input_file> [<input_file_2>] <output_file>`
 
 Positional parameters:
-* `input_file` - input file in FASTA format (pass STDIN when reading from standard input)
+* `input_file`, `input_file_2` - input files in FASTA format (first input can be replaced with STDIN string to read from standard input); action depends on the number of input files:
+    * one input - multiple sequence alignment (input gaps, if present, are removed prior the alignment),
+	* two inputs - profile-profile aligment (gaps are preserved).
 * `output_file` - output file (pass STDOUT when writing to standard output); available outputs:
     * alignment in FASTA format,
     * guide tree in Newick format (`-gt_export` option specified),

@@ -12,11 +12,42 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <vector>
 #include <math.h>
 #include <string>
+#include <sstream>
+#include <algorithm>
 #include "../core/defs.h"
 #include "../tree/TreeDefs.h"
 
 
 using namespace std;
+
+class Refinement {
+public:
+	enum Mode {ON, OFF, AUTO};
+	
+	static std::string toString(Mode v) {
+		switch (v) {
+		case ON:				return "on";
+		case OFF:				return "off";
+		case AUTO:				return "auto";
+		default:
+			throw new std::runtime_error("Error: Illegal refinment mode.");
+		}
+
+		return "Unknown";
+	}
+
+	static Mode fromString(const std::string& name) {
+		if (name == "on") { return ON; }
+		if (name == "off") { return OFF; }
+		if (name == "auto") { return AUTO; }
+
+		// something went wrong
+		throw new std::runtime_error("Error: Illegal refinment mode.");
+
+		return ON;
+	}
+};
+
 
 class CParams
 {
@@ -27,6 +58,7 @@ private:
 	double gap_term_ext_base				= 0.66;
 	
 public:	
+	
 	score_t gap_open;
 	score_t gap_ext;
 	score_t gap_term_open;
@@ -39,8 +71,8 @@ public:
 	bool enable_gap_rescaling				= true;
 	bool enable_gap_optimization			= true;
 	bool enable_total_score_calculation		= true;
-	bool enable_auto_refinement				= true;
 	
+	Refinement::Mode refinement_mode		= Refinement::AUTO;
 	uint32_t n_refinements					= 100;
 	uint32_t thr_refinement					= 1000;
 	uint32_t thr_internal_refinement		= 0;
@@ -78,7 +110,9 @@ public:
 	bool verbose_mode = false;
 	bool very_verbose_mode = false;
 
+	bool profile_aligning = false;
 	string input_file_name;
+	string input_file_name_2;
 	string output_file_name;
 
 	vector<vector<score_t>> score_matrix;
@@ -87,6 +121,52 @@ public:
 	CParams();
 	bool parse(int argc, char** argv, bool& showExpert);
 	void show_usage(bool expert);
+
+protected:
+	bool findSwitch(std::vector<std::string>& params, const std::string& name) {
+		auto it = find(params.begin(), params.end(), name); // verbose mode
+		if (it != params.end()) {
+			params.erase(it);
+			return true;
+		}
+
+		return false;
+	}
+
+	template <typename T>
+	bool findOption(std::vector<std::string>& params, const std::string& name, T& v) {
+		auto prevToEnd = std::prev(params.end());
+		auto it = find(params.begin(), prevToEnd, name); // verbose mode
+		if (it != prevToEnd) {
+			std::istringstream iss(*std::next(it));
+			if (iss >> v) {
+				params.erase(it, it + 2);
+				return true;
+			}
+		}
+
+		return false;
+	}
+
+	template <typename T>
+	bool findOption(
+		std::vector<std::string>& params, 
+		const std::string& name, 
+		T& v, 
+		std::vector<std::string>::iterator & next) {
+		
+		auto prevToEnd = std::prev(params.end());
+		auto it = find(params.begin(), prevToEnd, name); // verbose mode
+		if (it != prevToEnd) {
+			std::istringstream iss(*std::next(it));
+			if (iss >> v) {
+				next = params.erase(it, it + 2);
+				return true;
+			}
+		}
+
+		return false;
+	}
 };
 
 #endif

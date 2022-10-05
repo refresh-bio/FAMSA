@@ -439,8 +439,10 @@ bool CFAMSA::RefineAlignment(CProfile *&profile_to_refine)
 	// Restart generator
 	rnd_rfn.seed(5489u);
 
-	if (params.enable_auto_refinement && profile_to_refine->Size() > params.thr_refinement)
+	if (params.refinement_mode == Refinement::OFF ||
+		(params.refinement_mode == Refinement::AUTO && profile_to_refine->Size() > params.thr_refinement)) {
 		return true;
+	}
 
 	size_t n_ref = params.n_refinements;
 	size_t n_seq = profile_to_refine->Size();
@@ -637,7 +639,7 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 		<< "  enable gap rescaling: " << params.enable_gap_rescaling << "\n"
 		<< "  enable gap optimization: " << params.enable_gap_optimization << "\n"
 		<< "  enable total score calculation: " << params.enable_total_score_calculation << "\n"
-		<< "  enable auto refinement: " << params.enable_auto_refinement << "\n"
+		<< "  refinement mode: " << Refinement::toString(params.refinement_mode) << "\n"
 		<< "  guided alignment radius: " << params.guided_alignment_radius << "\n\n";
 	
 
@@ -841,4 +843,48 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 	}
 
 	return true;
+}
+
+// *******************************************************************
+bool CFAMSA::alignProfiles(vector<CGappedSequence>& p1, vector<CGappedSequence>& p2) {
+
+	CProfile prof_1 = CProfile(&params);
+	CProfile prof_2 = CProfile(&params);
+
+	timers[TIMER_ALIGNMENT].StartTimer();
+	LOG_VERBOSE << "Computing alignment...";
+
+	for (const auto& gs: p1) {
+		prof_1.AppendRawSequence(gs);
+	}
+	for (const auto& gs : p2) {
+		prof_2.AppendRawSequence(gs);
+	}
+
+	prof_1.CalculateCountersScores();
+	prof_2.CalculateCountersScores();
+	
+	uint32_t no_rows_per_box = 0;
+
+	final_profile = new CProfile(&prof_1, &prof_2, &params, 1, no_rows_per_box);
+	if (!final_profile) {
+		return false;
+	}
+	LOG_VERBOSE << "[OK]" << endl;
+	timers[TIMER_ALIGNMENT].StopTimer();
+
+
+	timers[TIMER_REFINMENT].StartTimer();
+	LOG_VERBOSE << "Computing refinement...";
+	if (!RefineAlignment(final_profile))
+		return false;
+	LOG_VERBOSE << "[OK]" << endl;
+	timers[TIMER_REFINMENT].StopTimer();
+
+	if (params.verbose_mode || params.very_verbose_mode) {
+		statistics.put("time.alignment", timers[TIMER_ALIGNMENT].GetElapsedTime());
+		statistics.put("time.refinement", timers[TIMER_REFINMENT].GetElapsedTime());
+	}
+
+	return 0;
 }

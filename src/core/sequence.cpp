@@ -21,14 +21,21 @@ char CGappedSequence::mapping_table[25] = "ARNDCQEGHILKMFPSTWYVBZX*";
 // *******************************************************************
 CSequence::CSequence(const string& _id, const string& seq, int sequence_no, memory_monotonic_safe* mma)
 	: 
-	length((uint32_t)seq.length()), 
+	length(0), 
 	original_no(sequence_no),
 	sequence_no(sequence_no),
 	id(_id),
-	mma(mma),
-	uppercase(seq.length())
+	mma(mma)
 {
-	data_size = seq.length();
+	// omit gaps
+	for (const char c : seq) {
+		if (c != '-') {
+			++length;
+		}
+	}
+	
+	uppercase.resize(length);
+	data_size = length;
 
 	if (length)
 	{
@@ -43,24 +50,32 @@ CSequence::CSequence(const string& _id, const string& seq, int sequence_no, memo
 	p_bit_masks = nullptr;
 	p_bv_len = 0;
 
-	for(uint32_t i = 0; i < length; ++i)
+	for(uint32_t i = 0, i_out = 0; i < seq.length(); ++i)
 	{
 		char c = seq[i];
-		if(c > 'Z')
-		{
-			c -= 32;
-			uppercase[i] = false;
+		
+		if (c == '-') {
+			continue;
 		}
-		else
-			uppercase[i] = true;
+		
+		if(c > 'Z') {
+			c -= 32;
+			uppercase[i_out] = false;
+		}
+		else {
+			uppercase[i_out] = true;
+		}
 
 		char *q = find(mapping_table, mapping_table+25, c);
 		if (q == mapping_table + 25) {	
-			extra_symbols.emplace_back(i, c); // save non-standard symbol
-			data[i] = (symbol_t)UNKNOWN_SYMBOL;
+			extra_symbols.emplace_back(i_out, c); // save non-standard symbol
+			data[i_out] = (symbol_t)UNKNOWN_SYMBOL;
 		}
-		else
-			data[i] = (symbol_t) (q - mapping_table);
+		else {
+			data[i_out] = (symbol_t)(q - mapping_table);
+		}
+
+		++i_out;
 	}
 }
 
@@ -196,6 +211,65 @@ void CSequence::ReleaseBitMasks()
 // *******************************************************************
 
 // *******************************************************************
+CGappedSequence::CGappedSequence(const string& _id, const string& seq, int seq_no, memory_monotonic_safe* mma) 
+	: mma(mma), sequence_no(seq_no), id(_id)
+{
+	gapped_size = seq.size();
+	size = 0;
+	for (const auto &ch : seq) {
+		if (ch!='-') {
+			++size;
+		}
+	}
+
+	symbols_size = size;
+	uppercase.resize(symbols_size);
+	n_gaps.resize(symbols_size + 1, 0);
+
+	if (size) {
+		if (mma) { 
+			symbols=(symbol_t*)mma->allocate(symbols_size + 1);}
+		else {
+			symbols=new symbol_t[symbols_size +1];}
+	}
+	else {
+		symbols=nullptr;
+	}
+  
+	int is = 0;
+	for (int i = 0; i < (int)gapped_size; ++i) {
+		char c = seq[i];
+		
+		if (c == '-') {
+			++n_gaps[is];
+		}
+		else {
+			
+			if (c > 'Z') {
+				c -= 32;
+				uppercase[is] = false;
+			}
+			else {
+				uppercase[is] = true;
+			}
+			char* q = find(mapping_table, mapping_table + 25, c);
+			if (q == mapping_table + 25) {
+				extra_symbols.emplace_back(is, c); // save non-standard symbol
+				symbols[is] = (symbol_t)UNKNOWN_SYMBOL;
+			}
+			else {
+				symbols[is] = (symbol_t)(q - mapping_table);
+			}
+
+			++is;
+
+		}
+	}
+
+	InitialiseDPS();
+}
+//*******************88******************************************************************************************************************************************************************************************************************************************************
+
 CGappedSequence::CGappedSequence(CSequence&& _sequence) :
 	mma(_sequence.mma),
 	symbols(std::move(_sequence.data)),
@@ -232,11 +306,13 @@ CGappedSequence::CGappedSequence(const CGappedSequence& _gapped_sequence) :
 	dps_size_div2 = _gapped_sequence.dps_size_div2;
 	mma = _gapped_sequence.mma;
 
+
 	if (mma)
 		symbols = (symbol_t*)mma->allocate(symbols_size + 1);
 	else
 		symbols = new symbol_t[symbols_size + 1];
 
+	
 	copy_n(_gapped_sequence.symbols, symbols_size, symbols);
 
 	n_gaps = _gapped_sequence.n_gaps;

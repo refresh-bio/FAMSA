@@ -66,13 +66,32 @@ int main(int argc, char *argv[])
 			Log::getInstance(Log::LEVEL_DEBUG).enable();
 		}
 
-		// ***** Read input file
-		LOG_VERBOSE << "Processing: " << params.input_file_name << "\n";
-
 		memory_monotonic_safe mma(16 << 20, 64);
-
 		vector<CGappedSequence*> result;
 		vector<CSequence> sequences;
+
+		// profile - profile alignment
+		if (params.profile_aligning) {
+			LOG_VERBOSE << "Aligning " << params.input_file_name << " with " << params.input_file_name_2 << "\n";
+
+			vector<CGappedSequence> profile1;
+			vector<CGappedSequence> profile2;
+	
+			size_t size1 = IOService::loadFasta(params.input_file_name, profile1, &mma);
+			size_t size2 = IOService::loadFasta(params.input_file_name_2, profile2, &mma);
+			CFAMSA profile_aligner(params);
+
+			profile_aligner.adjustParams((int)(size1 + size2));
+			profile_aligner.alignProfiles(profile1, profile2);
+
+			profile_aligner.GetAlignment(result);
+
+			IOService::saveAlignment(params.output_file_name, result, params.n_threads, 
+				params.gzippd_output ? params.gzip_level : -1);
+			return 0;
+		}		
+
+		LOG_VERBOSE << "Aligning " << params.input_file_name << "\n";
 
 		size_t input_seq_cnt = IOService::loadFasta(params.input_file_name, sequences, &mma);
 
@@ -95,10 +114,8 @@ int main(int argc, char *argv[])
 					famsa.getStatistics().put("alignment.length", result[0]->gapped_size);
 
 					LOG_VERBOSE << "Saving alignment in " << params.output_file_name;
-					if (params.gzippd_output)
-						ok = IOService::saveAlignment(params.output_file_name, result, params.n_threads, params.gzip_level);
-					else
-						ok = IOService::saveAlignment(params.output_file_name, result, params.n_threads, -1);
+					ok = IOService::saveAlignment(params.output_file_name, result, params.n_threads, 
+						params.gzippd_output ? params.gzip_level : -1);
 
 					LOG_VERBOSE << " [OK]" << endl;
 				}
