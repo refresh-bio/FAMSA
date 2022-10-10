@@ -113,6 +113,7 @@
     <ClCompile Include="..\libs\mimalloc\static.cpp">
       <Filter>libraries</Filter>
     </ClCompile>
+    <ClCompile Include="msa_refinement.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="msa.h" />

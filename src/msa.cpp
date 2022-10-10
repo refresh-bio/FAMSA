@@ -228,6 +228,43 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 }
 
 // *******************************************************************
+void CFAMSA::sortAndExtendSequences(std::vector<CSequence>& sequences) {
+
+	// create vector of pointers just for sorting
+	std::vector<CSequence*> seq_ptrs(sequences.size());
+	std::transform(sequences.begin(), sequences.end(), seq_ptrs.begin(), [](CSequence& s) { return &s; });
+
+	auto comparer = [](const CSequence* a, const CSequence* b)->bool {
+		return a->length > b->length ||
+			(a->length == b->length && std::lexicographical_compare(a->data, a->data + a->data_size, b->data, b->data + b->data_size));
+	};
+
+	std::stable_sort(seq_ptrs.begin(), seq_ptrs.end(), comparer);
+	uint32_t max_seq_len = seq_ptrs[0]->length;
+
+	std::vector<CSequence> output;
+	output.reserve(sequences.size());
+
+	// mark already allocated memory area to free
+	auto mma = sequences.front().get_mma();
+	if (mma) {
+		mma->freeze();
+	}
+
+	// put sequences in the ordered collection with length extension
+	for (int i = 0; i < seq_ptrs.size(); ++i) {
+		output.emplace_back(std::move(sequences[seq_ptrs[i]->original_no]));
+		output.back().DataResize(max_seq_len, UNKNOWN_SYMBOL);
+	}
+	output.swap(sequences);
+
+	// free marked area
+	if (mma) {
+		mma->release_freezed();
+	}
+}
+
+// *******************************************************************
 void CFAMSA::extendSequences(std::vector<CSequence>& sequences) {
 	
 	// Temporarily resize the sequences by adding unknown symbols (just to simplify the pairwise comparison)
@@ -282,6 +319,29 @@ void CFAMSA::shrinkSequences(std::vector<CSequence>& sequences) {
 		mma->release_freezed();
 	}
 }
+
+
+// *******************************************************************
+void CFAMSA::removeDuplicates(std::vector<CSequence*>& sorted_seqs, std::vector<int>& original2sorted) {
+	
+	auto eq_comparer = [](const CSequence* a, const CSequence* b)->bool {
+		return a->length == b->length && std::equal(a->data, a->data + a->length, b->data);
+	};
+
+	// update original2sorted mappings to take into account duplicates
+	int cur_sorted_index = 0;
+	for (int i = 1; i < (int)sorted_seqs.size(); ++i) {
+		if (!eq_comparer(sorted_seqs[i], sorted_seqs[i - 1])) {
+			++cur_sorted_index;
+		}
+
+		original2sorted[i] = cur_sorted_index;
+	}
+
+	auto newend = std::unique(sorted_seqs.begin(), sorted_seqs.end(), eq_comparer);
+	sorted_seqs.erase(newend, sorted_seqs.end());
+}
+
 
 
 // *******************************************************************
@@ -367,220 +427,6 @@ CProfile* CFAMSA::ComputeAlignment(std::vector<CGappedSequence*>& gapped_sequenc
 }
 
 // *******************************************************************
-void CFAMSA::RefineRandom(CProfile* profile_to_refine, vector<size_t> &dest_prof_id)
-{
-	for(size_t i = 0; i < profile_to_refine->data.size(); ++i)
-		dest_prof_id.emplace_back(rnd_rfn() % 2);
-
-	if(count(dest_prof_id.begin(), dest_prof_id.end(), 0) == 0 ||
-		count(dest_prof_id.begin(), dest_prof_id.end(), 1) == 0)		// Both profiles must contain at least 1 sequence
-	{
-		size_t id = rnd_rfn() % dest_prof_id.size();
-		dest_prof_id[id] = !dest_prof_id[id];
-	}
-}
-
-// *******************************************************************
-void CFAMSA::RefineMostEmptyAndFullColumn(CProfile *profile_to_refine, vector<size_t> &dest_prof_id, vector<size_t> &gap_stats, bool valid_gap_stats)
-{
-	size_t size = profile_to_refine->data.front()->gapped_size;
-	size_t card = profile_to_refine->data.size();
-
-	dest_prof_id.clear();
-
-	if(!valid_gap_stats)
-		profile_to_refine->GetGapStats(gap_stats);
-
-	vector<pair<size_t, size_t>> tmp;
-
-	for(size_t i = 1; i <= size; ++i)
-	{
-		int x = (int) min(gap_stats[i], card - gap_stats[i]);
-		if(x > 0)
-			tmp.emplace_back(i, x);
-	}
-
-	stable_sort(tmp.begin(), tmp.end(), [](const pair<size_t, size_t> &x, const pair<size_t, size_t> &y){
-		if(x.second != y.second)
-			return x.second < y.second;
-		else
-			return x.first < y.first;
-	});
-
-	if(tmp.empty())
-	{
-		RefineRandom(profile_to_refine, dest_prof_id);
-		return;
-	}
-
-	size_t col_id = tmp[rnd_rfn() % tmp.size()].first;
-
-	int first_prof_id = 0;
-	int second_prof_id = 1;
-
-	if(profile_to_refine->data[0]->GetSymbol(col_id) == GAP)
-		swap(first_prof_id, second_prof_id);
-
-	for(size_t j = 0; j < card; ++j)
-		if(profile_to_refine->data[j]->GetSymbol(col_id) == GAP)
-			dest_prof_id.emplace_back(first_prof_id);
-		else
-			dest_prof_id.emplace_back(second_prof_id);
-}
-
-// *******************************************************************
-// Refine alignment
-#ifdef DEBUG_MODE
-bool CFAMSA::RefineAlignment(string output_file_name)
-#else
-bool CFAMSA::RefineAlignment(CProfile *&profile_to_refine)
-#endif
-{
-	// Restart generator
-	rnd_rfn.seed(5489u);
-
-	if (params.refinement_mode == Refinement::OFF ||
-		(params.refinement_mode == Refinement::AUTO && profile_to_refine->Size() > params.thr_refinement)) {
-		return true;
-	}
-
-	size_t n_ref = params.n_refinements;
-	size_t n_seq = profile_to_refine->Size();
-
-	vector<size_t> gap_stats;
-
-	if(n_ref > 2*n_seq)
-		n_ref = 2*n_seq;
-	if(n_ref > 0 && n_ref < 100 && n_seq < 100)
-		n_ref = 100;
-
-#ifdef DEBUG_MODE
-	FILE *f_stat;
-
-	if(output_file_name != "")
-	{
-		vector<CGappedSequence*> result;
-		GetAlignment(result);
-			
-		COutputFile out_file;
-			
-		out_file.PutSequences(result);
-		out_file.SaveFile(output_file_name + to_string(0));
-
-		f_stat = fopen((output_file_name + "_stats").c_str(), "wt");
-
-		fprintf(f_stat, "%d  %f\n", final_profile->width, final_profile->CalculateTotalScore());
-	}
-#endif
-
-	int n_ref_succ = 0;
-	score_t prev_total_score = profile_to_refine->CalculateTotalScore();
-
-	sort(profile_to_refine->data.begin(), profile_to_refine->data.end(), [](CGappedSequence *p, CGappedSequence *q){return p->id < q->id; });
-
-	vector<size_t> dest_prof_id;
-	vector<vector<size_t>> old_dest_prof_ids;
-
-	vector<int> column_mapping1, column_mapping2;
-
-	size_t i_ref;
-	size_t i_succ_ref;
-	bool valid_gap_stats = false;
-#ifdef DEBUG_MODE
-	int ref_upd[2] = {0};
-	int hist_size[20] = {0};
-#endif
-
-	for(i_ref = i_succ_ref = 0; i_succ_ref < n_ref && i_ref < 20*n_ref; ++i_ref)
-	{
-		LOG_DEBUG << "Computing refinement - " << fixed << setprecision(1) << 100.0 * (double) i_succ_ref / (double) n_ref << "%    (" << i_succ_ref << " of " << n_ref << ")  \r";
-			
-		CProfile profile1(&params), profile2(&params);
-
-		RefineMostEmptyAndFullColumn(profile_to_refine, dest_prof_id, gap_stats, valid_gap_stats);
-		valid_gap_stats = true;
-
-		if(find(old_dest_prof_ids.begin(), old_dest_prof_ids.end(), dest_prof_id) == old_dest_prof_ids.end())
-		{
-			// Split into two profiles
-			for(size_t i = 0; i < profile_to_refine->data.size(); ++i)
-				if(dest_prof_id[i])
-					profile1.AppendRawSequence(*profile_to_refine->data[i]);
-				else
-					profile2.AppendRawSequence(*profile_to_refine->data[i]);
-
-			// Condense the profiles (remove empty columns)
-			profile1.Condense(column_mapping1);
-			profile2.Condense(column_mapping2);
-
-			profile1.OptimizeGaps();
-			profile2.OptimizeGaps();
-
-			profile1.Size();
-			profile2.Size();
-
-#ifdef DEBUG_MODE
-			int size_min = min(p1_size, p2_size);
-			hist_size[min(9, size_min)]++;
-#endif
-
-			CProfile* prof = new CProfile(&params);
-
-			// TODO: Enable parallelization here!
-			prof->Align(&profile1, &profile2, 1, 0, &column_mapping1, &column_mapping2);
-			sort(prof->data.begin(), prof->data.end(), [](CGappedSequence *p, CGappedSequence *q){return p->id < q->id; });
-
-			if (!(*prof == *profile_to_refine))		// if the new profile is the same as previous do not score it
-			{
-				prof->CalculateTotalScore();
-#ifdef DEBUG_MODE
-				ref_upd[0]++;
-#endif
-
-				if (prof->total_score >= prev_total_score)
-					{
-					prev_total_score = prof->total_score;
-					swap(profile_to_refine, prof);
-					++n_ref_succ;
-					old_dest_prof_ids.clear();
-					valid_gap_stats = false;
-#ifdef DEBUG_MODE
-					ref_upd[1]++;
-					hist_size[10+min(9, size_min)]++;
-#endif
-				}
-			}
-
-			delete prof;
-
-			old_dest_prof_ids.emplace_back(dest_prof_id);
-			i_succ_ref++;
-
-#ifdef DEBUG_MODE
-			if(output_file_name != "")
-			{
-				vector<CGappedSequence*> result;
-				GetAlignment(result);
-
-				COutputFile out_file;
-
-				out_file.PutSequences(result);
-				out_file.SaveFile(output_file_name + to_string(i_ref+1));
-				fprintf(f_stat, "%d  %f  p.sizes: %5d %5d\n", final_profile->width, final_profile->total_score, p1_size, p2_size);
-			}
-#endif
-		}
-	}
-
-#ifdef DEBUG_MODE
-	if(output_file_name != "")
-		fclose(f_stat);
-#endif
-
-	return true;
-}
-
-// *******************************************************************
 bool CFAMSA::GetAlignment(vector<CGappedSequence*> &result)
 {
 	if (!final_profile) {
@@ -653,69 +499,43 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 		<< " Number of threads: " << params.n_threads << endl
 		<< " Instruction set: " << instr_names[(int)instruction_set] << endl << endl;
 
-	std::vector<int> original2sorted(sequences.size());
 	GuideTree tree;
-
-	std::vector<CSequence*> sorted_seqs(sequences.size());
-	std::transform(sequences.begin(), sequences.end(), sorted_seqs.begin(), [](CSequence& s) { return &s; });
+	std::vector<CSequence*> mapped_seqs(sequences.size());
 
 	// store distance matrix
 	if (params.export_distances) {
 		LOG_VERBOSE << "Calculating distances and storing in: " << params.output_file_name;
-		
 		std::shared_ptr<AbstractTreeGenerator> calculator = createTreeGenerator(params);
+		std::transform(sequences.begin(), sequences.end(), mapped_seqs.begin(), [](CSequence& s) { return &s; });
 		extendSequences(sequences);
-		(*calculator)(sorted_seqs, tree.raw());
+		(*calculator)(mapped_seqs, tree.raw());
 		shrinkSequences(sequences);
 		LOG_VERBOSE << " [OK]" << endl;
 		
-	}
+	} 
 	else {
 
 		timers[TIMER_SORTING].StartTimer();
 		LOG_VERBOSE << "Sorting sequences...";
-
-		auto comparer = [](const CSequence* a, const CSequence* b)->bool {
-			return a->length > b->length ||
-				(a->length == b->length && std::lexicographical_compare(a->data, a->data + a->data_size, b->data, b->data + b->data_size));
-		};
-
-		std::stable_sort(sorted_seqs.begin(), sorted_seqs.end(), comparer);
-
-		// store original to sorted mappings
-		for (int is = 0; is < (int)sorted_seqs.size(); ++is) {
-			original2sorted[sorted_seqs[is]->original_no] = is;
-		}
-
+		sortAndExtendSequences(sequences);
+		std::transform(sequences.begin(), sequences.end(), mapped_seqs.begin(), [](CSequence& s) { return &s; });
 		timers[TIMER_SORTING].StopTimer();
 		LOG_VERBOSE << " [OK]" << endl;
+
+		std::vector<int> original2mapped(sequences.size());
+		std::iota(original2mapped.begin(), original2mapped.end(), 0);
 
 		// remove duplicates
 		int dups = 0;
 		if (!params.keepDuplicates) {
 			LOG_VERBOSE << "Duplicate removal... ";
-			auto eq_comparer = [](const CSequence* a, const CSequence* b)->bool {
-				return a->length == b->length && std::equal(a->data, a->data + a->length, b->data);
-			};
-
-			// update original2sorted mappings to take into account duplicates
-			int cur_sorted_index = 0;
-			for (int i = 1; i < (int)sorted_seqs.size(); ++i) {
-				if (!eq_comparer(sorted_seqs[i], sorted_seqs[i - 1])) {
-					++cur_sorted_index;
-				}
-
-				original2sorted[sorted_seqs[i]->original_no] = cur_sorted_index;
-			}
-
-			auto newend = std::unique(sorted_seqs.begin(), sorted_seqs.end(), eq_comparer);
-			sorted_seqs.erase(newend, sorted_seqs.end());
-			dups = sequences.size() - sorted_seqs.size();
-			LOG_VERBOSE << sorted_seqs.size() << "/" << sequences.size() << " sequences retained." << endl;
+			removeDuplicates(mapped_seqs, original2mapped);
+			dups = sequences.size() - mapped_seqs.size();
+			LOG_VERBOSE << mapped_seqs.size() << "/" << sequences.size() << " sequences retained." << endl;
 		}
 
 		// only one unique sequence - move input to output end exit
-		if (sorted_seqs.size() == 1) {
+		if (mapped_seqs.size() == 1) {
 			final_profile = new CProfile(&params);
 			for (int i = 0; i < (int)sequences.size(); ++i) {
 				final_profile->AppendRawSequence(CGappedSequence(move(sequences[i])));
@@ -723,34 +543,31 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 			return true;
 		}
 
-		
 		// store mappings and temporarily reset numerical identifiers (to make medoid trees work)
-		for (int i = 0; i < (int)sorted_seqs.size(); ++i) {
-			sorted_seqs[i]->sequence_no = i;
+		for (int i = 0; i < (int)mapped_seqs.size(); ++i) {
+			mapped_seqs[i]->sequence_no = i;
 		}
 		
 		timers[TIMER_TREE_BUILD].StartTimer();
 		if (params.gt_method == GT::imported) {
 			LOG_VERBOSE << "Importing guide tree from: " << params.guide_tree_in_file;
 			tree.loadNewick(params.guide_tree_in_file, sequences);
-			tree.toUnique(original2sorted, (int)sorted_seqs.size());
+			tree.toUnique(original2mapped, (int)mapped_seqs.size());
 		}
 		else {
 			std::shared_ptr<AbstractTreeGenerator> gen = createTreeGenerator(params);
 			LOG_VERBOSE << "Computing guide tree...";
-			extendSequences(sequences);
-			(*gen)(sorted_seqs, tree.raw());
-			shrinkSequences(sequences);
+			(*gen)(mapped_seqs, tree.raw());
 		}
+		shrinkSequences(sequences);
 		LOG_VERBOSE << " [OK]" << endl;
 		timers[TIMER_TREE_BUILD].StopTimer();
-
 
 		if (params.export_tree) {
 			// store guide tree in Newick format...
 			timers[TIMER_TREE_STORE].StartTimer();
 			LOG_VERBOSE << "Storing guide tree in: " << params.output_file_name;
-			tree.fromUnique(original2sorted);
+			tree.fromUnique(original2mapped);
 			tree.saveNewick(params.output_file_name, sequences);
 			LOG_VERBOSE << " [OK]" << endl;
 			timers[TIMER_TREE_STORE].StopTimer();
@@ -758,30 +575,24 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 		else {
 			// ... or perform an alignment
 			std::vector<CGappedSequence> gapped_sequences;
-			std::vector<CGappedSequence*> sorted_gapped_seqs(sorted_seqs.size());
-			std::vector<int> sorted2original(sorted_seqs.size());
-
-			// store sorted to original mappings
-			for (int is = 0; is < (int)sorted_seqs.size(); ++is) {
-				sorted2original[is] = sorted_seqs[is]->original_no;
-			}
-			sorted_seqs.clear();
+			std::vector<CGappedSequence*> mapped_gapped_seqs(mapped_seqs.size(), nullptr);
 			
 			// convert sequences into gapped sequences
 			gapped_sequences.reserve(sequences.size());
 			for (int i = 0; i < (int)sequences.size(); ++i) {
 				gapped_sequences.emplace_back(std::move(sequences[i]));
+				if (mapped_gapped_seqs[original2mapped[i]] == nullptr) {
+					mapped_gapped_seqs[original2mapped[i]] = &gapped_sequences[i];
+				}
 			}
-			std::vector<CSequence>().swap(sequences); // clear input vector
 
-			// restore pointers
-			for (int is = 0; is < (int)sorted_gapped_seqs.size(); ++is) {
-				sorted_gapped_seqs[is] = &gapped_sequences[sorted2original[is]];
-			}
+			// clear input vectors
+			std::vector<CSequence>().swap(sequences); 
+			std::vector<CSequence*>().swap(mapped_seqs);
 
 			timers[TIMER_ALIGNMENT].StartTimer();
 			LOG_VERBOSE << "Computing alignment...";
-			final_profile = ComputeAlignment(sorted_gapped_seqs, tree.raw());
+			final_profile = ComputeAlignment(mapped_gapped_seqs, tree.raw());
 			if (!final_profile) {
 				return false;
 			}
@@ -795,7 +606,7 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 			LOG_VERBOSE << "[OK]" << endl;
 			timers[TIMER_REFINMENT].StopTimer();
 
-			if (final_profile->Size() != sorted_gapped_seqs.size()) {
+			if (final_profile->Size() != mapped_gapped_seqs.size()) {
 				throw std::runtime_error("Error: incomplete guide tree - report a bug");
 			}
 
@@ -809,18 +620,18 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 			std::vector<CGappedSequence*> ordered_alignment(gapped_sequences.size(), nullptr);
 			for (int i = 0; i < (int)gapped_sequences.size(); ++i) {
 				CGappedSequence& current = gapped_sequences[i];
-				CGappedSequence* representative = ordered_unique_alignment[original2sorted[i]];
+				CGappedSequence* representative = ordered_unique_alignment[original2mapped[i]];
 
 				if (current.original_no == representative->original_no) {
 					// unique sequence - put representative in profile
-					ordered_alignment[i] = representative;
+					ordered_alignment[current.original_no] = representative;
 				}
 				else {
 					// duplicate - make a copy of a representative
 					CGappedSequence* duplicate = new CGappedSequence(*representative);
 					duplicate->id = std::move(current.id);
 					duplicate->original_no = current.original_no;
-					ordered_alignment[i] = duplicate;
+					ordered_alignment[current.original_no] = duplicate;
 				}
 			}
 

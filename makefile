@@ -130,6 +130,7 @@ CXXFLAGS_NEON = $(CXXFLAGS) ${ABI_FLAG} -funroll-loops
 
 
 COMMON_OBJS := src/msa.o \
+	src/msa_refinement.o \
 	src/tree/AbstractTreeGenerator.o \
 	src/tree/Clustering.o \
 	src/tree/DistanceCalculator.o \

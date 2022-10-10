@@ -16,6 +16,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <random>
 #include <numeric>
 #include <thread>
+#include <chrono>
 
 // *******************************************************************
 template <Distance _distance>

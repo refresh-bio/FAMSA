@@ -399,7 +399,7 @@ jobs:
         
     - name: no refinement
       run: |
-        ./famsa-${{matrix.compiler}} -gt import upgma.dnd -refine_mode off ${INPUT} upgma.no_refine.fasta
+        ./famsa-${{matrix.compiler}} -gt import ${REF_DIR}/upgma.dnd -refine_mode off ${INPUT} upgma.no_refine.fasta
         cmp upgma.no_refine.fasta ${REF_DIR}/upgma.no_refine.fasta
         
     - name: profile-profile alignment

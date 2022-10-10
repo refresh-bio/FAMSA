@@ -74,9 +74,11 @@ protected:
 	void RefineMostEmptyAndFullColumn(CProfile *profile_to_refine, vector<size_t> &dest_prof_id, vector<size_t> &gap_stats, bool valid_gap_stats);
 
 	std::shared_ptr<AbstractTreeGenerator> createTreeGenerator(const CParams& params);
+	
+	void sortAndExtendSequences(std::vector<CSequence>& sequences);
 	void extendSequences(std::vector<CSequence>& sequences);
 	void shrinkSequences(std::vector<CSequence>& sequences);
-
+	void removeDuplicates(std::vector<CSequence*>& sorted_seqs, std::vector<int>& original2sorted);
 
 public:
 	
