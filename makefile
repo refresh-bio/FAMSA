@@ -116,7 +116,7 @@ DEFINE_FLAGS := $(DEFINE_FLAGS) -DGIT_COMMIT=$(GIT_COMMIT)
  
  
 ifeq ($(STATIC_LINK), true) 
-	CXXFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 -$(COMMON_FLAGS) $(DEFINE_FLAGS) -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD) -I $(LIBS_DIR)
+	CXXFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 $(COMMON_FLAGS) $(DEFINE_FLAGS) -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD) -I $(LIBS_DIR)
 	CLINK	= -lm -static -O3 -msse4 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD)
 else
 	CXXFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 $(COMMON_FLAGS) $(DEFINE_FLAGS) -std=$(CPP_STD) -pthread -I $(LIBS_DIR)
