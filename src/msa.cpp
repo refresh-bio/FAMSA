@@ -84,7 +84,7 @@ void CFAMSA::initScoreMatrix()
 {
 	score_matrix.resize(NO_AMINOACIDS);
 
-#ifdef HUGE_ALIGNEMENTS
+#ifdef HUGE_ALIGNMENTS
 	for(int i = 0; i < NO_AMINOACIDS; ++i)
 	{
 		score_vector.emplace_back(SM_MIQS[i][i]);
