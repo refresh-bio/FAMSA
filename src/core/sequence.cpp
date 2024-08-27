@@ -255,10 +255,10 @@ CGappedSequence::CGappedSequence(const string& _id, const string& seq, int seq_n
 			char* q = find(mapping_table, mapping_table + 25, c);
 			if (q == mapping_table + 25) {
 				extra_symbols.emplace_back(is, c); // save non-standard symbol
-				symbols[is] = (symbol_t)UNKNOWN_SYMBOL;
+				symbols[is+1] = (symbol_t)UNKNOWN_SYMBOL;
 			}
 			else {
-				symbols[is] = (symbol_t)(q - mapping_table);
+				symbols[is+1] = (symbol_t)(q - mapping_table);
 			}
 
 			++is;
