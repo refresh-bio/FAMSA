@@ -313,7 +313,7 @@ CGappedSequence::CGappedSequence(const CGappedSequence& _gapped_sequence) :
 		symbols = new symbol_t[symbols_size + 1];
 
 	
-	copy_n(_gapped_sequence.symbols, symbols_size, symbols);
+	copy_n(_gapped_sequence.symbols, symbols_size + 1, symbols);
 
 	n_gaps = _gapped_sequence.n_gaps;
 	dps = _gapped_sequence.dps;
