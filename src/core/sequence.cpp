@@ -231,6 +231,7 @@ CGappedSequence::CGappedSequence(const string& _id, const string& seq, int seq_n
 			symbols=(symbol_t*)mma->allocate(symbols_size + 1);}
 		else {
 			symbols=new symbol_t[symbols_size +1];}
+                symbols[0]=GUARD;
 	}
 	else {
 		symbols=nullptr;
