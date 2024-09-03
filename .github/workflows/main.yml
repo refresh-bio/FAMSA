@@ -59,7 +59,7 @@ jobs:
       INPUT: ./test/adeno_fiber/adeno_fiber
  
     steps:
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4.1.7
       with:
         name: executable-artifact-${{ matrix.machine }}
         path: ./
@@ -100,7 +100,7 @@ jobs:
       INPUT: ./test/hemopexin/hemopexin
  
     steps:  
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4.1.7
       with:
         name: executable-artifact-${{ matrix.machine }}
         path: ./
@@ -145,7 +145,7 @@ jobs:
       INPUT: ./test/adeno_fiber/adeno_fiber
      
     steps:
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4.1.7
       with:
         name: executable-artifact-${{ matrix.machine }}
         path: ./
