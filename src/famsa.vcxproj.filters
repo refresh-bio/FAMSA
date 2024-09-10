@@ -107,13 +107,10 @@
     <ClCompile Include="utils\utils_neon.cpp">
       <Filter>utils</Filter>
     </ClCompile>
-    <ClCompile Include="..\libs\mimalloc\override-new-delete.cpp">
-      <Filter>libraries</Filter>
-    </ClCompile>
-    <ClCompile Include="..\libs\mimalloc\static.cpp">
-      <Filter>libraries</Filter>
-    </ClCompile>
     <ClCompile Include="msa_refinement.cpp" />
+    <ClCompile Include="..\libs\mimalloc\src\static.c">
+      <Filter>libraries</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="msa.h" />
@@ -222,25 +219,14 @@
     <ClInclude Include="tree\SingleLinkageQueue.h">
       <Filter>tree</Filter>
     </ClInclude>
-    <ClInclude Include="..\libs\libdeflate\libdeflate.h">
-      <Filter>libraries</Filter>
-    </ClInclude>
     <ClInclude Include="utils\statistics.h">
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="lcs\lcsbp_neon_intr.h">
       <Filter>lcs</Filter>
     </ClInclude>
-    <ClInclude Include="..\libs\mimalloc\mimalloc.h">
-      <Filter>libraries</Filter>
-    </ClInclude>
     <ClInclude Include="utils\memory_monotonic.h">
       <Filter>utils</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\libs\libdeflate\windows\libdeflatestatic.lib">
-      <Filter>libraries</Filter>
-    </Library>
   </ItemGroup>
 </Project>

@@ -36,7 +36,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #else
 thread_local size_t __barrier_favorite_hash =
 std::hash<std::thread::id>()(std::this_thread::get_id());
-#include "../libs/atomic_wait/barrier"
+#include "atomic_wait/include/barrier"
 #endif
 #endif
 

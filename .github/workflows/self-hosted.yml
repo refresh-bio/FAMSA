@@ -15,11 +15,13 @@ jobs:
     name: checkout
     strategy:
       matrix:
-        machine: [xeon, tripper, raspberry, m1, old]
+        machine: [xeon, tripper, raspberry, mac-m1, mac-i7]
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
     
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
     
     - name: copy sl->slink references
       run: |
@@ -45,22 +47,25 @@ jobs:
           compiler: g++
           platform: arm8
           
-        - machine: m1
+        - machine: mac-m1
           compiler: g++
           platform: m1
+        - machine: mac-i7
+          compiler: g++
+          platform: avx2
           
-        - machine: old
-          compiler: g++-5
-          platform: avx2
-        - machine: old
-          compiler: g++-6
-          platform: avx2
-        - machine: old
-          compiler: g++-7
-          platform: avx2
-        - machine: old
-          compiler: g++-8
-          platform: avx2
+#        - machine: old
+#          compiler: g++-5
+#          platform: avx2
+#        - machine: old
+#          compiler: g++-6
+#          platform: avx2
+#        - machine: old
+#          compiler: g++-7
+#          platform: avx2
+#        - machine: old
+#          compiler: g++-8
+#          platform: avx2
  
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
 
@@ -68,6 +73,7 @@ jobs:
     - name: make
       run: | 
         make -j32 CXX=${{matrix.compiler}} PLATFORM=${{matrix.platform}}
+        ./famsa
         cp ./famsa ./famsa-${{matrix.compiler}}
         make clean
         
@@ -86,9 +92,10 @@ jobs:
         - machine: raspberry
           compiler: g++
           
-        - machine: m1
+        - machine: mac-m1
           compiler: g++
-        
+        - machine: mac-i7
+          compiler: g++
      
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']    
     
@@ -141,28 +148,38 @@ jobs:
           compiler: g++
           tree: slink
 
-        - machine: m1
+        - machine: mac-m1
           compiler: g++
           tree: sl
-        - machine: m1
+        - machine: mac-m1
           compiler: g++
           tree: upgma
-        - machine: m1
+        - machine: mac-m1
+          compiler: g++
+          tree: slink
+
+        - machine: mac-i7
+          compiler: g++
+          tree: sl
+        - machine: mac-i7
+          compiler: g++
+          tree: upgma
+        - machine: mac-i7
           compiler: g++
           tree: slink
    
-        - machine: old
-          compiler: g++-5
-          tree: sl
-        - machine: old
-          compiler: g++-6
-          tree: sl
-        - machine: old
-          compiler: g++-7
-          tree: sl
-        - machine: old
-          compiler: g++-8
-          tree: sl
+#        - machine: old
+#          compiler: g++-5
+#          tree: sl
+#        - machine: old
+#          compiler: g++-6
+#          tree: sl
+#        - machine: old
+#          compiler: g++-7
+#          tree: sl
+#        - machine: old
+#          compiler: g++-8
+#          tree: sl
           
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
         
@@ -210,7 +227,10 @@ jobs:
           compiler: g++
           tree: sl
           
-        - machine: m1
+        - machine: mac-m1
+          compiler: g++
+          tree: sl
+        - machine: mac-i7
           compiler: g++
           tree: sl
      
@@ -263,19 +283,31 @@ jobs:
           compiler: g++
           tree: nj
           
-        - machine: m1
+        - machine: mac-m1
           compiler: g++
           tree: sl
-        - machine: m1
+        - machine: mac-m1
           compiler: g++
           tree: upgma
-        - machine: m1
+        - machine: mac-m1
           compiler: g++
           tree: slink
-        - machine: m1
+        - machine: mac-m1
           compiler: g++
           tree: nj
-          
+        
+        - machine: mac-i7
+          compiler: g++
+          tree: sl
+        - machine: mac-i7
+          compiler: g++
+          tree: upgma
+        - machine: mac-i7
+          compiler: g++
+          tree: slink
+        - machine: mac-i7
+          compiler: g++
+          tree: nj  
           
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
       
@@ -322,7 +354,10 @@ jobs:
           compiler: g++
           tree: sl
         
-        - machine: m1
+        - machine: mac-m1
+          compiler: g++
+          tree: sl
+        - machine: mac-i7
           compiler: g++
           tree: sl
      
@@ -380,9 +415,10 @@ jobs:
         - machine: raspberry
           compiler: g++
           
-        - machine: m1
+        - machine: mac-m1
           compiler: g++
-        
+        - machine: mac-i7
+          compiler: g++
      
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']    
         
@@ -476,9 +512,12 @@ jobs:
         tree: [sl]
         
         include:
-        - machine: m1
+        - machine: mac-m1
           compiler: g++
           tree: sl
+        - machine: mac-i7
+          compiler: g++
+          tree: sl 
           
     env: 
       REF_DIR: ./test/LRR

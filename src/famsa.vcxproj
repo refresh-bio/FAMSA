@@ -102,6 +102,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>E:\Projekty\FAMSA-dev\libs\mimalloc\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
     <LinkIncremental>true</LinkIncremental>
@@ -112,6 +113,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <TargetName>famsa</TargetName>
+    <IncludePath>E:\Projekty\FAMSA-dev\libs\mimalloc\include;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
     <LinkIncremental>false</LinkIncremental>
@@ -149,6 +151,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>../libs/libdeflate/build/Debug/deflatestatic.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM64'">
@@ -213,6 +216,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <Profile>true</Profile>
+      <AdditionalDependencies>../libs/libdeflate/build/Release/deflatestatic.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM64'">
@@ -246,13 +250,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\libs\mimalloc\override-new-delete.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\libs\mimalloc\static.cpp">
-      <CompileAs Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Default</CompileAs>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
+    <ClCompile Include="..\libs\mimalloc\src\static.c" />
     <ClCompile Include="core\params.cpp" />
     <ClCompile Include="core\profile_par.cpp">
       <EnableEnhancedInstructionSet Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotSet</EnableEnhancedInstructionSet>
@@ -302,8 +300,6 @@
     <ClCompile Include="utils\utils_neon.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\libs\libdeflate\libdeflate.h" />
-    <ClInclude Include="..\libs\mimalloc\mimalloc.h" />
     <ClInclude Include="lcs\lcsbp_avx2_intr.h" />
     <ClInclude Include="lcs\lcsbp_avx_intr.h" />
     <ClInclude Include="lcs\lcsbp_neon_intr.h" />
@@ -343,9 +339,6 @@
     <ClInclude Include="utils\timer.h" />
     <ClInclude Include="core\version.h" />
     <ClInclude Include="utils\utils.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <Library Include="..\libs\libdeflate\windows\libdeflatestatic.lib" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

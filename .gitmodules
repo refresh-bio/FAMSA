@@ -1,0 +1,9 @@
+[submodule "libs/mimalloc"]
+	path = libs/mimalloc
+	url = https://github.com/refresh-bio-dependencies/mimalloc
+[submodule "libs/libdeflate"]
+	path = libs/libdeflate
+	url = https://github.com/refresh-bio-dependencies/libdeflate
+[submodule "libs/atomic_wait"]
+	path = libs/atomic_wait
+	url = https://github.com/refresh-bio-dependencies/atomic_wait

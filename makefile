@@ -1,11 +1,8 @@
-all: deflate famsa 
+all: famsa 
 
-deflate: 
-	$(MAKE) -C libs/libdeflate
 
 ####################
-LIBS_DIR = libs
-LIB_FILES := libs/libdeflate/libdeflate.a
+
 
 UNAME_S := $(shell uname -s)
 GCC_VERSION= $(shell $(CXX) -dumpversion | cut -f1 -d.)
@@ -113,13 +110,15 @@ endif
 # get commit hash
 GIT_COMMIT = $(shell git describe --always --dirty) 
 DEFINE_FLAGS := $(DEFINE_FLAGS) -DGIT_COMMIT=$(GIT_COMMIT)
- 
+
+INC_DIRS =. libs/mimalloc/include libs
+INCLUDES=$(foreach d, $(INC_DIRS), -I$d)
  
 ifeq ($(STATIC_LINK), true) 
-	CXXFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 $(COMMON_FLAGS) $(DEFINE_FLAGS) -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD) -I $(LIBS_DIR)
+	CXXFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 $(COMMON_FLAGS) $(DEFINE_FLAGS) -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD) $(INCLUDES)
 	CLINK	= -lm -static -O3 -msse4 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD)
 else
-	CXXFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 $(COMMON_FLAGS) $(DEFINE_FLAGS) -std=$(CPP_STD) -pthread -I $(LIBS_DIR)
+	CXXFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 $(COMMON_FLAGS) $(DEFINE_FLAGS) -std=$(CPP_STD) -pthread $(INCLUDES)
 	CLINK	= -lm $(CLINK_FLAGS) -O3 $(COMMON_FLAGS) -std=$(CPP_STD) -pthread 
 endif
  
@@ -128,6 +127,17 @@ CXXFLAGS_AVX2 = $(CXXFLAGS) -mavx2 ${ABI_FLAG} -mpopcnt -funroll-loops
 CXXFLAGS_NEON = $(CXXFLAGS) ${ABI_FLAG} -funroll-loops
 
 
+LIB_DEFLATE=libs/libdeflate/build/libdeflate.a
+
+deflate: 
+	cmake -S libs/libdeflate -B libs/libdeflate/build
+	cmake --build libs/libdeflate/build
+
+
+MIMALLOC_OBJ=libs/mimalloc/mimalloc.o
+
+$(MIMALLOC_OBJ):
+	$(CXX) -DMI_MALLOC_OVERRIDE -O3 -DNDEBUG -fPIC -Wall -Wextra -Wno-unknown-pragmas -fvisibility=hidden -Wstrict-prototypes -ftls-model=initial-exec -fno-builtin-malloc -std=$(CPP_STD) -c -I libs/mimalloc/include libs/mimalloc/src/static.c -o $(MIMALLOC_OBJ)
 
 COMMON_OBJS := src/msa.o \
 	src/msa_refinement.o \
@@ -149,8 +159,7 @@ COMMON_OBJS := src/msa.o \
 	src/core/profile_par.o \
 	src/core/profile_seq.o \
 	src/core/sequence.o \
-	src/core/queues.o \
-	libs/mimalloc/static.o
+	src/core/queues.o
 		
 src/lcs/lcsbp_classic.o : src/lcs/lcsbp_classic.cpp
 	$(CXX) $(CXXFLAGS) -c src/lcs/lcsbp_classic.cpp -o $@
@@ -226,11 +235,11 @@ endif
 .cpp.o:
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-famsa: deflate src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS)
-	$(CXX) $(CLINK) -o $@ src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS) $(LIB_FILES)
+famsa: deflate $(MIMALLOC_OBJ) src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS)
+	$(CXX) $(CLINK) -o $@ $(MIMALLOC_OBJ) src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS) $(LIB_DEFLATE)
 
 clean:
-	$(MAKE) clean -C libs/libdeflate
+	cd libs/libdeflate/build && make clean
 	-rm src/core/*.o
 	-rm src/lcs/*.o
 	-rm src/tree/*.o
