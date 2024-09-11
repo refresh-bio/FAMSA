@@ -21,7 +21,9 @@ jobs:
       INPUT: ./test/adeno_fiber/adeno_fiber
  
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
     - name: make
       run: |
         g++ --version
@@ -35,7 +37,7 @@ jobs:
     - name: tar artifacts
       run: tar -cvf famsa.tar ./famsa ./test   
     
-    - uses: actions/upload-artifact@v2
+    - uses: actions/upload-artifact@v4
       with:
         name: executable-artifact-${{ matrix.machine }}
         path: ./famsa.tar    
@@ -59,7 +61,7 @@ jobs:
       INPUT: ./test/adeno_fiber/adeno_fiber
  
     steps:
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
       with:
         name: executable-artifact-${{ matrix.machine }}
         path: ./
@@ -100,7 +102,7 @@ jobs:
       INPUT: ./test/hemopexin/hemopexin
  
     steps:  
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
       with:
         name: executable-artifact-${{ matrix.machine }}
         path: ./
@@ -145,7 +147,7 @@ jobs:
       INPUT: ./test/adeno_fiber/adeno_fiber
      
     steps:
-    - uses: actions/download-artifact@v2
+    - uses: actions/download-artifact@v4
       with:
         name: executable-artifact-${{ matrix.machine }}
         path: ./
