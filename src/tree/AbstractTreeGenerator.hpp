@@ -58,7 +58,10 @@ public:
 		if (indel >= cur_pp_size)
 			pp_extend((uint32_t) indel);
 
-		return pp_sqrt_rec[indel] / l;
+		if(l)
+			return pp_sqrt_rec[indel] / l;
+		else
+			return nextafter(numeric_limits<T>::max(), 0);
 	}
 };
 
@@ -66,7 +69,11 @@ template <class T>
 struct Transform<T, Distance::indel_div_lcs> {
 	T operator()(uint32_t lcs, uint32_t len1, uint32_t len2) {
 		T indel = (T) (len1 + len2 - 2 * lcs);
-		return (T)indel / lcs; 
+
+		if (lcs)
+			return (T)indel / lcs;
+		else
+			return nextafter(numeric_limits<T>::max(), 0);
 	}
 };
 
@@ -115,7 +122,6 @@ struct DistanceToSimilarity {
 		auto val = transform(lcs, len1, len2);
 		return (val == 0) ? (lcs * 1000) : (1.0 / val);
 	}
-
 };
 
 // *******************************************************************

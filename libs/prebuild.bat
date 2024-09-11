@@ -1,3 +1,5 @@
+cd %1\libs
+
 @echo "Building libdeflate"
 cd libdeflate
 
