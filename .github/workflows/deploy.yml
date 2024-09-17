@@ -1,0 +1,84 @@
+name: Deploy
+
+on:
+ release:
+    types:
+      - created
+
+jobs:
+
+
+ ########################################################################################
+  checkout:
+    name: Checkout
+    strategy:
+      matrix:
+        machine: [x64_linux, x64_mac, arm64_linux, arm64_mac]
+    runs-on: [self-hosted, kmer-db, '${{ matrix.machine }}']
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+########################################################################################
+  make:
+    name: Make
+    needs: checkout
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: [x64_linux]
+        platform: [avx2]
+        compiler: [g++-13]
+        static: [true]
+        include:
+        - {machine: arm64_linux, platform: arm8, compiler: g++-12, static: true}
+        - {machine: x64_mac, platform: avx2, compiler: g++-13, static: false}
+        - {machine: arm64_mac, platform: m1, compiler: g++-13, static: false}
+       
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']  
+        
+    steps:
+    - name: make 
+      run: |
+        make clean
+        make -j32 CXX=${{matrix.compiler}} STATIC_LINK=${{ matrix.static }} PLATFORM=${{ matrix.platform }}
+    - name: tar artifacts
+      run: tar -cvzf famsa.tar.gz famsa LICENSE
+
+      
+########################################################################################
+  help:
+    name: Print usage
+    needs: make
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: [x64_linux, x64_mac, arm64_linux, arm64_mac]
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
+        
+    steps:
+    - name: help
+      run: ./famsa
+
+########################################################################################
+  upload:
+    name: Upload
+    needs: help
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: [x64_linux, x64_mac, arm64_linux, arm64_mac]
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
+    
+    steps:
+    - name: deploy
+      uses: actions/upload-release-asset@v1.0.1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ github.event.release.upload_url }}
+        asset_path: ./famsa.tar.gz
+        asset_name: famsa-${{ github.event.release.tag_name }}-${{matrix.machine}}.tar.gz
+        asset_content_type: application/gzip

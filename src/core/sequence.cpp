@@ -231,6 +231,7 @@ CGappedSequence::CGappedSequence(const string& _id, const string& seq, int seq_n
 			symbols=(symbol_t*)mma->allocate(symbols_size + 1);}
 		else {
 			symbols=new symbol_t[symbols_size +1];}
+                symbols[0]=GUARD;
 	}
 	else {
 		symbols=nullptr;
@@ -255,10 +256,10 @@ CGappedSequence::CGappedSequence(const string& _id, const string& seq, int seq_n
 			char* q = find(mapping_table, mapping_table + 25, c);
 			if (q == mapping_table + 25) {
 				extra_symbols.emplace_back(is, c); // save non-standard symbol
-				symbols[is] = (symbol_t)UNKNOWN_SYMBOL;
+				symbols[is+1] = (symbol_t)UNKNOWN_SYMBOL;
 			}
 			else {
-				symbols[is] = (symbol_t)(q - mapping_table);
+				symbols[is+1] = (symbol_t)(q - mapping_table);
 			}
 
 			++is;
@@ -313,7 +314,7 @@ CGappedSequence::CGappedSequence(const CGappedSequence& _gapped_sequence) :
 		symbols = new symbol_t[symbols_size + 1];
 
 	
-	copy_n(_gapped_sequence.symbols, symbols_size, symbols);
+	copy_n(_gapped_sequence.symbols, symbols_size + 1, symbols);
 
 	n_gaps = _gapped_sequence.n_gaps;
 	dps = _gapped_sequence.dps;

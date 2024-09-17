@@ -9,14 +9,17 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"2.2.2"
-#define FAMSA_DATE		"2022-10-09"
+#define FAMSA_VER		"2.2.3"
+#define FAMSA_DATE		"2024-09-17"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+2.2.3 (2024-09-17):
+- Fixed rare bug in single linkage when analyzing sequences with zero similarity. Release deployment scripts added.
+
 2.2.2 (2022-10-09):
 - Fixed slowdown caused by the duplicate removal (feature added in 2.1.0).
 

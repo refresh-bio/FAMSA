@@ -15,7 +15,7 @@ jobs:
     name: checkout
     strategy:
       matrix:
-        machine: [xeon, tripper, raspberry, mac-m1, mac-i7]
+        machine: [xeon, x64_linux, x64_mac, arm64_linux, arm64_mac]
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
     
     steps:
@@ -37,36 +37,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # multiple X64 configurations
-        machine: [xeon, tripper]
-        compiler: [g++-9, g++-10, g++-11]
+        machine: [x64_linux]
+        compiler: [g++-9, g++-10, g++-11, g++-12, g++]
         platform: [avx2]
-        # additional ARM configurations
         include:
-        - machine: raspberry
-          compiler: g++
-          platform: arm8
-          
-        - machine: mac-m1
-          compiler: g++
-          platform: m1
-        - machine: mac-i7
-          compiler: g++
-          platform: avx2
-          
-#        - machine: old
-#          compiler: g++-5
-#          platform: avx2
-#        - machine: old
-#          compiler: g++-6
-#          platform: avx2
-#        - machine: old
-#          compiler: g++-7
-#          platform: avx2
-#        - machine: old
-#          compiler: g++-8
-#          platform: avx2
- 
+        - {machine: xeon, platform: avx2, compiler: g++}
+        - {machine: arm64_linux, platform: arm8, compiler: g++}
+        - {machine: x64_mac, platform: avx2, compiler: g++}
+        - {machine: arm64_mac, platform: m1, compiler: g++}
+
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
 
     steps:
@@ -85,17 +64,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [xeon, tripper]
-        compiler: [g++-9, g++-10, g++-11]
-        # additional ARM configurations
+        machine: [xeon, x64_linux, arm64_linux, x64_mac, arm64_mac]
+        compiler: [g++]
         include:
-        - machine: raspberry
-          compiler: g++
-          
-        - machine: mac-m1
-          compiler: g++
-        - machine: mac-i7
-          compiler: g++
+        - {machine: x64_linux, compiler: g++-9}
+        - {machine: x64_linux, compiler: g++-10}
+        - {machine: x64_linux, compiler: g++-11}
+        - {machine: x64_linux, compiler: g++-12}
      
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']    
     
@@ -133,54 +108,19 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [xeon, tripper]
-        compiler: [g++-9, g++-10, g++-11]
+        machine: [xeon, x64_linux, arm64_linux, x64_mac, arm64_mac]
+        compiler: [g++]
         tree: [sl, upgma, slink]
-        # additional ARM configurations
         include:
-        - machine: raspberry
-          compiler: g++
-          tree: sl
-        - machine: raspberry
-          compiler: g++
-          tree: upgma
-        - machine: raspberry
-          compiler: g++
-          tree: slink
-
-        - machine: mac-m1
-          compiler: g++
-          tree: sl
-        - machine: mac-m1
-          compiler: g++
-          tree: upgma
-        - machine: mac-m1
-          compiler: g++
-          tree: slink
-
-        - machine: mac-i7
-          compiler: g++
-          tree: sl
-        - machine: mac-i7
-          compiler: g++
-          tree: upgma
-        - machine: mac-i7
-          compiler: g++
-          tree: slink
-   
-#        - machine: old
-#          compiler: g++-5
-#          tree: sl
-#        - machine: old
-#          compiler: g++-6
-#          tree: sl
-#        - machine: old
-#          compiler: g++-7
-#          tree: sl
-#        - machine: old
-#          compiler: g++-8
-#          tree: sl
-          
+        - {machine: x64_linux, compiler: g++-9, tree: sl}
+        - {machine: x64_linux, compiler: g++-9, tree: upgma}
+        - {machine: x64_linux, compiler: g++-10, tree: sl}
+        - {machine: x64_linux, compiler: g++-10, tree: upgma}
+        - {machine: x64_linux, compiler: g++-11, tree: sl}
+        - {machine: x64_linux, compiler: g++-11, tree: upgma}
+        - {machine: x64_linux, compiler: g++-12, tree: sl}
+        - {machine: x64_linux, compiler: g++-12, tree: upgma}
+        
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
         
     env: 
@@ -218,22 +158,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [xeon, tripper]
-        compiler: [g++-9, g++-11]
+        machine: [xeon, x64_linux, arm64_linux, x64_mac, arm64_mac]
+        compiler: [g++]
         tree: [sl]
-        # additional ARM configurations
         include:
-        - machine: raspberry
-          compiler: g++
-          tree: sl
-          
-        - machine: mac-m1
-          compiler: g++
-          tree: sl
-        - machine: mac-i7
-          compiler: g++
-          tree: sl
-     
+        - {machine: x64_linux, compiler: g++-9, tree: sl}
+        - {machine: x64_linux, compiler: g++-10, tree: sl}
+        - {machine: x64_linux, compiler: g++-11, tree: sl}
+        - {machine: x64_linux, compiler: g++-12, tree: sl}
+       
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
         
     env: 
@@ -265,50 +198,23 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [xeon, tripper]
-        compiler: [g++-9, g++-10, g++-11]
+        machine: [xeon, x64_linux, arm64_linux, x64_mac, arm64_mac]
+        compiler: [g++]
         tree: [sl, upgma, slink, nj]
-        # additional ARM configurations
         include:
-        - machine: raspberry
-          compiler: g++
-          tree: sl
-        - machine: raspberry
-          compiler: g++
-          tree: upgma
-        - machine: raspberry
-          compiler: g++
-          tree: slink
-        - machine: raspberry
-          compiler: g++
-          tree: nj
-          
-        - machine: mac-m1
-          compiler: g++
-          tree: sl
-        - machine: mac-m1
-          compiler: g++
-          tree: upgma
-        - machine: mac-m1
-          compiler: g++
-          tree: slink
-        - machine: mac-m1
-          compiler: g++
-          tree: nj
-        
-        - machine: mac-i7
-          compiler: g++
-          tree: sl
-        - machine: mac-i7
-          compiler: g++
-          tree: upgma
-        - machine: mac-i7
-          compiler: g++
-          tree: slink
-        - machine: mac-i7
-          compiler: g++
-          tree: nj  
-          
+        - {machine: x64_linux, compiler: g++-9, tree: sl}
+        - {machine: x64_linux, compiler: g++-9, tree: upgma}
+        - {machine: x64_linux, compiler: g++-9, tree: nj}
+        - {machine: x64_linux, compiler: g++-10, tree: sl}
+        - {machine: x64_linux, compiler: g++-10, tree: upgma}
+        - {machine: x64_linux, compiler: g++-10, tree: nj}
+        - {machine: x64_linux, compiler: g++-11, tree: sl}
+        - {machine: x64_linux, compiler: g++-11, tree: upgma}
+        - {machine: x64_linux, compiler: g++-11, tree: nj}
+        - {machine: x64_linux, compiler: g++-12, tree: sl}
+        - {machine: x64_linux, compiler: g++-12, tree: upgma}
+        - {machine: x64_linux, compiler: g++-12, tree: nj}
+
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
       
     env: 
@@ -345,21 +251,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [xeon, tripper]
-        compiler: [g++-9, g++-11]
+        machine: [xeon, x64_linux, arm64_linux, x64_mac, arm64_mac]
+        compiler: [g++]
         tree: [sl]
-        # additional ARM configurations
         include:
-        - machine: raspberry
-          compiler: g++
-          tree: sl
-        
-        - machine: mac-m1
-          compiler: g++
-          tree: sl
-        - machine: mac-i7
-          compiler: g++
-          tree: sl
+        - {machine: x64_linux, compiler: g++-9, tree: sl}
+        - {machine: x64_linux, compiler: g++-10, tree: sl}
+        - {machine: x64_linux, compiler: g++-11, tree: sl}
+        - {machine: x64_linux, compiler: g++-12, tree: sl}
      
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
         
@@ -408,17 +307,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [xeon, tripper]
-        compiler: [g++-9, g++-10, g++-11]
-        # additional ARM configurations
+        machine: [xeon, x64_linux, arm64_linux, x64_mac, arm64_mac]
+        compiler: [g++]
         include:
-        - machine: raspberry
-          compiler: g++
-          
-        - machine: mac-m1
-          compiler: g++
-        - machine: mac-i7
-          compiler: g++
+        - {machine: x64_linux,  compiler: g++-9}
+        - {machine: x64_linux, compiler: g++-10}
+        - {machine: x64_linux, compiler: g++-11}
+        - {machine: x64_linux, compiler: g++-12}
      
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']    
         
@@ -476,12 +371,12 @@ jobs:
 ########################################################################################
   noavx-tests:
     name: distances only - different TRipper SIMD extensions 
-    runs-on: [self-hosted, famsa, tripper]
+    runs-on: [self-hosted, famsa, x64_linux]
     needs: small-tests
     strategy:
       fail-fast: false
       matrix:
-        compiler: [g++-9, g++-10, g++-11]
+        compiler: [g++-9, g++-10, g++-11, g++-12, g++-13]
         platform: [none, sse4, avx]
         
     env: 
@@ -507,17 +402,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [xeon, tripper]
-        compiler: [g++-9, g++-11]
+        machine: [xeon, x64_linux, arm64_linux, x64_mac, arm64_mac]
+        compiler: [g++]
         tree: [sl]
-        
         include:
-        - machine: mac-m1
-          compiler: g++
-          tree: sl
-        - machine: mac-i7
-          compiler: g++
-          tree: sl 
+        - {machine: x64_linux, compiler: g++-9, tree: sl}
+        - {machine: x64_linux, compiler: g++-10, tree: sl}
+        - {machine: x64_linux, compiler: g++-11, tree: sl}
+        - {machine: x64_linux, compiler: g++-12, tree: sl}
           
     env: 
       REF_DIR: ./test/LRR
