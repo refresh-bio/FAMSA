@@ -49,6 +49,10 @@ jobs:
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
 
     steps:
+    - name: clean
+      run:  make clean
+      continue-on-error: true
+    
     - name: make
       run: | 
         make -j32 CXX=${{matrix.compiler}} PLATFORM=${{matrix.platform}}
