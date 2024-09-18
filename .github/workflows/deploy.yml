@@ -17,6 +17,9 @@ jobs:
     runs-on: [self-hosted, kmer-db, '${{ matrix.machine }}']
     
     steps:
+    - name: clean
+      run: rm -rf ${{ github.workspace }}/*
+      
     - uses: actions/checkout@v4
       with:
         submodules: recursive
@@ -41,9 +44,7 @@ jobs:
         
     steps:
     - name: make 
-      run: |
-        make clean
-        make -j32 CXX=${{matrix.compiler}} STATIC_LINK=${{ matrix.static }} PLATFORM=${{ matrix.platform }}
+      run: make -j32 CXX=${{matrix.compiler}} STATIC_LINK=${{ matrix.static }} PLATFORM=${{ matrix.platform }}
     - name: tar artifacts
       run: tar -cvzf famsa.tar.gz famsa LICENSE
 
