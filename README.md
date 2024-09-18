@@ -31,7 +31,7 @@ Progressive algorithm for large-scale multiple sequence alignments.
 ## Quick start
 
 ```bash
-git clone https://github.com/refresh-bio/FAMSA
+git clone https://github.com/refresh-bio/FAMSA --recursive
 cd FAMSA && make
 
 # align sequences with default parameters (single linkage tree)
