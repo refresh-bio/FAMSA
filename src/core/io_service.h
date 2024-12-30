@@ -18,7 +18,12 @@ class IOService {
 public:
 	template <class seq_t>
 	static size_t loadFasta(const std::string& file_name, std::vector<seq_t>& sequences, memory_monotonic_safe* mma = nullptr);
-	static bool saveAlignment(const std::string& file_name, vector<CGappedSequence*> & sequences, int no_threads, int gzip_level);
+	static bool saveAlignment(const std::string& file_name, vector<CGappedSequence*> & sequences, const std::string& format, int no_threads, int gzip_level);
+
+private: 
+	static bool saveFAMSAFormat(const std::string& file_name, vector<CGappedSequence*> & sequences, int no_threads, int gzip_level);
+	static bool saveCLUSTALFormat(const std::string& file_name, vector<CGappedSequence*> & sequences);
+	
 };
 
 
