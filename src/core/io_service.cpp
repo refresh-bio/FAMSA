@@ -27,17 +27,17 @@ using namespace std;
 // *******************************************************************
 bool IOService::saveAlignment(const std::string& file_name, vector<CGappedSequence*>& sequences, const std::string& format, int no_threads, int gzip_level)
 {
-	if (format == "famsa"){
-		return saveFAMSAFormat(file_name, sequences, no_threads, gzip_level);
+	if (format == "fasta"){
+		return saveFASTAFormat(file_name, sequences, no_threads, gzip_level);
 	} else if (format == "clustal"){
 		return saveCLUSTALFormat(file_name, sequences);
 	} else {
-		return saveFAMSAFormat(file_name, sequences, no_threads, gzip_level);
+		return saveFASTAFormat(file_name, sequences, no_threads, gzip_level);
 	}		
 }
 
 // *******************************************************************
-bool IOService::saveFAMSAFormat(const std::string& file_name, vector<CGappedSequence*>& sequences, int no_threads, int gzip_level)
+bool IOService::saveFASTAFormat(const std::string& file_name, vector<CGappedSequence*>& sequences, int no_threads, int gzip_level)
 {
 	string s;
 	string id, seq;
@@ -196,7 +196,6 @@ bool IOService::saveFAMSAFormat(const std::string& file_name, vector<CGappedSequ
 
 // BEGIN CLUSTAL OUTPUT SPECIFIC CODE
 // *******************************************************************
-#define CLUSTALO 1
 #define kOtherSeq   0		/* hmmNOTSETYET */
 #define kDNA        1
 #define kRNA        2		/* hmmNUCLEIC   */
@@ -212,7 +211,8 @@ inline void die(const std::string &message) {
 FILE* openFile(const std::string& file_name, const char* mode = "r")
 {
     FILE* file_ptr = std::fopen(file_name.c_str(), mode);
-    if (!file_ptr) {
+    if (!file_ptr) 
+    {
         std::cerr << "Error: could not open file \"" 
                   << file_name << "\" with mode \"" << mode << "\"\n";
         std::exit(EXIT_FAILURE);
@@ -233,19 +233,13 @@ size_t utf8len(const char *s)
 
 // *******************************************************************
 bool IOService::saveCLUSTALFormat(const std::string& file_name, vector<CGappedSequence*>& sequences)
- // saveCLUSTALFormat(FILE *fp, MSA *msa, int iWrap, int bResno, int iSeqType)
 {
   int    idx;			/* counter for sequences         */
   int    len;			/* tmp variable for name lengths */
-  int    namelen;		/* maximum name length used      */
+  int    namelen; /* maximum name length used      */
   int    pos;			/* position counter              */
-#ifdef CLUSTALO
-  char  *buf;    	        /* buffer for writing seq        */
+  char  *buf;    	/* buffer for writing seq        */
   int    cpl = 60; //msa->alen<iWrap ? msa->alen+10 : (iWrap > 0 ? iWrap : 60);		/* char per line (< 64)          */
-#else
-  char   buf[80];	        /* buffer for writing seq        */
-  int    cpl = 60;		/* char per line (< 64)          */
-#endif
 
   /* consensus line stuff */
   int subpos;
@@ -256,66 +250,56 @@ bool IOService::saveCLUSTALFormat(const std::string& file_name, vector<CGappedSe
   /*int cons;*/
   int bin;
   int nseq = sequences.size(); // msa->nseq
-  int iSeqType = kDNA;
+  int iSeqType = kAmino; // NEED TO PASS CORRECT SEQTYPE
   bool bResno = false;
   FILE *fp = openFile(file_name, "w");
-
-#ifdef CLUSTALO
   int *piResCnt = NULL;
-#endif
 
-#ifdef CLUSTALO
-  if (1 == bResno){
-
-    if (NULL == (piResCnt = (int *)malloc(nseq * sizeof(int)))){
+  if (1 == bResno)
+  {
+    if (NULL == (piResCnt = (int *)malloc(nseq * sizeof(int))))
+    {
       printf("%s:%s:%d: could not malloc %d int for residue count", 
-	  __FUNCTION__, __FILE__, __LINE__, nseq);
-	  return false;
+      __FUNCTION__, __FILE__, __LINE__, nseq);
+      return false;
     }
-    else {
+    else 
+    {
       memset(piResCnt, 0, nseq * sizeof(int));
     }
   } /* do print residue numbers */
 
-  if (NULL == (buf = (char *)malloc(cpl+20))){
+  if (NULL == (buf = (char *)malloc(cpl+20)))
+  {
     printf("%s:%s:%d: could not malloc %d char for buffer",
-        __FUNCTION__, __FILE__, __LINE__, cpl+20);
+    __FUNCTION__, __FILE__, __LINE__, cpl+20);
 	  return false;
   }
-  else {
+  else 
+  {
     memset(buf, 0, cpl+20);
   }
 
-#endif
-
-
-/* calculate max namelen used */
-namelen = 0;
-for (idx = 0; idx < nseq; idx++){
-  /*if ((len = strlen(msa->sqname[idx])) > namelen) */ /* strlen() gives problems for unicode, FS, -> 290 */
-  if ((len = utf8len(sequences[idx]->id.c_str())) > namelen)
+  /* calculate max namelen used */
+  namelen = 0;
+  for (idx = 0; idx < nseq; idx++)
   {
-    namelen = len; 
+    /*if ((len = strlen(msa->sqname[idx])) > namelen) */ /* strlen() gives problems for unicode, FS, -> 290 */
+    if ((len = utf8len(sequences[idx]->id.c_str())) > namelen)
+      namelen = len; 
   }
-}
 
-#ifdef CLUSTALO
   fprintf(fp, "FAMSA multiple sequence alignment\n");
-#else
-  fprintf(fp, "CLUSTAL W(1.5) multiple sequence alignment\n");
-#endif
-  
+
   /*****************************************************
    * Write the sequences
    *****************************************************/
 
-#ifdef CLUSTALO
-    fprintf(fp, "\n");	/* original had two blank lines */
-#endif
+  fprintf(fp, "\n");	/* original had two blank lines */
 
   map<string, string> alignments;
-  int alen = 0; //seq.size();
-  
+  int alen = 0; // length of global alignment
+
   string firstseq;
   for (idx = 0; idx < nseq; idx++)
   {
@@ -326,15 +310,11 @@ for (idx = 0; idx < nseq; idx++){
         alen = seq.size();
         firstseq = seq;
       } 
-      //const char *aseq = seq.c_str(); // msa->aseq
-      //const char *sqname = p->id.c_str(); // msa->sqname[idx]
       alignments[id] = seq;
 
-      cout << id << " -- " << alignments[id] << endl;
+      // cout << id << " -- " << alignments[id] << endl;
   }
   
-
-  //cout << alen << "  FIRST  -- " <<firstone << endl;
   for (pos = 0; pos < alen; pos += cpl)
   {
       fprintf(fp, "\n");	/* Blank line between sequence blocks */
@@ -347,154 +327,141 @@ for (idx = 0; idx < nseq; idx++){
         strncpy(buf, aseq + pos, cpl);
 
 	      buf[cpl] = '\0';
-#ifdef CLUSTALO
-	    if (1 == bResno){
-	      char *pc = NULL;
-		  
-	      for (pc = buf; *pc != '\0'; pc++){
-		      if ( ( (*pc >= 'a') && (*pc <= 'z') ) || ( (*pc >= 'A') && (*pc <= 'Z') ) ){
-		        piResCnt[idx]++;
-          }
-	      }
-	      /* printf("%*s") gives problems for unicode, FS, -> 290 */
-	      /*fprintf(fp, "%-*s\t%s\t%d\n", namelen+5, msa->sqname[idx], buf, piResCnt[idx]);*/
-	      fprintf(fp, "%s%*s %s\t%d\n", sqname, (int)(namelen+5-utf8len(sqname)), "", buf, piResCnt[idx]);
-	    }
-	    else {
-	      /* printf("%*s") gives problems for unicode, FS, -> 290 */
-	      /*fprintf(fp, "%-*s\t%s\n", namelen+5, msa->sqname[idx], buf);*/
-	      fprintf(fp, "%s%*s %s\n", sqname, (int)(namelen+5-utf8len(sqname)), "", buf); 	
-		}
-#else
-	    fprintf(fp, "%*s %s\n", namelen, msa->sqname[idx], buf);
-#endif
-    }
-#ifdef CLUSTALO
-      /* do consensus dots */
-
-      /* print namelen+5 spaces */
-      for(subpos = 0; subpos <= namelen+5; subpos++)
-        fprintf(fp, " ");
-
-	    const char *firstaseq = firstseq.c_str(); // msa->aseq
-      for(subpos = pos; subpos < min(pos + cpl, alen); subpos++)
-      {
-          /* see if 100% conservation */
-          first = firstaseq[subpos];
-          bail = 0;
-          for (idx = 1; idx < nseq; idx++)
-          {
-            auto p = sequences[idx];
-            string id = p->id;
-            const char *sqname = id.c_str();// msa->sqname[idx]
-            const char *aseq = alignments[id].c_str(); // msa->aseq
-            if(toupper(aseq[subpos]) != toupper(first)) /* toupper makes consensus case-insensitive, FS, r290 -> */
-            {
-              bail = 1;
-              break;
+        if (1 == bResno){
+          char *pc = NULL;
+          for (pc = buf; *pc != '\0'; pc++){
+            if ( ( (*pc >= 'a') && (*pc <= 'z') ) || ( (*pc >= 'A') && (*pc <= 'Z') ) ){
+              piResCnt[idx]++;
             }
           }
-          if(!bail)
-            fprintf(fp, "*");
+          /* printf("%*s") gives problems for unicode, FS, -> 290 */
+          /*fprintf(fp, "%-*s\t%s\t%d\n", namelen+5, msa->sqname[idx], buf, piResCnt[idx]);*/
+          fprintf(fp, "%s%*s %s\t%d\n", sqname, (int)(namelen+5-utf8len(sqname)), "", buf, piResCnt[idx]);
+        }
+        else {
+          /* printf("%*s") gives problems for unicode, FS, -> 290 */
+          /*fprintf(fp, "%-*s\t%s\n", namelen+5, msa->sqname[idx], buf);*/
+          fprintf(fp, "%s%*s %s\n", sqname, (int)(namelen+5-utf8len(sqname)), "", buf); 	
+      }
+    }
+    /* do consensus dots */
+
+    /* print namelen+5 spaces */
+    for(subpos = 0; subpos <= namelen+5; subpos++)
+      fprintf(fp, " ");
+
+    const char *firstaseq = firstseq.c_str(); // msa->aseq
+    for(subpos = pos; subpos < min(pos + cpl, alen); subpos++)
+    {
+        /* see if 100% conservation */
+        first = firstaseq[subpos];
+        bail = 0;
+        for (idx = 1; idx < nseq; idx++)
+        {
+          auto p = sequences[idx];
+          string id = p->id;
+          const char *aseq = alignments[id].c_str(); // msa->aseq
+          if(toupper(aseq[subpos]) != toupper(first)) /* toupper makes consensus case-insensitive, FS, r290 -> */
+          {
+            bail = 1;
+            break;
+          }
+        }
+        if(!bail)
+          fprintf(fp, "*");
+        else
+        {
+          /* if not then check strong */
+          for(bin = 0; bin < 9; bin++)
+            strong_bins[bin] = 0; /* clear the bins */
+
+          for (idx = 0; (iSeqType == kAmino) && (idx < nseq); idx++)
+          { /* do this only for amino acids, no strong/weak consensus for nucleotide, FS, r290 -> */
+            auto p = sequences[idx];
+            string id = p->id;
+            const char *aseq = alignments[id].c_str(); // msa->aseq
+          
+            switch(toupper(aseq[subpos])) /* toupper makes consensus case-insensitive, FS, r290 -> */
+            {
+              case 'S': strong_bins[0]++; break;
+              case 'T': strong_bins[0]++; break;
+              case 'A': strong_bins[0]++; break;
+              case 'N': strong_bins[1]++; strong_bins[2]++; strong_bins[3]++; break;
+              case 'E': strong_bins[1]++; strong_bins[3]++; break;
+              case 'Q': strong_bins[1]++; strong_bins[2]++; strong_bins[3]++; strong_bins[4]++; break;
+              case 'K': strong_bins[1]++; strong_bins[2]++; strong_bins[4]++; break;
+              case 'D': strong_bins[3]++; break;
+              case 'R': strong_bins[4]++; break;
+        case 'H': strong_bins[2]++; strong_bins[4]++; strong_bins[7]++; break; /* added bin-2 (NHQK), FS 2016-07-14 */
+              case 'M': strong_bins[5]++; strong_bins[6]++; break;
+              case 'I': strong_bins[5]++; strong_bins[6]++; break;
+              case 'L': strong_bins[5]++; strong_bins[6]++; break;
+              case 'V': strong_bins[5]++; break;
+              case 'F': strong_bins[6]++; strong_bins[8]++; break;
+              case 'Y': strong_bins[7]++; strong_bins[8]++; break;
+              case 'W': strong_bins[8]++; break;
+            }
+          }
+          bail = 0;
+          for(bin = 0; bin < 9; bin++)
+            if(strong_bins[bin] == nseq)
+            {
+                bail = 1;
+                break;
+            }
+          if(bail)
+            fprintf(fp, ":");
           else
           {
-            /* if not then check strong */
-            for(bin = 0; bin < 9; bin++)
-              strong_bins[bin] = 0; /* clear the bins */
+            /* check weak */
+            for(bin = 0; bin < 11; bin++)
+              weak_bins[bin] = 0; /* clear the bins */
 
-            for (idx = 0; (iSeqType == kAmino) && (idx < nseq); idx++)
+            for(idx = 0; (iSeqType == kAmino) && (idx < nseq); idx++)
             { /* do this only for amino acids, no strong/weak consensus for nucleotide, FS, r290 -> */
               auto p = sequences[idx];
               string id = p->id;
-              const char *sqname = id.c_str();// msa->sqname[idx]
               const char *aseq = alignments[id].c_str(); // msa->aseq
-            
+          
               switch(toupper(aseq[subpos])) /* toupper makes consensus case-insensitive, FS, r290 -> */
               {
-                case 'S': strong_bins[0]++; break;
-                case 'T': strong_bins[0]++; break;
-                case 'A': strong_bins[0]++; break;
-                case 'N': strong_bins[1]++; strong_bins[2]++; strong_bins[3]++; break;
-                case 'E': strong_bins[1]++; strong_bins[3]++; break;
-                case 'Q': strong_bins[1]++; strong_bins[2]++; strong_bins[3]++; strong_bins[4]++; break;
-                case 'K': strong_bins[1]++; strong_bins[2]++; strong_bins[4]++; break;
-                case 'D': strong_bins[3]++; break;
-                case 'R': strong_bins[4]++; break;
-	        case 'H': strong_bins[2]++; strong_bins[4]++; strong_bins[7]++; break; /* added bin-2 (NHQK), FS 2016-07-14 */
-                case 'M': strong_bins[5]++; strong_bins[6]++; break;
-                case 'I': strong_bins[5]++; strong_bins[6]++; break;
-                case 'L': strong_bins[5]++; strong_bins[6]++; break;
-                case 'V': strong_bins[5]++; break;
-                case 'F': strong_bins[6]++; strong_bins[8]++; break;
-                case 'Y': strong_bins[7]++; strong_bins[8]++; break;
-                case 'W': strong_bins[8]++; break;
+                case 'C': weak_bins[0]++; break;
+                case 'S': weak_bins[0]++; weak_bins[2]++; weak_bins[3]++; weak_bins[4]++; weak_bins[5]++; weak_bins[6]++; break;
+                case 'A': weak_bins[0]++; weak_bins[1]++; weak_bins[2]++; weak_bins[4]++; break;
+                case 'T': weak_bins[1]++; weak_bins[3]++; weak_bins[4]++; break;
+                case 'V': weak_bins[1]++; weak_bins[9]++; break;
+                case 'G': weak_bins[2]++; weak_bins[5]++; break; /* Added bin-5, FS 2016-07-14 */
+                case 'N': weak_bins[3]++; weak_bins[5]++; weak_bins[6]++; weak_bins[7]++; weak_bins[8]++; break;
+                case 'K': weak_bins[3]++; weak_bins[6]++; weak_bins[7]++; weak_bins[8]++; break;
+                case 'D': weak_bins[5]++; weak_bins[6]++; weak_bins[7]++; break;
+                case 'E': weak_bins[6]++; weak_bins[7]++; weak_bins[8]++; break;
+                case 'Q': weak_bins[6]++; weak_bins[7]++; weak_bins[8]++; break;
+                case 'H': weak_bins[7]++; weak_bins[8]++; weak_bins[10]++; break;
+                case 'R': weak_bins[8]++; break;
+                case 'F': weak_bins[9]++; weak_bins[10]++; break;
+                case 'L': weak_bins[9]++; break;
+                case 'I': weak_bins[9]++; break;
+                case 'M': weak_bins[9]++; break;
+                case 'Y': weak_bins[10]++; break;
               }
             }
             bail = 0;
-            for(bin = 0; bin < 9; bin++)
-              if(strong_bins[bin] == nseq)
+            for(bin = 0; bin < 11; bin++)
+              if(weak_bins[bin] == nseq)
               {
                   bail = 1;
                   break;
               }
             if(bail)
-              fprintf(fp, ":");
+              fprintf(fp, ".");
             else
-            {
-              /* check weak */
-              for(bin = 0; bin < 11; bin++)
-                weak_bins[bin] = 0; /* clear the bins */
-
-              for(idx = 0; (iSeqType == kAmino) && (idx < nseq); idx++)
-	            { /* do this only for amino acids, no strong/weak consensus for nucleotide, FS, r290 -> */
-                auto p = sequences[idx];
-                string id = p->id;
-                const char *sqname = id.c_str();// msa->sqname[idx]
-                const char *aseq = alignments[id].c_str(); // msa->aseq
-            
-              	switch(toupper(aseq[subpos])) /* toupper makes consensus case-insensitive, FS, r290 -> */
-                {
-                  case 'C': weak_bins[0]++; break;
-                  case 'S': weak_bins[0]++; weak_bins[2]++; weak_bins[3]++; weak_bins[4]++; weak_bins[5]++; weak_bins[6]++; break;
-                  case 'A': weak_bins[0]++; weak_bins[1]++; weak_bins[2]++; weak_bins[4]++; break;
-                  case 'T': weak_bins[1]++; weak_bins[3]++; weak_bins[4]++; break;
-                  case 'V': weak_bins[1]++; weak_bins[9]++; break;
-		              case 'G': weak_bins[2]++; weak_bins[5]++; break; /* Added bin-5, FS 2016-07-14 */
-                  case 'N': weak_bins[3]++; weak_bins[5]++; weak_bins[6]++; weak_bins[7]++; weak_bins[8]++; break;
-                  case 'K': weak_bins[3]++; weak_bins[6]++; weak_bins[7]++; weak_bins[8]++; break;
-                  case 'D': weak_bins[5]++; weak_bins[6]++; weak_bins[7]++; break;
-                  case 'E': weak_bins[6]++; weak_bins[7]++; weak_bins[8]++; break;
-                  case 'Q': weak_bins[6]++; weak_bins[7]++; weak_bins[8]++; break;
-                  case 'H': weak_bins[7]++; weak_bins[8]++; weak_bins[10]++; break;
-                  case 'R': weak_bins[8]++; break;
-                  case 'F': weak_bins[9]++; weak_bins[10]++; break;
-                  case 'L': weak_bins[9]++; break;
-                  case 'I': weak_bins[9]++; break;
-                  case 'M': weak_bins[9]++; break;
-                  case 'Y': weak_bins[10]++; break;
-                }
-              }
-              bail = 0;
-              for(bin = 0; bin < 11; bin++)
-                if(weak_bins[bin] == nseq)
-                {
-                    bail = 1;
-                    break;
-                }
-              if(bail)
-                fprintf(fp, ".");
-              else
-                fprintf(fp, " ");
-            }
+              fprintf(fp, " ");
           }
-      }
-      fprintf(fp,"\n");
-#endif
+        }
     }
+    fprintf(fp,"\n");
+  } // end position for loop
 
-#ifdef CLUSTALO
   free(piResCnt); piResCnt = NULL;
-#endif
-
   return true;
 }

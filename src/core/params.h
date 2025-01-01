@@ -114,6 +114,7 @@ public:
 	string input_file_name;
 	string input_file_name_2;
 	string output_file_name;
+	string output_format = "fasta";
 
 	vector<vector<score_t>> score_matrix;
 	vector<score_t> score_vector;

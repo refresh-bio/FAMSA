@@ -21,7 +21,7 @@ public:
 	static bool saveAlignment(const std::string& file_name, vector<CGappedSequence*> & sequences, const std::string& format, int no_threads, int gzip_level);
 
 private: 
-	static bool saveFAMSAFormat(const std::string& file_name, vector<CGappedSequence*> & sequences, int no_threads, int gzip_level);
+	static bool saveFASTAFormat(const std::string& file_name, vector<CGappedSequence*> & sequences, int no_threads, int gzip_level);
 	static bool saveCLUSTALFormat(const std::string& file_name, vector<CGappedSequence*> & sequences);
 	
 };

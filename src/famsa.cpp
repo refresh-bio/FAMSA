@@ -86,9 +86,7 @@ int main(int argc, char *argv[])
 
 			profile_aligner.GetAlignment(result);
 
-			std::string format = "clustal";
-			printf("Using format %s\n", format.c_str());
-			IOService::saveAlignment(params.output_file_name, result, format, params.n_threads, 
+			IOService::saveAlignment(params.output_file_name, result, params.output_format, params.n_threads, 
 				params.gzippd_output ? params.gzip_level : -1);
 			return 0;
 		}		
@@ -116,9 +114,7 @@ int main(int argc, char *argv[])
 
 					LOG_VERBOSE << "Saving alignment in " << params.output_file_name;
 					
-					std::string format = "clustal";
-					printf("Using format %s\n", format.c_str());
-					ok = IOService::saveAlignment(params.output_file_name, result, format, params.n_threads, 
+					ok = IOService::saveAlignment(params.output_file_name, result, params.output_format, params.n_threads, 
 						params.gzippd_output ? params.gzip_level : -1);
 
 					LOG_VERBOSE << " [OK]" << endl;

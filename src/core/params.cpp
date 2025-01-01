@@ -13,6 +13,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #endif
 
 #include <thread>
+#include <iostream>
 
 //****************************************************************************
 //
@@ -90,7 +91,8 @@ void CParams::show_usage(bool expert)
 
 		<< "  -gz - enable gzipped output (default: " << bool2str[gzippd_output] << ")\n"
 		<< "  -gz-lev <value> - gzip compression level [0-9] (default: " << gzip_level << ")\n"
-		<< "  -refine_mode <on | off | auto> - refinement mode (default: auto - the refinement is enabled for sets <= " << thr_refinement << " seq.)\n\n";
+		<< "  -refine_mode <on | off | auto> - refinement mode (default: auto - the refinement is enabled for sets <= " << thr_refinement << " seq.)\n\n"
+		<< "  -output_format <fasta | clustal> - output format type (default: fasta)\n\n";
 
 		
 	if (expert) {
@@ -185,6 +187,14 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 	findOption(params, "-sample_size", sample_size);
 	findOption(params, "-cluster_fraction", cluster_fraction);
 	findOption(params, "-cluster_iters", cluster_iters);
+
+	string def_fmt = output_format;
+	findOption(params, "-output_format", output_format);
+	if (output_format != "fasta" && output_format != "clustal")
+	{
+		LOG_NORMAL << "Incorrect output format: " << output_format << " was changed to default value: " << def_fmt << endl;
+		output_format = def_fmt;
+	}
 
 	export_tree = findSwitch(params, "-gt_export");
 	export_distances = findSwitch(params, "-dist_export");
