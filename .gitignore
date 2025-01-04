@@ -9,7 +9,7 @@ FAMSA.VC.db
 *.db-wal
 *.opendb
 /.vs
-/src/famsa.vcxproj.use
+/src/famsa.vcxproj.user
 **/*.o
 libs/mimalloc/*.o
 .vscode/**

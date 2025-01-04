@@ -13,7 +13,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #endif
 
 #include <thread>
-#include <iostream>
 
 //****************************************************************************
 //
