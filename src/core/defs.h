@@ -81,6 +81,7 @@ const symbol_t NO_AA_SYMBOLS			= UNKNOWN_SYMBOL;		// no. of symbols that can be 
 #define MAX3(x, y, z)		(max(x, max(y, z)))
 #define ABS(x)				((x) >= 0 ? (x) : -(x))
 
+enum class seq_t {AA, DNA, RNA}; 
 
 inline void *my_align(std::size_t alignment, std::size_t size,
 	void *&ptr, std::size_t &space) {

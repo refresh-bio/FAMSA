@@ -90,8 +90,9 @@ void CParams::show_usage(bool expert)
 
 		<< "  -gz - enable gzipped output (default: " << bool2str[gzippd_output] << ")\n"
 		<< "  -gz-lev <value> - gzip compression level [0-9] (default: " << gzip_level << ")\n"
-		<< "  -refine_mode <on | off | auto> - refinement mode (default: auto - the refinement is enabled for sets <= " << thr_refinement << " seq.)\n\n"
-		<< "  -output_format <fasta | clustal> - output format type (default: fasta)\n\n";
+		<< "  -refine_mode <on | off | auto> - refinement mode (default: auto - the refinement is enabled for sets <= " << thr_refinement << " seq.)\n"
+		<< "  -output_format <fasta | clustal> - output format type (default: fasta)\n"
+		<< "  -seq_type <aa | dna | rna> - input sequence type type, only used for clustal output format (default: aa)\n\n";
 
 		
 	if (expert) {
@@ -187,12 +188,26 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 	findOption(params, "-cluster_fraction", cluster_fraction);
 	findOption(params, "-cluster_iters", cluster_iters);
 
-	string def_fmt = output_format;
+	string def_val = output_format;
 	findOption(params, "-output_format", output_format);
 	if (output_format != "fasta" && output_format != "clustal")
 	{
-		LOG_NORMAL << "Incorrect output format: " << output_format << " was changed to default value: " << def_fmt << endl;
-		output_format = def_fmt;
+		LOG_NORMAL << "Incorrect output format: " << output_format << ". This was changed to default value: " << def_val << endl;
+		output_format = def_val;
+	}
+
+	string input_seq_type = "aa"; // default is amino acid.
+	def_val = input_seq_type;
+	findOption(params, "-seq_type", input_seq_type);
+	if (input_seq_type == "aa")
+		seq_type = seq_t::AA;
+	else if (input_seq_type == "dna")
+		seq_type = seq_t::DNA;
+	else if (input_seq_type == "rna") 
+		seq_type = seq_t::RNA;
+	else {
+		LOG_NORMAL << "Incorrect seq_type: " << input_seq_type << ". This was changed to default value: " << def_val << endl;
+		seq_type = seq_t::AA;
 	}
 
 	export_tree = findSwitch(params, "-gt_export");

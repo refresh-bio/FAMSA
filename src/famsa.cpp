@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 
 			profile_aligner.GetAlignment(result);
 
-			IOService::saveAlignment(params.output_file_name, result, params.output_format, params.n_threads, 
+			IOService::saveAlignment(params.output_file_name, result, params.output_format, params.seq_type, params.n_threads, 
 				params.gzippd_output ? params.gzip_level : -1);
 			return 0;
 		}		
@@ -114,7 +114,7 @@ int main(int argc, char *argv[])
 
 					LOG_VERBOSE << "Saving alignment in " << params.output_file_name;
 					
-					ok = IOService::saveAlignment(params.output_file_name, result, params.output_format, params.n_threads, 
+					ok = IOService::saveAlignment(params.output_file_name, result, params.output_format, params.seq_type, params.n_threads, 
 						params.gzippd_output ? params.gzip_level : -1);
 
 					LOG_VERBOSE << " [OK]" << endl;

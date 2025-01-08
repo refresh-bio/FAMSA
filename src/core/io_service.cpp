@@ -25,12 +25,12 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 using namespace std;
 
 // *******************************************************************
-bool IOService::saveAlignment(const std::string& file_name, vector<CGappedSequence*>& sequences, const std::string& format, int no_threads, int gzip_level)
+bool IOService::saveAlignment(const std::string& file_name, vector<CGappedSequence*>& sequences, const std::string& format, seq_t seq_type, int no_threads, int gzip_level)
 {
 	if (format == "fasta"){
 		return saveFASTAFormat(file_name, sequences, no_threads, gzip_level);
 	} else if (format == "clustal"){
-		return saveCLUSTALFormat(file_name, sequences);
+		return saveCLUSTALFormat(file_name, sequences, seq_type);
 	} else {
 		return saveFASTAFormat(file_name, sequences, no_threads, gzip_level);
 	}		
@@ -196,12 +196,6 @@ bool IOService::saveFASTAFormat(const std::string& file_name, vector<CGappedSequ
 
 // BEGIN CLUSTAL OUTPUT SPECIFIC CODE
 // *******************************************************************
-#define kOtherSeq   0		/* hmmNOTSETYET */
-#define kDNA        1
-#define kRNA        2		/* hmmNUCLEIC   */
-#define kAmino      3		/* hmmAMINO     */
-
-// *******************************************************************
 FILE* openFile(const std::string& file_name, const char* mode = "r")
 {
 	FILE* file_ptr = std::fopen(file_name.c_str(), mode);
@@ -225,7 +219,7 @@ size_t utf8len(const char *s)
 // https://github.com/GSLBiotech/clustal-omega/blob/d21fab82d380638c568c9427ed39cb42dd87d93b/src/squid/clustal.c#L191
 
 // *******************************************************************
-bool IOService::saveCLUSTALFormat(const std::string& file_name, vector<CGappedSequence*>& sequences)
+bool IOService::saveCLUSTALFormat(const std::string& file_name, vector<CGappedSequence*>& sequences, seq_t seq_type)
 {
 	int    idx;			/* counter for sequences         */
 	int    len;			/* tmp variable for name lengths */
@@ -243,7 +237,6 @@ bool IOService::saveCLUSTALFormat(const std::string& file_name, vector<CGappedSe
 	/*int cons;*/
 	int bin;
 	int nseq = sequences.size(); // msa->nseq
-	int iSeqType = kAmino; // NEED TO PASS CORRECT SEQTYPE
 	bool bResno = false;
 	FILE *fp = openFile(file_name, "w");
 	int *piResCnt = NULL;
@@ -358,7 +351,7 @@ bool IOService::saveCLUSTALFormat(const std::string& file_name, vector<CGappedSe
 				for(bin = 0; bin < 9; bin++)
 					strong_bins[bin] = 0; /* clear the bins */
 
-				for (idx = 0; (iSeqType == kAmino) && (idx < nseq); idx++)
+				for (idx = 0; (seq_type == seq_t::AA) && (idx < nseq); idx++)
 				{ /* do this only for amino acids, no strong/weak consensus for nucleotide, FS, r290 -> */
 					auto p = sequences[idx];
 					string id = p->id;
@@ -399,7 +392,7 @@ bool IOService::saveCLUSTALFormat(const std::string& file_name, vector<CGappedSe
 					for(bin = 0; bin < 11; bin++)
 						weak_bins[bin] = 0; /* clear the bins */
 
-					for(idx = 0; (iSeqType == kAmino) && (idx < nseq); idx++)
+					for(idx = 0; (seq_type == seq_t::AA) && (idx < nseq); idx++)
 					{ /* do this only for amino acids, no strong/weak consensus for nucleotide, FS, r290 -> */
 						auto p = sequences[idx];
 						string id = p->id;
