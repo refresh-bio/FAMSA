@@ -268,7 +268,7 @@ bool IOService::saveCLUSTALFormat(const std::string& file_name, vector<CGappedSe
 		namelen = len; 
 	}
 
-	fprintf(fp, "FAMSA multiple sequence alignment\n");
+	fprintf(fp, "CLUSTAL multiple sequence alignment format. Alignment performed with FAMSA.\n");
 
 	/*****************************************************
 	 * Write the sequences
