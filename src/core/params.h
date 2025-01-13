@@ -114,6 +114,8 @@ public:
 	string input_file_name;
 	string input_file_name_2;
 	string output_file_name;
+	string output_format = "fasta";
+	seq_t seq_type = seq_t::AA;
 
 	vector<vector<score_t>> score_matrix;
 	vector<score_t> score_vector;

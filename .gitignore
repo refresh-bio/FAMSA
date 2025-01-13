@@ -1,3 +1,4 @@
+famsa
 FAMSA.VC.VC.opendb
 Debug
 x64
@@ -9,3 +10,6 @@ FAMSA.VC.db
 *.opendb
 /.vs
 /src/famsa.vcxproj.user
+**/*.o
+libs/mimalloc/*.o
+.vscode/**

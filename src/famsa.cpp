@@ -48,7 +48,7 @@ int main(int argc, char *argv[])
 		CParams params;
 
 		if (!params.parse(argc, argv, showExpert)) {
-			// some parameters could be parsed - used default values for printing
+			// some parameters could be parsed - used clustal values for printing
 			CParams def_params;
 			def_params.show_usage(showExpert);
 			return 0;
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 
 			profile_aligner.GetAlignment(result);
 
-			IOService::saveAlignment(params.output_file_name, result, params.n_threads, 
+			IOService::saveAlignment(params.output_file_name, result, params.output_format, params.seq_type, params.n_threads, 
 				params.gzippd_output ? params.gzip_level : -1);
 			return 0;
 		}		
@@ -113,7 +113,8 @@ int main(int argc, char *argv[])
 					famsa.getStatistics().put("alignment.length", result[0]->gapped_size);
 
 					LOG_VERBOSE << "Saving alignment in " << params.output_file_name;
-					ok = IOService::saveAlignment(params.output_file_name, result, params.n_threads, 
+					
+					ok = IOService::saveAlignment(params.output_file_name, result, params.output_format, params.seq_type, params.n_threads, 
 						params.gzippd_output ? params.gzip_level : -1);
 
 					LOG_VERBOSE << " [OK]" << endl;
