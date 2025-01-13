@@ -301,8 +301,12 @@ bool IOService::saveCLUSTALFormat(const std::string& file_name, vector<CGappedSe
 		{
 			auto p = sequences[idx];
 			string id = p->id;
-			const char *sqname = id.c_str();// msa->sqname[idx]
+			string sqname = id.c_str();// msa->sqname[idx]
+			if (sqname[0] == '>') { 
+				sqname.erase(0, 1);
+			}
 			const char *aseq = alignments[id].c_str(); // msa->aseq
+			const char *csqname = sqname.c_str();
 			strncpy(buf, aseq + pos, cpl);
 
 			buf[cpl] = '\0';
@@ -315,11 +319,11 @@ bool IOService::saveCLUSTALFormat(const std::string& file_name, vector<CGappedSe
 				}
 				/* printf("%*s") gives problems for unicode, FS, -> 290 */
 				/*fprintf(fp, "%-*s\t%s\t%d\n", namelen+5, msa->sqname[idx], buf, piResCnt[idx]);*/
-				fprintf(fp, "%s%*s %s\t%d\n", sqname, (int)(namelen+5-utf8len(sqname)), "", buf, piResCnt[idx]);
+				fprintf(fp, "%s%*s %s\t%d\n", csqname, (int)(namelen+5-utf8len(csqname)), "", buf, piResCnt[idx]);
 			} else {
 				/* printf("%*s") gives problems for unicode, FS, -> 290 */
 				/*fprintf(fp, "%-*s\t%s\n", namelen+5, msa->sqname[idx], buf);*/
-				fprintf(fp, "%s%*s %s\n", sqname, (int)(namelen+5-utf8len(sqname)), "", buf); 	
+				fprintf(fp, "%s%*s %s\n", csqname, (int)(namelen+5-utf8len(csqname)), "", buf); 	
 			}
 		}
 		/* do consensus dots */
