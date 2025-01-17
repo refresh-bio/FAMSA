@@ -94,6 +94,7 @@ public:
 	bool generate_square_matrix			= false;
 	bool calculate_pid					= false;
 	bool keepDuplicates					= false;
+	string seed_file_name;
 	
 	bool test_ref_sequences				 = false;
 	uint64_t ref_seq_subtree_size = 0;

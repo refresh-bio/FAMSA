@@ -42,7 +42,7 @@ template <Distance _distance>
 void FastTree<_distance>::run(std::vector<CSequence*>& sequences, tree_structure& tree)
 {
 	tree_structure local_tree;
-	doStep(sequences, local_tree, tree.size(), true);
+	doStep(sequences, local_tree, tree.size(), true, 0);
 	tree.insert(tree.end(), local_tree.begin(), local_tree.end());
 	
 }
@@ -50,7 +50,7 @@ void FastTree<_distance>::run(std::vector<CSequence*>& sequences, tree_structure
 
 // *******************************************************************
 template <Distance _distance>
-void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_structure& tree, int previousTop, bool parallel)
+void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_structure& tree, int previousTop, bool parallel, int depth)
 {
 	int n_seqs = (int)sequences.size();
 	CLCSBP lcsbp(instruction_set);
@@ -92,6 +92,11 @@ void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_struct
 					assignments[j] = k;
 				}
 			}
+		}
+
+		// notify observers
+		for (auto& o : observers) {
+			o->notifySeedsSelected(seeds, depth);
 		}
 
 		// get histogram
@@ -156,11 +161,11 @@ void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_struct
 
 			// process tasks in threads
 			for (auto& w : workers) {
-				w = std::thread([this, &queue] {
+				w = std::thread([this, &queue, depth] {
 					SubtreeTask task;
 					while (!queue.IsEmpty()) {
 						if (queue.Pop(task)) {
-							this->doStep(*task.subgroup, *task.localTree, task.previousTop, false);
+							this->doStep(*task.subgroup, *task.localTree, task.previousTop, false, depth + 1);
 						}
 					}
 				});
@@ -186,7 +191,7 @@ void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_struct
 				// create a subtree when more than 1 element
 				if (subgroup.size() > 1) {
 					tree_structure local_tree;
-					doStep(subgroup, local_tree, previousTop, false);
+					doStep(subgroup, local_tree, previousTop, false, depth + 1);
 					tree.insert(tree.end(), local_tree.begin(), local_tree.end());
 					previousTop += (int) subgroup.size() - 1;
 					subroots[k] = previousTop - 1;

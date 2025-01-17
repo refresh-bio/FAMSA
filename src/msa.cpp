@@ -203,25 +203,57 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 			? nullptr
 			: make_shared<CLARANS>(params.cluster_fraction, params.cluster_iters);
 
+		// local seed dumper
+		class SeedDumper : public IFastTreeObserver {
+		protected:
+			std::ofstream ofs;
+		public:
+			SeedDumper(const std::string& fname) {
+				ofs.open(fname);
+			}
+
+			void notifySeedsSelected(const std::vector<CSequence*>& seeds, int depth) override {
+				if (depth == 0) {
+					for (const auto s : seeds) {
+						ofs << s->id.substr(1) << std::endl;
+					}
+				}
+			}
+		};
+
 		// verify distance measure
 		if (params.distance == Distance::indel_div_lcs) {
-			gen = make_shared<FastTree<Distance::indel_div_lcs>>(
+			auto ft = make_shared<FastTree<Distance::indel_div_lcs>>(
 				params.n_threads,
 				params.instruction_set,
 				dynamic_pointer_cast<IPartialGenerator>(gen),
 				params.subtree_size,
 				clustering,
 				params.sample_size);
+
+			gen = ft;
+
+			if (!params.seed_file_name.empty()) {
+				ft->registerObserver(make_shared<SeedDumper>(params.seed_file_name));
+			}
 		}
 		else if (params.distance == Distance::sqrt_indel_div_lcs) {
-			gen = make_shared<FastTree<Distance::sqrt_indel_div_lcs>>(
+			auto ft = make_shared<FastTree<Distance::sqrt_indel_div_lcs>>(
 				params.n_threads,
 				params.instruction_set,
 				dynamic_pointer_cast<IPartialGenerator>(gen),
 				params.subtree_size,
 				clustering,
 				params.sample_size);
+
+			gen = ft;
+
+			if (!params.seed_file_name.empty()) {
+				ft->registerObserver(make_shared<SeedDumper>(params.seed_file_name));
+			}
 		}
+
+		
 	}
 
 	return gen;

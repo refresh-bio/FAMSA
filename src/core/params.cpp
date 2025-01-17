@@ -191,6 +191,8 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 	generate_square_matrix = findSwitch(params, "-square_matrix");
 	calculate_pid = findSwitch(params, "-pid");
 	gzippd_output = findSwitch(params, "-gz");
+	
+	findOption(params, "-dump_seeds", seed_file_name);
 
 	int g_lev = gzip_level;
 	if (findOption(params, "-gz-lev", g_lev) && (g_lev < 0 || g_lev > 12))

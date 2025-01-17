@@ -12,6 +12,14 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "Clustering.h"
 
 #include <memory>
+#include <vector>
+
+
+class IFastTreeObserver{
+public:
+	void virtual notifySeedsSelected(const std::vector<CSequence*>& seeds, int depth) = 0;
+};
+
 
 template <Distance _distance>
 class FastTree : public AbstractTreeGenerator {
@@ -27,6 +35,10 @@ public:
 
 	virtual void run(std::vector<CSequence*>& sequences, tree_structure& tree) override;
 
+	void registerObserver(std::shared_ptr<IFastTreeObserver> o) {
+		observers.push_back(o);
+	}
+
 protected:
 	std::shared_ptr<IPartialGenerator> partialGenerator;
 	int subtreeSize;
@@ -34,7 +46,9 @@ protected:
 	int sampleSize;
 	int clusteringThreshold;
 
-	void doStep(std::vector<CSequence*>& sequences, tree_structure& tree, int previousTop, bool parallel);
+	std::vector<std::shared_ptr<IFastTreeObserver>> observers;
+
+	void doStep(std::vector<CSequence*>& sequences, tree_structure& tree, int previousTop, bool parallel, int depth);
 
 	int randomSeeds(
 		std::vector<CSequence*>& sequences,
