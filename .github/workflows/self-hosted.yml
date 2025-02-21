@@ -405,7 +405,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [xeon, x64_linux, arm64_linux, x64_mac, arm64_mac]
+        machine: [x64_linux, arm64_linux, x64_mac, arm64_mac]
         compiler: [g++]
         tree: [sl]
         include:

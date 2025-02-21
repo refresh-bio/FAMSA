@@ -1,4 +1,4 @@
-name: GitHub Actions CI
+name: Build and tests
 
 on:
   push:
@@ -13,7 +13,7 @@ jobs:
     name: Make
     strategy:
       matrix:
-        machine: [ubuntu-latest, macOS-12]
+        machine: [ubuntu-latest, macOS-13]
     runs-on: ['${{ matrix.machine }}']
     
     env: 
@@ -52,7 +52,7 @@ jobs:
       fail-fast: false
       matrix:
         tree: [sl, upgma]
-        machine: [ubuntu-latest, macOS-12]
+        machine: [ubuntu-latest, macOS-13]
    
     runs-on: ['${{ matrix.machine }}']
   
@@ -93,7 +93,7 @@ jobs:
       fail-fast: false
       matrix:
         tree: [sl, upgma, nj]
-        machine: [ubuntu-latest, macOS-12]
+        machine: [ubuntu-latest, macOS-13]
    
     runs-on: ['${{ matrix.machine }}']
       
@@ -138,7 +138,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [ubuntu-latest, macOS-12]
+        machine: [ubuntu-latest, macOS-13]
    
     runs-on: ['${{ matrix.machine }}']
         
