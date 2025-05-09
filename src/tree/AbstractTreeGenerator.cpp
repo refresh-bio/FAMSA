@@ -7,14 +7,13 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 */
 #include "AbstractTreeGenerator.h"
 
-#if SIMD==SIMD_AVX1 || SIMD==SIMD_AVX2 || SIMD==SIMD_AVX512
+#if defined(SIMD_SSE2) || defined(SIMD_AVX) || defined(SIMD_AVX2) || defined(SIMD_AVX512)
 #include "../utils/cpuid.h"
 #endif
 
 #include <algorithm>
 
 using namespace std;
-
 
 // *******************************************************************
 AbstractTreeGenerator::AbstractTreeGenerator(int n_threads, instruction_set_t instruction_set) 
@@ -31,7 +30,6 @@ void AbstractTreeGenerator::operator()(std::vector<CSequence*>& sequences, tree_
 	// build the tree
 	run(sequences, tree);
 }
-
 
 // *******************************************************************
 #ifdef DEVELOPER_MODE

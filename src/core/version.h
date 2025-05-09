@@ -9,14 +9,25 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"2.2.4"
-#define FAMSA_DATE		"2025-01-17"
+#define FAMSA_VER		"2.4.1"
+#define FAMSA_DATE		"2025-05-09"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+2.4.1 (2025-05-09)
+- Added AVX512 support.
+- Added gzipped inputs support.
+- Added distance-based prefiltering in MST Prim's algorithm.
+- Fix in MedoidTrees - full FAMSA executed always when subtree size is smaller then -sample_size parameter.
+- Automatic deployment of Windows releases.
+
+2.3.0 (2025-02-21)
+- Added Pfasum substitution matrices. 
+- New dissimilarity measure.
+
 2.2.4 (2025-01-17)
 - Added parameter to dump seed sequences in -parttree and -medoidtree modes.
 

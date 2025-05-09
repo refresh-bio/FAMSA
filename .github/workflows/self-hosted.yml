@@ -15,7 +15,7 @@ jobs:
     name: checkout
     strategy:
       matrix:
-        machine: [xeon, x64_linux, x64_mac, arm64_linux, arm64_mac]
+        machine: [x64_linux, x64_mac, arm64_linux, arm64_mac]
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
     
     steps:
@@ -30,78 +30,123 @@ jobs:
       run: |
         cp ./test/adeno_fiber/sl.fasta ./test/adeno_fiber/slink.fasta
         cp ./test/hemopexin/medoid-sl.fasta ./test/hemopexin/medoid-slink.fasta
+
+  ########################################################################################
+  checkout-windows:
+    name: checkout (Windows)
+    strategy:
+      matrix:
+        machine: [x64_windows]
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
+    
+    steps:
+    - name: clean
+      run: Remove-Item -Path "${{ github.workspace }}/*" -Recurse -Force 
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: copy sl->slink references
+      run: |
+        cp ./test/adeno_fiber/sl.fasta ./test/adeno_fiber/slink.fasta
+        cp ./test/hemopexin/medoid-sl.fasta ./test/hemopexin/medoid-slink.fasta      
       
           
   ########################################################################################
-  make-tests:
+  make:
     name: make
    
     needs: checkout
     strategy:
       fail-fast: false
       matrix:
-        machine: [x64_linux]
-        compiler: [g++-9, g++-10, g++-11, g++-12, g++]
-        platform: [avx2]
+        machine: [x64_linux, arm64_linux, x64_mac, arm64_mac]
+        compiler: [11, 12, 13]
         include:
-        - {machine: xeon, platform: avx2, compiler: g++}
-        - {machine: arm64_linux, platform: arm8, compiler: g++}
-        - {machine: x64_mac, platform: avx2, compiler: g++}
-        - {machine: arm64_mac, platform: m1, compiler: g++}
+        - {machine: x64_linux, platform: avx2}
+        - {machine: arm64_linux, platform: arm8}
+        - {machine: x64_mac, platform: avx2}
+        - {machine: arm64_mac, platform: m1}
+        exclude:
+        - {machine: arm64_linux, compiler: 13}
 
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
 
     steps:
     - name: make
       run: | 
-        make -j32 CXX=${{matrix.compiler}} PLATFORM=${{matrix.platform}}
-        ./famsa
-        cp ./famsa ./famsa-${{matrix.compiler}}
-        make clean
+        gmake -j32 CXX=g++-${{matrix.compiler}} CC=gcc-${{matrix.compiler}} PLATFORM=${{matrix.platform}} STATIC_LINK=true
+        ./bin/famsa
+        cp ./bin/famsa ./famsa.${{matrix.compiler}}
+        gmake clean
+
+########################################################################################
+  make-windows:
+    name: Make (Windows)
+    needs: checkout-windows
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: [x64_windows]
+     
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']  
+
+    env:
+      MSBUILD: "C:/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe"
         
+    steps:
+    - name: make 
+      run: | 
+        & "$env:MSBUILD" FAMSA.sln /p:Configuration=Release /p:Platform=x64 /m
+        ./x64/Release/famsa.exe
+        cp ./x64/Release/famsa.exe ./famsa.exe
+
   ########################################################################################        
          
   small-tests:
     name: small tests
-    needs: make-tests
+    needs: 
+    - make
+    - make-windows
     strategy:
       fail-fast: false
       matrix:
-        machine: [xeon, x64_linux, arm64_linux, x64_mac, arm64_mac]
-        compiler: [g++]
+        machine: [x64_linux, arm64_linux, x64_mac, arm64_mac]
+        compiler: [12]
+        wsl: [""]
         include:
-        - {machine: x64_linux, compiler: g++-9}
-        - {machine: x64_linux, compiler: g++-10}
-        - {machine: x64_linux, compiler: g++-11}
-        - {machine: x64_linux, compiler: g++-12}
+        - {machine: x64_linux, compiler: 11, wsl: ""}
+        - {machine: x64_windows, compiler: exe, wsl: wsl}
      
-    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']    
-    
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']  
+
+   
     steps:
     - name: single sequence
       run: |
-        ./famsa-${{matrix.compiler}} ./test/dummy/one-seq out.fasta
-        cmp out.fasta ./test/dummy/one-seq.aln
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} ./test/dummy/one-seq out.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr out.fasta ./test/dummy/one-seq.aln
         
     - name: two duplicates
       run: |
-        ./famsa-${{matrix.compiler}} ./test/dummy/two-seq out.fasta
-        cmp out.fasta ./test/dummy/two-seq.aln
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} ./test/dummy/two-seq out.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr out.fasta ./test/dummy/two-seq.aln
         
     - name: two duplicates (kept)
       run: |
-        ./famsa-${{matrix.compiler}} -keep-duplicates ./test/dummy/two-seq out.fasta
-        cmp out.fasta ./test/dummy/two-seq.aln   
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -keep-duplicates ./test/dummy/two-seq out.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr out.fasta ./test/dummy/two-seq.aln   
         
     - name: many duplicates
       run: |
-        ./famsa-${{matrix.compiler}} ./test/dummy/many-seq out.fasta
-        cmp out.fasta ./test/dummy/many-seq.aln 
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} ./test/dummy/many-seq out.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr out.fasta ./test/dummy/many-seq.aln 
         
     - name: many duplicates (kept)
       run: |
-        ./famsa-${{matrix.compiler}} -keep-duplicates ./test/dummy/many-seq out.fasta
-        cmp out.fasta ./test/dummy/many-seq.aln    
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -keep-duplicates ./test/dummy/many-seq out.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr out.fasta ./test/dummy/many-seq.aln    
   
   ########################################################################################    
     
@@ -111,47 +156,42 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [xeon, x64_linux, arm64_linux, x64_mac, arm64_mac]
-        compiler: [g++]
+        machine: [x64_linux, arm64_linux, x64_mac, arm64_mac, x64_windows]
         tree: [sl, upgma, slink]
+        INPUT: [adeno_fiber]
         include:
-        - {machine: x64_linux, compiler: g++-9, tree: sl}
-        - {machine: x64_linux, compiler: g++-9, tree: upgma}
-        - {machine: x64_linux, compiler: g++-10, tree: sl}
-        - {machine: x64_linux, compiler: g++-10, tree: upgma}
-        - {machine: x64_linux, compiler: g++-11, tree: sl}
-        - {machine: x64_linux, compiler: g++-11, tree: upgma}
-        - {machine: x64_linux, compiler: g++-12, tree: sl}
-        - {machine: x64_linux, compiler: g++-12, tree: upgma}
-        
+        - {machine: x64_linux, compiler: 11, wsl: ""}
+        - {machine: x64_linux, compiler: 12, wsl: ""}
+        - {machine: arm64_linux, compiler: 12, wsl: ""}
+        - {machine: x64_mac, compiler: 12, wsl: ""}
+        - {machine: arm64_mac, compiler: 12, wsl: ""}
+        - {machine: x64_windows, compiler: exe, wsl: "wsl"}
+
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
         
-    env: 
-      REF_DIR: ./test/adeno_fiber
-      INPUT: ./test/adeno_fiber/adeno_fiber
- 
+   
     steps:  
-
+  
     - name: ${{matrix.tree}} (tree only)
       run: |
-        ./famsa-${{matrix.compiler}} -gt ${{matrix.tree}} -gt_export ${INPUT} ${{matrix.tree}}.dnd
-        cmp ${{matrix.tree}}.dnd ${REF_DIR}/${{matrix.tree}}.dnd
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -gt ${{matrix.tree}} -gt_export ./test/${{matrix.INPUT}}/${{matrix.INPUT}} ${{matrix.tree}}.dnd
+        ${{matrix.wsl}} diff --strip-trailing-cr ${{matrix.tree}}.dnd ./test/${{matrix.INPUT}}/${{matrix.tree}}.dnd
     
     - name: ${{matrix.tree}} (complete alignment)
       run: |
-        ./famsa-${{matrix.compiler}} -gt ${{matrix.tree}} ${INPUT} ${{matrix.tree}}.fasta
-        cmp ${{matrix.tree}}.fasta ${REF_DIR}/${{matrix.tree}}.fasta
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -gt ${{matrix.tree}} ./test/${{matrix.INPUT}}/${{matrix.INPUT}} ${{matrix.tree}}.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr ${{matrix.tree}}.fasta ./test/${{matrix.INPUT}}/${{matrix.tree}}.fasta
      
     - name: ${{matrix.tree}} (from tree)
       run: |
-        ./famsa-${{matrix.compiler}} -gt import ${{matrix.tree}}.dnd ${INPUT} ${{matrix.tree}}.dnd.fasta
-        cmp ${{matrix.tree}}.dnd.fasta ${REF_DIR}/${{matrix.tree}}.fasta
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -gt import ${{matrix.tree}}.dnd ./test/${{matrix.INPUT}}/${{matrix.INPUT}} ${{matrix.tree}}.dnd.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr ${{matrix.tree}}.dnd.fasta ./test/${{matrix.INPUT}}/${{matrix.tree}}.fasta
         
     - name: ${{matrix.tree}} (gzip)
       run: |
-        ./famsa-${{matrix.compiler}} -gz -gt ${{matrix.tree}} ${INPUT} ${{matrix.tree}}.fasta.gz
-        pigz -f -d ${{matrix.tree}}.fasta.gz
-        cmp ${{matrix.tree}}.fasta ${REF_DIR}/${{matrix.tree}}.fasta
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -gz -gt ${{matrix.tree}} ./test/${{matrix.INPUT}}/${{matrix.INPUT}} ${{matrix.tree}}.fasta.gz
+        ${{matrix.wsl}} pigz -f -d ${{matrix.tree}}.fasta.gz
+        ${{matrix.wsl}} diff --strip-trailing-cr ${{matrix.tree}}.fasta ./test/${{matrix.INPUT}}/${{matrix.tree}}.fasta
         
   ########################################################################################    
 
@@ -161,146 +201,133 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [xeon, x64_linux, arm64_linux, x64_mac, arm64_mac]
-        compiler: [g++]
+        machine: [x64_linux, arm64_linux, x64_mac, arm64_mac, x64_windows]
         tree: [sl]
+        INPUT: [adeno_fiber_duplicates]
         include:
-        - {machine: x64_linux, compiler: g++-9, tree: sl}
-        - {machine: x64_linux, compiler: g++-10, tree: sl}
-        - {machine: x64_linux, compiler: g++-11, tree: sl}
-        - {machine: x64_linux, compiler: g++-12, tree: sl}
+        - {machine: x64_linux, compiler: 11, wsl: ""}
+        - {machine: x64_linux, compiler: 12, wsl: ""}
+        - {machine: arm64_linux, compiler: 12, wsl: ""}
+        - {machine: x64_mac, compiler: 12, wsl: ""}
+        - {machine: arm64_mac, compiler: 12, wsl: ""}
+        - {machine: x64_windows, compiler: exe, wsl: "wsl"}
        
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
         
-    env: 
-      REF_DIR: ./test/adeno_fiber_duplicates
-      INPUT: ./test/adeno_fiber_duplicates/adeno_fiber_duplicates
- 
     steps:  
 
     - name: ${{matrix.tree}} (tree only)
       run: |
-        ./famsa-${{matrix.compiler}} -gt ${{matrix.tree}} -gt_export ${INPUT} ${{matrix.tree}}.dnd
-        cmp ${{matrix.tree}}.dnd ${REF_DIR}/${{matrix.tree}}.dnd
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -gt ${{matrix.tree}} -gt_export ./test/${{matrix.INPUT}}/${{matrix.INPUT}} ${{matrix.tree}}.dnd
+        ${{matrix.wsl}} diff --strip-trailing-cr ${{matrix.tree}}.dnd ./test/${{matrix.INPUT}}/${{matrix.tree}}.dnd
     
     - name: ${{matrix.tree}} (complete alignment)
       run: |
-        ./famsa-${{matrix.compiler}} -gt ${{matrix.tree}} ${INPUT} ${{matrix.tree}}.fasta
-        cmp ${{matrix.tree}}.fasta ${REF_DIR}/${{matrix.tree}}.fasta
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -gt ${{matrix.tree}} ./test/${{matrix.INPUT}}/${{matrix.INPUT}} ${{matrix.tree}}.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr ${{matrix.tree}}.fasta ./test/${{matrix.INPUT}}/${{matrix.tree}}.fasta
      
     - name: ${{matrix.tree}} (from tree)
       run: |
-        ./famsa-${{matrix.compiler}} -gt import ${{matrix.tree}}.dnd ${INPUT} ${{matrix.tree}}.dnd.fasta
-        cmp ${{matrix.tree}}.dnd.fasta ${REF_DIR}/${{matrix.tree}}.fasta
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -gt import ${{matrix.tree}}.dnd ./test/${{matrix.INPUT}}/${{matrix.INPUT}} ${{matrix.tree}}.dnd.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr ${{matrix.tree}}.dnd.fasta ./test/${{matrix.INPUT}}/${{matrix.tree}}.fasta
         
  ########################################################################################    
     
   medoid-tree:
     name: hemopexin - medoid tree
-    needs: full-tree
+    needs: small-tests
     strategy:
       fail-fast: false
       matrix:
-        machine: [xeon, x64_linux, arm64_linux, x64_mac, arm64_mac]
-        compiler: [g++]
+        machine: [x64_linux, arm64_linux, x64_mac, arm64_mac, x64_windows]
         tree: [sl, upgma, slink, nj]
+        INPUT: [hemopexin]
         include:
-        - {machine: x64_linux, compiler: g++-9, tree: sl}
-        - {machine: x64_linux, compiler: g++-9, tree: upgma}
-        - {machine: x64_linux, compiler: g++-9, tree: nj}
-        - {machine: x64_linux, compiler: g++-10, tree: sl}
-        - {machine: x64_linux, compiler: g++-10, tree: upgma}
-        - {machine: x64_linux, compiler: g++-10, tree: nj}
-        - {machine: x64_linux, compiler: g++-11, tree: sl}
-        - {machine: x64_linux, compiler: g++-11, tree: upgma}
-        - {machine: x64_linux, compiler: g++-11, tree: nj}
-        - {machine: x64_linux, compiler: g++-12, tree: sl}
-        - {machine: x64_linux, compiler: g++-12, tree: upgma}
-        - {machine: x64_linux, compiler: g++-12, tree: nj}
+        - {machine: x64_linux, compiler: 11, wsl: ""}
+        - {machine: x64_linux, compiler: 12, wsl: ""}
+        - {machine: arm64_linux, compiler: 12, wsl: ""}
+        - {machine: x64_mac, compiler: 12, wsl: ""}
+        - {machine: arm64_mac, compiler: 12, wsl: ""}
+        - {machine: x64_windows, compiler: exe, wsl: "wsl"}
+
 
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
       
-    env: 
-      REF_DIR: ./test/hemopexin
-      INPUT: ./test/hemopexin/hemopexin
- 
     steps:  
 
     - name: medoid + ${{matrix.tree}}  (tree only)
       run: |
-        ./famsa-${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} -gt_export ${INPUT} medoid-${{matrix.tree}}.dnd
-        cmp  medoid-${{matrix.tree}}.dnd ${REF_DIR}/medoid-${{matrix.tree}}.dnd
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} -gt_export ./test/${{matrix.INPUT}}/${{matrix.INPUT}} medoid-${{matrix.tree}}.dnd
+        ${{matrix.wsl}} diff --strip-trailing-cr  medoid-${{matrix.tree}}.dnd ./test/${{matrix.INPUT}}/medoid-${{matrix.tree}}.dnd
     
     - name: medoid + ${{matrix.tree}}  (complete alignment)
       run: |
-        ./famsa-${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} ${INPUT} medoid-${{matrix.tree}}.fasta
-        cmp medoid-${{matrix.tree}}.fasta ${REF_DIR}/medoid-${{matrix.tree}}.fasta
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} ./test/${{matrix.INPUT}}/${{matrix.INPUT}} medoid-${{matrix.tree}}.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr medoid-${{matrix.tree}}.fasta ./test/${{matrix.INPUT}}/medoid-${{matrix.tree}}.fasta
      
     - name: medoid + ${{matrix.tree}}  (from tree)
       run: |
-        ./famsa-${{matrix.compiler}} -gt import medoid-${{matrix.tree}}.dnd ${INPUT} medoid-${{matrix.tree}}.dnd.fasta
-        cmp medoid-${{matrix.tree}}.dnd.fasta ${REF_DIR}/medoid-${{matrix.tree}}.fasta
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -gt import medoid-${{matrix.tree}}.dnd ./test/${{matrix.INPUT}}/${{matrix.INPUT}} medoid-${{matrix.tree}}.dnd.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr medoid-${{matrix.tree}}.dnd.fasta ./test/${{matrix.INPUT}}/medoid-${{matrix.tree}}.fasta
         
     - name: medoid + ${{matrix.tree}}  (non-default params)
       run: |
-        ./famsa-${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} -gt_export -subtree_size 10 -sample_size 100 -cluster_fraction 0.2 -cluster_iters 1 ${INPUT} medoid-${{matrix.tree}}-params.dnd
-        cmp  medoid-${{matrix.tree}}-params.dnd ${REF_DIR}/medoid-${{matrix.tree}}-params.dnd
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} -gt_export -subtree_size 10 -sample_size 100 -cluster_fraction 0.2 -cluster_iters 1 ./test/${{matrix.INPUT}}/${{matrix.INPUT}} medoid-${{matrix.tree}}-params.dnd
+        ${{matrix.wsl}} diff --strip-trailing-cr  medoid-${{matrix.tree}}-params.dnd ./test/${{matrix.INPUT}}/medoid-${{matrix.tree}}-params.dnd
   
   ########################################################################################    
 
   medoid-tree-duplicates:
     name: hemopexin - duplicates
-    needs: full-tree
+    needs: small-tests
     strategy:
       fail-fast: false
       matrix:
-        machine: [xeon, x64_linux, arm64_linux, x64_mac, arm64_mac]
-        compiler: [g++]
+        machine: [x64_linux, arm64_linux, x64_mac, arm64_mac, x64_windows]
         tree: [sl]
+        INPUT: [hemopexin_duplicates]
         include:
-        - {machine: x64_linux, compiler: g++-9, tree: sl}
-        - {machine: x64_linux, compiler: g++-10, tree: sl}
-        - {machine: x64_linux, compiler: g++-11, tree: sl}
-        - {machine: x64_linux, compiler: g++-12, tree: sl}
+        - {machine: x64_linux, compiler: 11, wsl: ""}
+        - {machine: x64_linux, compiler: 12, wsl: ""}
+        - {machine: arm64_linux, compiler: 12, wsl: ""}
+        - {machine: x64_mac, compiler: 12, wsl: ""}
+        - {machine: arm64_mac, compiler: 12, wsl: ""}
+        - {machine: x64_windows, compiler: exe, wsl: "wsl"}
      
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
         
-    env: 
-      REF_DIR: ./test/hemopexin_duplicates
-      INPUT: ./test/hemopexin_duplicates/hemopexin_duplicates
- 
     steps:  
 
     - name: medoid + ${{matrix.tree}}  (tree only)
       run: |
-        ./famsa-${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} -gt_export ${INPUT} medoid-${{matrix.tree}}.dnd
-        cmp  medoid-${{matrix.tree}}.dnd ${REF_DIR}/medoid-${{matrix.tree}}.dnd
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} -gt_export ./test/${{matrix.INPUT}}/${{matrix.INPUT}} medoid-${{matrix.tree}}.dnd
+        ${{matrix.wsl}} diff --strip-trailing-cr  medoid-${{matrix.tree}}.dnd ./test/${{matrix.INPUT}}/medoid-${{matrix.tree}}.dnd
     
     - name: medoid + ${{matrix.tree}}  (complete alignment)
       run: |
-        ./famsa-${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} ${INPUT} medoid-${{matrix.tree}}.fasta
-        cmp medoid-${{matrix.tree}}.fasta ${REF_DIR}/medoid-${{matrix.tree}}.fasta
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} ./test/${{matrix.INPUT}}/${{matrix.INPUT}} medoid-${{matrix.tree}}.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr medoid-${{matrix.tree}}.fasta ./test/${{matrix.INPUT}}/medoid-${{matrix.tree}}.fasta
      
     - name: medoid + ${{matrix.tree}}  (from tree)
       run: |
-        ./famsa-${{matrix.compiler}} -gt import medoid-${{matrix.tree}}.dnd ${INPUT} medoid-${{matrix.tree}}.dnd.fasta
-        cmp medoid-${{matrix.tree}}.dnd.fasta ${REF_DIR}/medoid-${{matrix.tree}}.fasta
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -gt import medoid-${{matrix.tree}}.dnd ./test/${{matrix.INPUT}}/${{matrix.INPUT}} medoid-${{matrix.tree}}.dnd.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr medoid-${{matrix.tree}}.dnd.fasta ./test/${{matrix.INPUT}}/medoid-${{matrix.tree}}.fasta
         
         
     - name: medoid + ${{matrix.tree}} + keep duplicates (tree only)
       run: |
-        ./famsa-${{matrix.compiler}} -keep-duplicates -medoidtree -gt ${{matrix.tree}} -gt_export ${INPUT} medoid-${{matrix.tree}}-dups.dnd
-        cmp  medoid-${{matrix.tree}}-dups.dnd ${REF_DIR}/medoid-${{matrix.tree}}-dups.dnd
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -keep-duplicates -medoidtree -gt ${{matrix.tree}} -gt_export ./test/${{matrix.INPUT}}/${{matrix.INPUT}} medoid-${{matrix.tree}}-dups.dnd
+        ${{matrix.wsl}} diff --strip-trailing-cr  medoid-${{matrix.tree}}-dups.dnd ./test/${{matrix.INPUT}}/medoid-${{matrix.tree}}-dups.dnd
     
     - name: medoid + ${{matrix.tree}} + keep duplicates (complete alignment)
       run: |
-        ./famsa-${{matrix.compiler}} -keep-duplicates -medoidtree -gt ${{matrix.tree}} ${INPUT} medoid-${{matrix.tree}}-dups.fasta
-        cmp medoid-${{matrix.tree}}-dups.fasta ${REF_DIR}/medoid-${{matrix.tree}}-dups.fasta
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -keep-duplicates -medoidtree -gt ${{matrix.tree}} ./test/${{matrix.INPUT}}/${{matrix.INPUT}} medoid-${{matrix.tree}}-dups.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr medoid-${{matrix.tree}}-dups.fasta ./test/${{matrix.INPUT}}/medoid-${{matrix.tree}}-dups.fasta
      
     - name: medoid + ${{matrix.tree}} + keep duplicates (from tree)
       run: |
-        ./famsa-${{matrix.compiler}} -keep-duplicates -gt import medoid-${{matrix.tree}}-dups.dnd ${INPUT} medoid-${{matrix.tree}}-dups.dnd.fasta
-        cmp medoid-${{matrix.tree}}-dups.dnd.fasta ${REF_DIR}/medoid-${{matrix.tree}}-dups.fasta    
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -keep-duplicates -gt import medoid-${{matrix.tree}}-dups.dnd ./test/${{matrix.INPUT}}/${{matrix.INPUT}} medoid-${{matrix.tree}}-dups.dnd.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr medoid-${{matrix.tree}}-dups.dnd.fasta ./test/${{matrix.INPUT}}/medoid-${{matrix.tree}}-dups.fasta    
   
   ########################################################################################        
          
@@ -310,66 +337,65 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [xeon, x64_linux, arm64_linux, x64_mac, arm64_mac]
-        compiler: [g++]
+        machine: [x64_linux, arm64_linux, x64_mac, arm64_mac, x64_windows]
+        INPUT: [adeno_fiber]    
         include:
-        - {machine: x64_linux,  compiler: g++-9}
-        - {machine: x64_linux, compiler: g++-10}
-        - {machine: x64_linux, compiler: g++-11}
-        - {machine: x64_linux, compiler: g++-12}
+        - {machine: x64_linux, compiler: 11, wsl: ""}
+        - {machine: x64_linux, compiler: 12, wsl: ""}
+        - {machine: arm64_linux, compiler: 12, wsl: ""}
+        - {machine: x64_mac, compiler: 12, wsl: ""}
+        - {machine: arm64_mac, compiler: 12, wsl: ""}
+        - {machine: x64_windows, compiler: exe, wsl: "wsl"}
      
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']    
         
-    env: 
-      REF_DIR: ./test/adeno_fiber
-      INPUT: ./test/adeno_fiber/adeno_fiber
-     
+   
     steps:
     
     - name: non-default gaps
       run: |
-        ./famsa-${{matrix.compiler}} -go 10 -ge 2 -tgo 0.5 -tge 1.0 -gsd 3 -gsl 30 ${INPUT} gaps.fasta
-        cmp gaps.fasta ${REF_DIR}/gaps.fasta
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -go 10 -ge 2 -tgo 0.5 -tge 1.0 -gsd 3 -gsl 30 ./test/${{matrix.INPUT}}/${{matrix.INPUT}} gaps.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr gaps.fasta ./test/${{matrix.INPUT}}/gaps.fasta
         
     - name: no refinement
       run: |
-        ./famsa-${{matrix.compiler}} -gt import ${REF_DIR}/upgma.dnd -refine_mode off ${INPUT} upgma.no_refine.fasta
-        cmp upgma.no_refine.fasta ${REF_DIR}/upgma.no_refine.fasta
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -gt import ./test/${{matrix.INPUT}}/upgma.dnd -refine_mode off ./test/${{matrix.INPUT}}/${{matrix.INPUT}} upgma.no_refine.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr upgma.no_refine.fasta ./test/${{matrix.INPUT}}/upgma.no_refine.fasta
         
     - name: profile-profile alignment
       run: |
-        ./famsa-${{matrix.compiler}} -refine_mode off ${REF_DIR}/upgma.no_refine.part1.fasta ${REF_DIR}/upgma.no_refine.part2.fasta upgma.pp.fasta
-        cmp upgma.pp.fasta ${REF_DIR}/upgma.pp.fasta
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -refine_mode off ./test/${{matrix.INPUT}}/upgma.no_refine.part1.fasta ./test/${{matrix.INPUT}}/upgma.no_refine.part2.fasta upgma.pp.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr upgma.pp.fasta ./test/${{matrix.INPUT}}/upgma.pp.fasta
     
     - name: export distance
       run: |
-        ./famsa-${{matrix.compiler}} -dist_export ${INPUT} dist.csv
-        cmp dist.csv ${REF_DIR}/dist.csv
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -dist_export ./test/${{matrix.INPUT}}/${{matrix.INPUT}} dist.csv
+        ${{matrix.wsl}} diff --strip-trailing-cr dist.csv ./test/${{matrix.INPUT}}/dist.csv
         
     - name: export distance (square)
       run: |
-        ./famsa-${{matrix.compiler}} -dist_export -square_matrix ${INPUT} dist_sq.csv
-        cmp dist_sq.csv ${REF_DIR}/dist_sq.csv
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -dist_export -square_matrix ./test/${{matrix.INPUT}}/${{matrix.INPUT}} dist_sq.csv
+        ${{matrix.wsl}} diff --strip-trailing-cr dist_sq.csv ./test/${{matrix.INPUT}}/dist_sq.csv
         
     - name: export pid
       run: |
-        ./famsa-${{matrix.compiler}} -dist_export -pid ${INPUT} pid.csv
-        cmp pid.csv ${REF_DIR}/pid.csv
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -dist_export -pid ./test/${{matrix.INPUT}}/${{matrix.INPUT}} pid.csv
+        ${{matrix.wsl}} diff --strip-trailing-cr pid.csv ./test/${{matrix.INPUT}}/pid.csv
         
     - name: export pid (square)
       run: |
-        ./famsa-${{matrix.compiler}} -dist_export -square_matrix -pid ${INPUT} pid_sq.csv
-        cmp pid_sq.csv ${REF_DIR}/pid_sq.csv
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -dist_export -square_matrix -pid ./test/${{matrix.INPUT}}/${{matrix.INPUT}} pid_sq.csv
+        ${{matrix.wsl}} diff --strip-trailing-cr pid_sq.csv ./test/${{matrix.INPUT}}/pid_sq.csv
         
     - name: align the alignment
       run: |
-        ./famsa-${{matrix.compiler}} ${REF_DIR}/upgma.fasta upgma2sl.fasta
-        cmp upgma2sl.fasta ${REF_DIR}/sl.fasta
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} ./test/${{matrix.INPUT}}/upgma.fasta upgma2sl.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr upgma2sl.fasta ./test/${{matrix.INPUT}}/sl.fasta
         
     - name: non-standard symbols
       run: |
-        ./famsa-${{matrix.compiler}} ./test/adeno_fiber_extra/adeno_fiber_extra out.fasta
-        cmp out.fasta ./test/adeno_fiber_extra/ref.fasta
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} ./test/adeno_fiber_extra/adeno_fiber_extra out.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr out.fasta ./test/adeno_fiber_extra/ref.fasta
       
 ########################################################################################
   noavx-tests:
@@ -379,57 +405,58 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        compiler: [g++-9, g++-10, g++-11, g++-12, g++-13]
+        compiler: [11, 12, 13]
         platform: [none, sse4, avx]
-        
-    env: 
-      REF_DIR: ./test/adeno_fiber
-      INPUT: ./test/adeno_fiber/adeno_fiber
-        
+        INPUT: [adeno_fiber] 
+         
     steps:
     - name: clean
-      run: make clean
+      run: gmake clean
     - name: make (${{matrix.compiler}}, CPU extension ${{matrix.platform}})
       run: | 
-        make -j32 CXX=${{matrix.compiler}} PLATFORM=${{matrix.platform}}
+         gmake -j32 CXX=g++-${{matrix.compiler}} CC=gcc-${{matrix.compiler}} PLATFORM=${{matrix.platform}} STATIC_LINK=true
     - name: distance calculation
       run: |
-        ./famsa -dist_export ${INPUT} dist.csv
-        cmp dist.csv ${REF_DIR}/dist.csv 
+        ./bin/famsa -dist_export ./test/${{matrix.INPUT}}/${{matrix.INPUT}} dist.csv
+        diff --strip-trailing-cr dist.csv ./test/${{matrix.INPUT}}/dist.csv 
 
 ########################################################################################
   huge-tree:
     name: LRR - 100k trees
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
-    needs: full-tree
+    needs: 
+    - full-tree
+    - full-tree-duplicates
+    - medoid-tree
+    - medoid-tree-duplicates
+    - other-tests
     strategy:
       fail-fast: false
       matrix:
-        machine: [x64_linux, arm64_linux, x64_mac, arm64_mac]
-        compiler: [g++]
+        machine: [x64_linux, arm64_linux, x64_mac, arm64_mac, x64_windows]
         tree: [sl]
+        INPUT: [LRR]  
         include:
-        - {machine: x64_linux, compiler: g++-9, tree: sl}
-        - {machine: x64_linux, compiler: g++-10, tree: sl}
-        - {machine: x64_linux, compiler: g++-11, tree: sl}
-        - {machine: x64_linux, compiler: g++-12, tree: sl}
-          
-    env: 
-      REF_DIR: ./test/LRR
-      INPUT: ./test/LRR/LRR
+        - {machine: x64_linux, compiler: 11, wsl: ""}
+        - {machine: x64_linux, compiler: 12, wsl: ""}
+        - {machine: arm64_linux, compiler: 12, wsl: ""}
+        - {machine: x64_mac, compiler: 12, wsl: ""}
+        - {machine: arm64_mac, compiler: 12, wsl: ""}
+        - {machine: x64_windows, compiler: exe, wsl: "wsl"}
+       
         
     steps:
     - name: ${{matrix.tree}} (tree only)
       run: |
-        ./famsa-${{matrix.compiler}} -gt ${{matrix.tree}} -gt_export ${INPUT} ${{matrix.tree}}.dnd
-        cmp ${{matrix.tree}}.dnd ${REF_DIR}/${{matrix.tree}}.dnd
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -gt ${{matrix.tree}} -gt_export ./test/${{matrix.INPUT}}/${{matrix.INPUT}} ${{matrix.tree}}.dnd
+        ${{matrix.wsl}} diff --strip-trailing-cr ${{matrix.tree}}.dnd ./test/${{matrix.INPUT}}/${{matrix.tree}}.dnd
     
     - name: ${{matrix.tree}} (full alignment)
       run: |
-         ./famsa-${{matrix.compiler}} -gt ${{matrix.tree}} ${{matrix.tree}}.fasta
-    
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -gt ${{matrix.tree}} ${{matrix.tree}}.fasta
+        
     - name: ${{matrix.tree}} (from tree)
       run: |
-         ./famsa-${{matrix.compiler}} -gt import ${{matrix.tree}}.dnd ${{matrix.tree}}.dnd.fasta
-          cmp ${{matrix.tree}}.dnd.fasta ${{matrix.tree}}.fasta
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -gt import ${{matrix.tree}}.dnd ${{matrix.tree}}.dnd.fasta
+        ${{matrix.wsl}} diff --strip-trailing-cr ${{matrix.tree}}.dnd.fasta ${{matrix.tree}}.fasta
         

@@ -67,10 +67,13 @@ void CLCSBP_AVX2_INTR::prepare_mask_pairs(uint32_t bv_len, CSequence* seq0)
 	uint64_t* bm = (uint64_t*)bit_masks;
 	uint64_t bm_len = seq0->p_bv_len;
 
-	for (uint32_t i = 0; i < NO_SYMBOLS; ++i)
-		for (uint32_t j = 0; j < NO_SYMBOLS; ++j)
+//	for (uint32_t i = 0; i < NO_SYMBOLS; ++i)
+	for (uint32_t i = 0; i < NO_AMINOACIDS; ++i)
+//		for (uint32_t j = 0; j < NO_SYMBOLS; ++j)
+		for (uint32_t j = 0; j < NO_AMINOACIDS; ++j)
 		{
-			__m128i* ptr = precomp_masks + i * NO_SYMBOLS * bv_len + j * bv_len;
+//			__m128i* ptr = precomp_masks + i * NO_SYMBOLS * bv_len + j * bv_len;
+			__m128i* ptr = precomp_masks + i * NO_AMINOACIDS * bv_len + j * bv_len;
 			uint64_t* pbm1 = bm + i * bm_len;
 			uint64_t* pbm2 = bm + j * bm_len;
 
@@ -90,6 +93,9 @@ void CLCSBP_AVX2_INTR::Calculate(CSequence* seq0, CSequence* seq1, CSequence* se
 	prepare_mask_pairs(bv_len, seq0);
 
 	dist[0] = dist[1] = dist[2] = dist[3] = 0;
+
+//	CLCSBP_AVX2_INTR_Impl<1, CSequence>::LoopCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, bv_len, max_len, X);
+//	return;
 
 	switch (bv_len)
 	{
@@ -140,6 +146,9 @@ void CLCSBP_AVX2_INTR::Calculate(CSequence* seq0, CSequenceView* seq1, CSequence
 	prepare_mask_pairs(bv_len, seq0);
 
 	dist[0] = dist[1] = dist[2] = dist[3] = 0;
+
+//	CLCSBP_AVX2_INTR_Impl<1, CSequenceView>::LoopCalculate(precomp_masks, seq0, seq1, seq2, seq3, seq4, dist, bv_len, max_len, X);
+//	return;
 
 	switch (bv_len)
 	{

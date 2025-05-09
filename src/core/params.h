@@ -16,7 +16,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <algorithm>
 #include "../core/defs.h"
 #include "../tree/TreeDefs.h"
-
+#include "../core/scoring_matrix.h"
 
 using namespace std;
 
@@ -48,7 +48,6 @@ public:
 	}
 };
 
-
 class CParams
 {
 private:
@@ -58,7 +57,9 @@ private:
 	double gap_term_ext_base				= 0.66;
 	
 public:	
-	
+//	ScoringMatrices::matrix_type_t matrix_type = ScoringMatrices::matrix_type_t::MIQS;
+	ScoringMatrices::matrix_type_t matrix_type = ScoringMatrices::matrix_type_t::PFASUM40;
+
 	score_t gap_open;
 	score_t gap_ext;
 	score_t gap_term_open;
@@ -79,7 +80,8 @@ public:
 	
 	GT::Method gt_method			= GT::MST_Prim;
 	GT::Heuristic gt_heuristic		= GT::None;
-	Distance distance				= Distance::indel_div_lcs;
+//	Distance distance				= Distance::indel_div_lcs;
+	Distance distance				= Distance::indel075_div_lcs;
 	int heuristic_threshold			= 0;
 	
 	int guide_tree_seed				= 0;
@@ -94,9 +96,9 @@ public:
 	bool generate_square_matrix			= false;
 	bool calculate_pid					= false;
 	bool keepDuplicates					= false;
-	string seed_file_name;
 	
-	bool test_ref_sequences				 = false;
+	
+	bool test_ref_sequences		   		= false;
 	uint64_t ref_seq_subtree_size = 0;
 	string ref_file_name;
 	
@@ -106,6 +108,9 @@ public:
 	bool gzippd_output					= false;
 	int gzip_level						= 7;
 	
+	bool remove_rare_columns = false;	
+	float rare_column_threshold = 0.1f;
+
 	instruction_set_t instruction_set	= instruction_set_t::none;
 
 	bool verbose_mode = false;
@@ -116,12 +121,19 @@ public:
 	string input_file_name_2;
 	string output_file_name;
 
+	string seed_file_name;
+	string stats_file_name;
+
 	vector<vector<score_t>> score_matrix;
 	vector<score_t> score_vector;
 
 	CParams();
 	bool parse(int argc, char** argv, bool& showExpert);
 	void show_usage(bool expert);
+
+	bool areStatsStored() {
+		return verbose_mode || very_verbose_mode || stats_file_name.length();
+	}
 
 protected:
 	bool findSwitch(std::vector<std::string>& params, const std::string& name) {

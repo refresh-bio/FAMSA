@@ -1,250 +1,97 @@
-all: famsa 
+all: famsa
 
+# *** REFRESH makefile utils
+include refresh.mk
 
-####################
+$(call INIT_SUBMODULES)
+$(call INIT_GLOBALS)
+$(call CHECK_OS_ARCH, $(PLATFORM))
 
+# *** Project directories
+$(call SET_SRC_OBJ_BIN,src,obj,bin)
+3RD_PARTY_DIR := ./libs
 
-UNAME_S := $(shell uname -s)
-GCC_VERSION= $(shell $(CXX) -dumpversion | cut -f1 -d.)
+SRC_SIMD_DIR := $(SRC_DIR)/simd
+OBJ_SIMD_DIR := $(OBJ_DIR)/simd
 
-ifeq ($(UNAME_S),Darwin)
-	ABI_FLAG =
-	CLINK_FLAGS =
-else
-	ABI_FLAG = -fabi-version=0 
-	CLINK_FLAGS = -lrt
+# *** Project configuration
+$(call ADD_MIMALLOC, $(3RD_PARTY_DIR)/mimalloc)
+$(call PROPOSE_ZLIB_NG, $(3RD_PARTY_DIR)/zlib-ng)
+$(call PROPOSE_ISAL, $(3RD_PARTY_DIR)/isa-l)
+$(call CHOOSE_GZIP_DECOMPRESSION)
+$(call ADD_LIBDEFLATE, $(3RD_PARTY_DIR)/libdeflate)
+$(call ADD_REFRESH_LIB, $(3RD_PARTY_DIR))
+$(call SET_STATIC, $(STATIC_LINK))
+$(call SET_C_CPP_STANDARDS, c11, c++20)
+$(call SET_GIT_COMMIT)
+
+$(call SET_FLAGS, $(TYPE))
+
+$(call SET_COMPILER_VERSION_ALLOWED, GCC, Linux_x86_64, 11, 20)
+$(call SET_COMPILER_VERSION_ALLOWED, GCC, Linux_aarch64, 11, 20)
+$(call SET_COMPILER_VERSION_ALLOWED, GCC, Darwin_x86_64, 11, 13)
+$(call SET_COMPILER_VERSION_ALLOWED, GCC, Darwin_arm64, 11, 13)
+
+ifneq ($(MAKECMDGOALS),clean)
+$(call CHECK_COMPILER_VERSION)
 endif
 
+# *** Source files and rules
+$(eval $(call PREPARE_DEFAULT_COMPILE_RULE,MAIN,))
+$(eval $(call PREPARE_DEFAULT_COMPILE_RULE,CORE,core))
+$(eval $(call PREPARE_DEFAULT_COMPILE_RULE,LCS,lcs))
+$(eval $(call PREPARE_DEFAULT_COMPILE_RULE,TREE,tree))
+$(eval $(call PREPARE_DEFAULT_COMPILE_RULE,UTILS,utils))
 
-ifeq ($(GCC_VERSION), 5)
-$(info *** Detecting g++ version 5 ***)
-	CPP_STD=c++11
-	DEFINE_FLAGS = -DNO_PROFILE_PAR -DOLD_ATOMIC_FLAG
-else ifeq ($(GCC_VERSION), 6)
-$(info *** Detecting g++ version 6 ***)
-	CPP_STD=c++11
-	DEFINE_FLAGS = -DNO_PROFILE_PAR -DOLD_ATOMIC_FLAG
-else ifeq ($(GCC_VERSION), 7)
-$(info *** Detecting g++ version 7 ***)
-	CPP_STD=c++14
-	DEFINE_FLAGS = -DNO_PROFILE_PAR -DOLD_ATOMIC_FLAG
-else ifeq ($(GCC_VERSION), 8)
-$(info *** Detecting g++ version 8 ***)
-	CPP_STD=c++2a
-	DEFINE_FLAGS = -DOLD_ATOMIC_FLAG
-else ifeq ($(GCC_VERSION), 9)
-$(info *** Detecting g++ version 9 ***)
-	CPP_STD=c++2a
-	DEFINE_FLAGS =  -DOLD_ATOMIC_FLAG
-else ifeq ($(GCC_VERSION), 10)
-$(info *** Detecting g++ version 10 ***)
-	CPP_STD=c++2a
-	DEFINE_FLAGS = -DOLD_ATOMIC_FLAG
-else ifeq ($(GCC_VERSION), 11)
-$(info *** Detecting g++ version 11 ***)
-	ifeq ($(UNAME_S),Darwin)
-		CPP_STD=c++2a
-		DEFINE_FLAGS = -DOLD_ATOMIC_FLAG
-	else
-		CPP_STD=c++20
-		DEFINE_FLAGS = 
-	endif
+# *** SIMD rules
+# Main kmer-db files
+ifeq ($(ARCH_TYPE),x86_64)
+SRC_SIMD := $(SRC_SIMD_DIR)/lcsbp_avx_intr.cpp $(SRC_SIMD_DIR)/lcsbp_avx2_intr.cpp $(SRC_SIMD_DIR)/lcsbp_avx512_intr.cpp $(SRC_SIMD_DIR)/utils_avx.cpp $(SRC_SIMD_DIR)/utils_avx2.cpp 
+$(OBJ_SIMD_DIR)/lcsbp_avx_intr.cpp.o: $(SRC_SIMD_DIR)/lcsbp_avx_intr.cpp
+	@mkdir -p $(OBJ_SIMD_DIR)
+	$(CXX) $(CPP_FLAGS_AVX) $(OPTIMIZATION_FLAGS) $(ARCH_FLAGS) $(INCLUDE_DIRS) -MMD -MF $@.d -c $< -o $@
+$(OBJ_SIMD_DIR)/lcsbp_avx2_intr.cpp.o: $(SRC_SIMD_DIR)/lcsbp_avx2_intr.cpp
+	@mkdir -p $(OBJ_SIMD_DIR)
+	$(CXX) $(CPP_FLAGS_AVX2) $(OPTIMIZATION_FLAGS) $(ARCH_FLAGS) $(INCLUDE_DIRS) -MMD -MF $@.d -c $< -o $@
+$(OBJ_SIMD_DIR)/lcsbp_avx512_intr.cpp.o: $(SRC_SIMD_DIR)/lcsbp_avx512_intr.cpp
+	@mkdir -p $(OBJ_SIMD_DIR)
+	$(CXX) $(CPP_FLAGS_AVX512) $(OPTIMIZATION_FLAGS) $(ARCH_FLAGS) $(INCLUDE_DIRS) -MMD -MF $@.d -c $< -o $@
+$(OBJ_SIMD_DIR)/utils_avx.cpp.o: $(SRC_SIMD_DIR)/utils_avx.cpp
+	@mkdir -p $(OBJ_SIMD_DIR)
+	$(CXX) $(CPP_FLAGS_AVX) $(OPTIMIZATION_FLAGS) $(ARCH_FLAGS) $(INCLUDE_DIRS) -MMD -MF $@.d -c $< -o $@
+$(OBJ_SIMD_DIR)/utils_avx2.cpp.o: $(SRC_SIMD_DIR)/utils_avx2.cpp
+	@mkdir -p $(OBJ_SIMD_DIR)
+	$(CXX) $(CPP_FLAGS_AVX2) $(OPTIMIZATION_FLAGS) $(ARCH_FLAGS) $(INCLUDE_DIRS) -MMD -MF $@.d -c $< -o $@
 else
-$(info *** Detecting g++ version 12 or higher ***)
-	ifeq ($(UNAME_S),Darwin)
-		CPP_STD=c++2a
-		DEFINE_FLAGS = -DOLD_ATOMIC_FLAG
-	else
-		CPP_STD=c++20
-		DEFINE_FLAGS = 
-	endif
-#	DEFINE_FLAGS = -DUSE_NATIVE_BARRIERS
+SRC_SIMD := $(SRC_SIMD_DIR)/lcsbp_neon_intr.cpp $(SRC_SIMD_DIR)/utils_neon.cpp 
+$(OBJ_SIMD_DIR)/lcsbp_neon_intr.cpp.o: $(SRC_SIMD_DIR)/lcsbp_neon_intr.cpp
+	@mkdir -p $(OBJ_SIMD_DIR)
+	$(CXX) $(CPP_FLAGS_NEON) $(OPTIMIZATION_FLAGS) $(ARCH_FLAGS) $(INCLUDE_DIRS) -MMD -MF $@.d -c $< -o $@
+$(OBJ_SIMD_DIR)/utils_neon.cpp.o: $(SRC_SIMD_DIR)/utils_neon.cpp
+	@mkdir -p $(OBJ_SIMD_DIR)
+	$(CXX) $(CPP_FLAGS_NEON) $(OPTIMIZATION_FLAGS) $(ARCH_FLAGS) $(INCLUDE_DIRS) -MMD -MF $@.d -c $< -o $@
 endif
 
-SIMD_NONE=0
-SIMD_AVX1=1
-SIMD_AVX2=2
-SIMD_AVX512=3
-SIMD_NEON=4
+OBJ_SIMD := $(patsubst $(SRC_SIMD_DIR)/%.cpp, $(OBJ_SIMD_DIR)/%.cpp.o, $(SRC_SIMD))
 
- 
-# Detecting user's options and add flags
-ifeq ($(PLATFORM), none) 
-$(info *** Unspecified platform w/o extensions ***)
-	COMMON_FLAGS :=  
-	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NONE)
-	SIMD=NONE
-else ifeq ($(PLATFORM), arm8)
-$(info *** ARMv8 with NEON extensions ***)
-	COMMON_FLAGS := -march=armv8-a
-	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NEON)
-	SIMD=NEON
-else ifeq ($(PLATFORM), m1)
-$(info *** Apple M1 with NEON extensions ***)
-	COMMON_FLAGS := -march=armv8.4-a
-	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NEON)
-	SIMD=NEON
-else ifeq ($(PLATFORM), sse4)
-$(info *** x86-64 with SSE4 extensions***)
-	COMMON_FLAGS := -msse4
-	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_NONE)
-	SIMD=NONE
-else ifeq ($(PLATFORM), avx)
-$(info *** x86-64 with AVX extensions***)
-	COMMON_FLAGS := -msse4
-	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_AVX1)
-	SIMD=AVX1
-else ifeq ($(PLATFORM), native)
-$(info *** x86-64 with AVX2 extensions and native architecture ***)
-	COMMON_FLAGS := -mavx2 -march=native
-	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_AVX2)
-	SIMD=AVX2
-else
-$(info *** x86-64 with AVX2 extensions***)
-	COMMON_FLAGS := -msse4
-	DEFINE_FLAGS := $(DEFINE_FLAGS) -DSIMD=$(SIMD_AVX2)
-	SIMD=AVX2
-endif
- 
+# Dependency files (needed only for SIMD)
+-include $(OBJ_SIMD:.o=.o.d)
 
-# get commit hash
-GIT_COMMIT = $(shell git describe --always --dirty) 
-DEFINE_FLAGS := $(DEFINE_FLAGS) -DGIT_COMMIT=$(GIT_COMMIT)
+# *** Targets
+famsa: $(OUT_BIN_DIR)/famsa
+$(OUT_BIN_DIR)/famsa: mimalloc_obj \
+	$(OBJ_MAIN) $(OBJ_CORE) $(OBJ_LCS) $(OBJ_TREE) $(OBJ_UTILS) $(OBJ_SIMD)
+	-mkdir -p $(OUT_BIN_DIR)	
+	$(CXX) -o $@  \
+	$(MIMALLOC_OBJ) \
+	$(OBJ_MAIN) $(OBJ_CORE) $(OBJ_LCS) $(OBJ_TREE) $(OBJ_UTILS) $(OBJ_SIMD) \
+	$(LIBRARY_FILES) $(LINKER_FLAGS) $(LINKER_DIRS)
 
-INC_DIRS =. libs/mimalloc/include libs
-INCLUDES=$(foreach d, $(INC_DIRS), -I$d)
- 
-ifeq ($(STATIC_LINK), true) 
-	CXXFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 $(COMMON_FLAGS) $(DEFINE_FLAGS) -static -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD) $(INCLUDES)
-	CLINK	= -lm -static -O3 -Wl,--whole-archive -lpthread -Wl,--no-whole-archive -std=$(CPP_STD)
-else
-	CXXFLAGS	= -Wall -Wno-char-subscripts -Wno-attributes -O3 $(COMMON_FLAGS) $(DEFINE_FLAGS) -std=$(CPP_STD) -pthread $(INCLUDES)
-	CLINK	= -lm $(CLINK_FLAGS) -O3 $(COMMON_FLAGS) -std=$(CPP_STD) -pthread 
-endif
- 
-CXXFLAGS_AVX = $(CXXFLAGS) -mavx ${ABI_FLAG} -mpopcnt -funroll-loops
-CXXFLAGS_AVX2 = $(CXXFLAGS) -mavx2 ${ABI_FLAG} -mpopcnt -funroll-loops
-CXXFLAGS_NEON = $(CXXFLAGS) ${ABI_FLAG} -funroll-loops
+# *** Cleaning
+.PHONY: clean init
+clean: clean-libdeflate clean-mimalloc_obj clean-zlib-ng clean-isa-l
+	-rm -r $(OBJ_DIR)
+	-rm -r $(OUT_BIN_DIR)
 
-
-LIB_DEFLATE=libs/libdeflate/build/libdeflate.a
-
-deflate: 
-	cmake -S libs/libdeflate -B libs/libdeflate/build
-	cmake --build libs/libdeflate/build
-
-
-MIMALLOC_OBJ=libs/mimalloc/mimalloc.o
-
-$(MIMALLOC_OBJ):
-	$(CXX) -DMI_MALLOC_OVERRIDE -O3 -DNDEBUG -fPIC -Wall -Wextra -Wno-unknown-pragmas -fvisibility=hidden -Wstrict-prototypes -ftls-model=initial-exec -fno-builtin-malloc -std=$(CPP_STD) -c -I libs/mimalloc/include libs/mimalloc/src/static.c -o $(MIMALLOC_OBJ)
-
-COMMON_OBJS := src/msa.o \
-	src/msa_refinement.o \
-	src/tree/AbstractTreeGenerator.o \
-	src/tree/Clustering.o \
-	src/tree/DistanceCalculator.o \
-	src/tree/FastTree.o \
-	src/tree/GuideTree.o \
-	src/tree/MSTPrim.o \
-	src/tree/NeighborJoining.o \
-	src/tree/NewickParser.o \
-	src/tree/SingleLinkage.o \
-	src/tree/UPGMA.o \
-	src/utils/timer.o \
-	src/utils/log.o \
-	src/core/io_service.o \
-	src/core/params.o \
-	src/core/profile.o \
-	src/core/profile_par.o \
-	src/core/profile_seq.o \
-	src/core/sequence.o \
-	src/core/queues.o
-		
-src/lcs/lcsbp_classic.o : src/lcs/lcsbp_classic.cpp
-	$(CXX) $(CXXFLAGS) -c src/lcs/lcsbp_classic.cpp -o $@
-
-ifeq ($(SIMD), NONE) 
-LCS_OBJS := src/lcs/lcsbp.o \
-	src/lcs/lcsbp_classic.o
-UTILS_OBJS := src/utils/utils.o 
-
-src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
-	$(CXX) $(CXXFLAGS) -c src/lcs/lcsbp.cpp -o $@
-src/utils/utils.o : src/utils/utils.cpp
-	$(CXX) $(CXXFLAGS) -c src/utils/utils.cpp -o $@
-
-else ifeq ($(SIMD), AVX1)
-LCS_OBJS := src/lcs/lcsbp.o \
-	src/lcs/lcsbp_classic.o \
-	src/lcs/lcsbp_avx_intr.o
-UTILS_OBJS := src/utils/utils.o \
-	src/utils/utils_avx.o 
-
-src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
-	$(CXX) $(CXXFLAGS) -c src/lcs/lcsbp.cpp -o $@
-src/lcs/lcsbp_avx_intr.o : src/lcs/lcsbp_avx_intr.cpp
-	$(CXX) $(CXXFLAGS_AVX) -c src/lcs/lcsbp_avx_intr.cpp -o $@
-
-src/utils/utils.o : src/utils/utils.cpp
-	$(CXX) $(CXXFLAGS) -c src/utils/utils.cpp -o $@
-src/utils/utils_avx.o : src/utils/utils_avx.cpp
-	$(CXX) $(CXXFLAGS_AVX) -c src/utils/utils_avx.cpp -o $@
-else ifeq ($(SIMD), NEON)
-LCS_OBJS := src/lcs/lcsbp.o \
-	src/lcs/lcsbp_classic.o \
-	src/lcs/lcsbp_neon_intr.o
-UTILS_OBJS := src/utils/utils.o \
-	src/utils/utils_neon.o 
-
-src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
-	$(CXX) $(CXXFLAGS) -c src/lcs/lcsbp.cpp -o $@
-src/lcs/lcsbp_neon_intr.o : src/lcs/lcsbp_neon_intr.cpp
-	$(CXX) $(CXXFLAGS_NEON) -c src/lcs/lcsbp_neon_intr.cpp -o $@
-
-src/utils/utils.o : src/utils/utils.cpp
-	$(CXX) $(CXXFLAGS) -c src/utils/utils.cpp -o $@
-src/utils/utils_neon.o : src/utils/utils_neon.cpp
-	$(CXX) $(CXXFLAGS_NEON) -c src/utils/utils_neon.cpp -o $@
-else
-LCS_OBJS := src/lcs/lcsbp.o \
-	src/lcs/lcsbp_classic.o \
-	src/lcs/lcsbp_avx_intr.o \
-	src/lcs/lcsbp_avx2_intr.o
-
-UTILS_OBJS := src/utils/utils.o \
-	src/utils/utils_avx.o \
-	src/utils/utils_avx2.o
-
-src/lcs/lcsbp.o : src/lcs/lcsbp.cpp
-	$(CXX) $(CXXFLAGS) -c src/lcs/lcsbp.cpp -o $@
-src/lcs/lcsbp_avx_intr.o : src/lcs/lcsbp_avx_intr.cpp
-	$(CXX) $(CXXFLAGS_AVX) -c src/lcs/lcsbp_avx_intr.cpp -o $@
-src/lcs/lcsbp_avx2_intr.o : src/lcs/lcsbp_avx2_intr.cpp
-	$(CXX) $(CXXFLAGS_AVX2) -c src/lcs/lcsbp_avx2_intr.cpp -o $@
-
-src/utils/utils.o : src/utils/utils.cpp
-	$(CXX) $(CXXFLAGS) -c src/utils/utils.cpp -o $@
-src/utils/utils_avx.o : src/utils/utils_avx.cpp
-	$(CXX) $(CXXFLAGS_AVX) -c src/utils/utils_avx.cpp -o $@
-src/utils/utils_avx2.o : src/utils/utils_avx2.cpp
-	$(CXX) $(CXXFLAGS_AVX2) -c src/utils/utils_avx2.cpp -o $@
-endif
-
-
-.cpp.o:
-	$(CXX) $(CXXFLAGS) -c $< -o $@
-
-famsa: deflate $(MIMALLOC_OBJ) src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS)
-	$(CXX) $(CLINK) -o $@ $(MIMALLOC_OBJ) src/famsa.o $(COMMON_OBJS) $(LCS_OBJS) $(UTILS_OBJS) $(LIB_DEFLATE)
-
-clean:
-	cd libs/libdeflate/build && make clean
-	-rm src/core/*.o
-	-rm src/lcs/*.o
-	-rm src/tree/*.o
-	-rm src/utils/*.o
-	-rm src/*.o
-	-rm libs/mimalloc/*.o
-	-rm famsa
-
+init:
+	$(call INIT_SUBMODULES)

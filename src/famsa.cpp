@@ -26,7 +26,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #undef min
 #undef max
 
-
 // ****************************************************************************
 int main(int argc, char *argv[])
 {
@@ -74,20 +73,31 @@ int main(int argc, char *argv[])
 		if (params.profile_aligning) {
 			LOG_VERBOSE << "Aligning " << params.input_file_name << " with " << params.input_file_name_2 << "\n";
 
-			vector<CGappedSequence> profile1;
-			vector<CGappedSequence> profile2;
-	
-			size_t size1 = IOService::loadFasta(params.input_file_name, profile1, &mma);
-			size_t size2 = IOService::loadFasta(params.input_file_name_2, profile2, &mma);
+			string inputs[2] {params.input_file_name, params.input_file_name_2};
+			vector<CGappedSequence> profiles[2];
+			size_t sizes[2];
+
+			for (int i = 0; i < 2; ++i) {
+				auto& profile = profiles[i];
+				sizes[i] = IOService::loadFasta(inputs[i], profile, &mma);
+				bool correct = (sizes[i] > 0) && std::all_of(profile.begin(), profile.end(), [&profile](const CGappedSequence& seq) {
+					return seq.gapped_size == profile.front().gapped_size;
+				});
+
+				if (!correct) {
+					throw std::runtime_error("Incorrect profile");
+				}
+			}
+
 			CFAMSA profile_aligner(params);
 
-			profile_aligner.adjustParams((int)(size1 + size2));
-			profile_aligner.alignProfiles(profile1, profile2);
+			profile_aligner.adjustParams((int)(sizes[0] + sizes[1]));
+			profile_aligner.alignProfiles(profiles[0], profiles[1]);
 
 			profile_aligner.GetAlignment(result);
 
 			IOService::saveAlignment(params.output_file_name, result, params.n_threads, 
-				params.gzippd_output ? params.gzip_level : -1);
+				params.gzippd_output ? params.gzip_level : -1, params.remove_rare_columns ? params.rare_column_threshold : 1.0f);
 			return 0;
 		}		
 
@@ -114,7 +124,7 @@ int main(int argc, char *argv[])
 
 					LOG_VERBOSE << "Saving alignment in " << params.output_file_name;
 					ok = IOService::saveAlignment(params.output_file_name, result, params.n_threads, 
-						params.gzippd_output ? params.gzip_level : -1);
+						params.gzippd_output ? params.gzip_level : -1, params.remove_rare_columns ? params.rare_column_threshold : 1.0f);
 
 					LOG_VERBOSE << " [OK]" << endl;
 				}
@@ -123,17 +133,20 @@ int main(int argc, char *argv[])
 				timer.StopTimer();
 				LOG_NORMAL << "Done!\n";
 
-				if (params.verbose_mode || params.very_verbose_mode) {
+				if (params.areStatsStored()) {
 					famsa.getStatistics().put("time.save", timer_saving.GetElapsedTime());
 					famsa.getStatistics().put("time.total", timer.GetElapsedTime());
-
 					string stats = famsa.getStatistics().toString();
 
-					LOG_VERBOSE << endl << endl << "Statistics:" << endl << stats << endl;
+					if (params.verbose_mode || params.very_verbose_mode) {
+						LOG_VERBOSE << endl << endl << "Statistics:" << endl << stats << endl;
+					}
 
-					std::ofstream ofs("famsa.stats");
-					ofs << "[stats]" << endl << stats;
-					ofs.close();
+					if (params.stats_file_name.length()) {
+						std::ofstream ofs(params.stats_file_name);
+						ofs << "[stats]" << endl << stats;
+						ofs.close();
+					}
 				}
 
 			}

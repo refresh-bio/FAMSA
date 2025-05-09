@@ -298,4 +298,4 @@ void UPGMA<_distance>::computeTree(UPGMA_dist_t* distances, int n_seq, tree_stru
 // Explicit template specializations for specified distance measures
 
 template class UPGMA<Distance::indel_div_lcs>;
-template class UPGMA<Distance::sqrt_indel_div_lcs>;
+template class UPGMA<Distance::indel075_div_lcs>;

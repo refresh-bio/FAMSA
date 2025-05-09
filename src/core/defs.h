@@ -39,13 +39,7 @@ typedef double score_t;
 typedef int64_t score_t;
 #endif
 
-#define SIMD_NONE 0
-#define SIMD_AVX1 1
-#define SIMD_AVX2 2
-#define SIMD_AVX512 3
-#define SIMD_NEON 4
-
-enum class instruction_set_t { none, sse, sse2, sse3, sse3s, sse41, sse42, avx, avx2 };
+enum class instruction_set_t { none, sse, sse2, sse3, sse3s, sse41, sse42, avx, avx2, avx512, neon };
 
 typedef char symbol_t;
 typedef int counter_t;
@@ -55,6 +49,7 @@ typedef unsigned long long bit_vec_t;
 const int bv_size = sizeof(bit_vec_t) * 8;
 const int bv_size128 = 64;					// length of a single word in AVX type used for bit-par LCS computation
 const int bv_size256 = 64;					// length of a single word in AVX2 type used for bit-par LCS computation
+const int bv_size512 = 64;					// length of a single word in AVX512 type used for bit-par LCS computation
 
 #ifdef HUGE_ALIGNMENTS
 const score_t infty = 1e30;

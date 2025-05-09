@@ -16,7 +16,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <vector>
 #include <array>
 
-
 using namespace std;
 using namespace refresh;
 

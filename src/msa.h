@@ -15,6 +15,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <random>
 #include <thread>
 #include <mutex>
+#include <memory>
 #include <condition_variable>
 
 #include "./core/queues.h"
@@ -38,8 +39,6 @@ protected:
 	static const int TIMER_REFINMENT = 3;
 	static const int TIMER_TREE_STORE = 4;
 
- 	static double SM_MIQS[24][24];
-
 	CParams params;
 	instruction_set_t instruction_set;
 	
@@ -47,6 +46,8 @@ protected:
 	vector<score_t> score_vector;
 
 	vector<CGappedSequence> gapped_sequences;
+
+	refresh::active_thread_pool_v2 atp;
 
 	map<size_t, CProfile*> profiles;
 	CProfile *final_profile;
@@ -80,17 +81,15 @@ protected:
 	void shrinkSequences(std::vector<CSequence>& sequences);
 	void removeDuplicates(std::vector<CSequence*>& sorted_seqs, std::vector<int>& original2sorted);
 
-public:
-	
-	
+public:	
 	CFAMSA(CParams& _params);
 	~CFAMSA();
 
 	CProfile* ComputeAlignment(std::vector<CGappedSequence*>& gapped_sequences, tree_structure& guide_tree);
 #ifdef DEBUG_MODE
-	bool RefineAlignment(string output_file_name = "");
+	bool RefineAlignment(string output_file_name = "", uint32_t no_threads);
 #else
-	bool RefineAlignment(CProfile *&profile_to_refine);
+	bool RefineAlignment(CProfile *&profile_to_refine, uint32_t no_threads);
 #endif
 
 	bool GetAlignment(vector<CGappedSequence*> &result);

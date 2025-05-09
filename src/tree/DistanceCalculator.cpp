@@ -127,4 +127,4 @@ void DistanceCalculator<_distance>::run(std::vector<CSequence*>& sequences, tree
 // Explicit template specializations for specified distance measures
 
 template class DistanceCalculator<Distance::indel_div_lcs>;
-template class DistanceCalculator<Distance::sqrt_indel_div_lcs>;
+template class DistanceCalculator<Distance::indel075_div_lcs>;

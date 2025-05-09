@@ -34,6 +34,13 @@ CProfile::CProfile(CParams *_params) : cumulate_gap_inserts(false), no_cumulated
 }
 
 // ****************************************************************************
+// Construct empty profile
+CProfile::CProfile(CParams *_params, refresh::active_thread_pool_v2* atp) : cumulate_gap_inserts(false), no_cumulated_gap_inserts(0), width(0), total_score(0), atp(atp)
+{
+	params = _params;
+}
+
+// ****************************************************************************
 // Convert sequence into a profile
 CProfile::CProfile(const CGappedSequence &gapped_sequence, CParams *_params) : cumulate_gap_inserts(false), no_cumulated_gap_inserts(0), width(0), total_score(0)
 {
@@ -59,7 +66,8 @@ CProfile::CProfile(const CProfile &profile)
 }
 
 // ****************************************************************************
-CProfile::CProfile(CProfile *profile1, CProfile *profile2, CParams *_params, uint32_t no_threads, uint32_t no_rows_per_box) : cumulate_gap_inserts(false), no_cumulated_gap_inserts(0), width(0), total_score(0)
+CProfile::CProfile(CProfile *profile1, CProfile *profile2, CParams *_params, uint32_t no_threads, uint32_t no_rows_per_box, refresh::active_thread_pool_v2* atp) : 
+	cumulate_gap_inserts(false), no_cumulated_gap_inserts(0), width(0), total_score(0), atp(atp)
 {
 	params = _params;
 
@@ -783,15 +791,19 @@ void CProfile::ConstructProfile(CProfile *profile1, CProfile *profile2, CDPMatri
 
 	if (width > 1024 && no_threads > 1)
 	{
-		auto fut = async([&] {
+		refresh::active_thread_pool_v2::pool_state_t atp_state;
+
+//		auto fut = async([&] {
+		atp->launch([&] {
 			scores.resize(width + 1);
 			scores.set_zeros(params->instruction_set);
-			});
+			}, &atp_state);
 
 		counters.resize(width + 1);
 		counters.set_zeros(params->instruction_set);
 
-		fut.wait();
+//		fut.wait();
+		atp_state.busy_wait();
 	}
 	else
 	{
@@ -1054,10 +1066,13 @@ void CProfile::FinalizeGaps(CProfile* profile, vector<pair<uint32_t, uint32_t>>&
 		}
 		else
 		{
-			vector<future<void>> v_fut;
+			refresh::active_thread_pool_v2::pool_state_t atp_state;
+
+//			vector<future<void>> v_fut;
 			for (uint32_t i = 0; i < no_threads; ++i)
 			{
-				v_fut.emplace_back(async([&,i] {
+//				v_fut.emplace_back(async([&,i] {
+				atp->launch([&,i] {
 					uint32_t i_min = i * num / no_threads;
 					uint32_t i_max = (i+1) * num / no_threads;
 
@@ -1068,11 +1083,12 @@ void CProfile::FinalizeGaps(CProfile* profile, vector<pair<uint32_t, uint32_t>>&
 							else
 								profile->data[i]->InsertGaps(x.first, x.second);
 
-					}));
+					}, &atp_state);
 			}
 
-			for (auto& f : v_fut)
-				f.wait();
+//			for (auto& f : v_fut)
+//				f.wait();
+			atp_state.busy_wait();
 		}
 	}
 	else
@@ -1199,8 +1215,7 @@ void CProfile::SolveGapsProblemWhenStarting(size_t source_col_id, size_t prof_wi
 		n_gap_open = prof_size;
 		n_gap_term_to_transfer = 0;		
 		n_gap_ext = 0;					
-#endif
-	
+#endif	
 	}
 }
 
@@ -1484,7 +1499,6 @@ score_t CProfile::CalculateTotalScore(void)
 			for(; dest <= dest_end; ++dest)
 				*dest = *src1++ + *src2++ - *src3++;
 	}
-
 	
 	// Determine the exact number of gap_opens and gap_term_opens
 	int64_t size = data.size();

@@ -27,6 +27,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <list>
 #include <stack>
 #include <thread>
+#include <memory>
 
 #include <iostream>
 #include <iomanip>
@@ -38,37 +39,12 @@ using namespace std;
 
 #define SHOW_PROGRESS
 
-double CFAMSA::SM_MIQS[24][24] = {
-//	   A     R     N     D     C     Q     E     G     H     I     L     K     M     F     P     S     T     W     Y     V     B     Z     X     *
-	{3.2, -1.3, -0.4, -0.4,  1.5, -0.2, -0.4,  0.4, -1.2, -1.3, -1.4, -0.7, -1.0, -2.3, -0.1,  0.8,  0.8, -3.6, -2.4,  0.0, -6.1, -6.1, -6.1, -6.1},	// A
-	{ -1.3,  6.2, -0.1, -1.5, -2.7,  1.8, -0.7, -1.9,  0.9, -2.4, -2.5,  3.3, -1.1, -3.3, -1.1, -0.3, -0.9, -3.8, -1.9, -2.3, -6.1, -6.1, -6.1, -6.1},	// R
-	{ -0.4, -0.1,  5.1,  2.6, -1.6,  0.9,  0.8,  0.2,  1.0, -3.6, -3.5,  0.7, -2.3, -3.5, -1.4,  0.9,  0.0, -4.5, -1.5, -2.6, -6.1, -6.1, -6.1, -6.1},	// N
-	{ -0.4, -1.5,  2.6,  5.7, -3.7,  0.9,  2.7, -0.5,  0.3, -4.5, -4.6,  0.4, -3.3, -5.8, -0.3,  0.3, -0.2, -5.3, -3.9, -3.5, -6.1, -6.1, -6.1, -6.1},	// D
-	{  1.5, -2.7, -1.6, -3.7, 11.7, -2.8, -3.2, -1.7, -1.2,  0.2, -2.3, -3.2,  0.1, -2.8, -2.8,  1.0,  0.0, -6.1, -0.7,  1.8, -6.1, -6.1, -6.1, -6.1},	// C
-	{ -0.2,  1.8,  0.9,  0.9, -2.8,  3.6,  2.1, -1.6,  1.2, -2.2, -1.9,  1.7, -0.4, -2.4, -0.4,  0.4,  0.1, -5.4, -2.8, -1.8, -6.1, -6.1, -6.1, -6.1},	// Q
-	{ -0.4, -0.7,  0.8,  2.7, -3.2,  2.1,  4.3, -1.3, -0.2, -3.3, -2.8,  1.1, -2.3, -4.1,  0.0,  0.4, -0.2, -5.8, -2.4, -2.3, -6.1, -6.1, -6.1, -6.1},	// E
-	{  0.4, -1.9,  0.2, -0.5, -1.7, -1.6, -1.3,  7.6, -1.6, -5.4, -4.8, -1.7, -3.6, -4.6, -1.6,  0.0, -1.9, -4.8, -4.5, -3.8, -6.1, -6.1, -6.1, -6.1},	// G
-	{ -1.2,  0.9,  1.0,  0.3, -1.2,  1.2, -0.2, -1.6,  7.5, -2.2, -1.9,  0.0, -2.1,  0.0, -1.5,  0.0, -0.2, -0.3,  2.1, -2.3, -6.1, -6.1, -6.1, -6.1},	// H
-	{ -1.3, -2.4, -3.6, -4.5,  0.2, -2.2, -3.3, -5.4, -2.2,  4.6,  3.1, -2.3,  1.7,  0.7, -3.7, -2.8, -0.7, -0.7, -0.8,  3.3, -6.1, -6.1, -6.1, -6.1},	// I
-	{ -1.4, -2.5, -3.5, -4.6, -2.3, -1.9, -2.8, -4.8, -1.9,  3.1,  4.6, -2.4,  3.2,  2.1, -2.8, -2.9, -1.6, -0.2,  0.0,  2.0, -6.1, -6.1, -6.1, -6.1},	// L
-	{ -0.7,  3.3,  0.7,  0.4, -3.2,  1.7,  1.1, -1.7,  0.0, -2.3, -2.4,  3.6, -1.1, -3.7, -0.1,  0.0,  0.0, -4.0, -2.3, -2.0, -6.1, -6.1, -6.1, -6.1},	// K
-	{ -1.0, -1.1, -2.3, -3.3,  0.1, -0.4, -2.3, -3.6, -2.1,  1.7,  3.2, -1.1,  5.4,  1.4, -2.8, -1.8, -0.8, -2.1, -0.9,  1.4, -6.1, -6.1, -6.1, -6.1},	// M
-	{ -2.3, -3.3, -3.5, -5.8, -2.8, -2.4, -4.1, -4.6,  0.0,  0.7,  2.1, -3.7,  1.4,  7.4, -3.7, -2.6, -2.3,  4.2,  5.2, -0.3, -6.1, -6.1, -6.1, -6.1},	// F
-	{ -0.1, -1.1, -1.4, -0.3, -2.8, -0.4,  0.0, -1.6, -1.5, -3.7, -2.8, -0.1, -2.8, -3.7,  8.4, -0.1, -0.5, -3.6, -4.5, -2.5, -6.1, -6.1, -6.1, -6.1},	// P
-	{  0.8, -0.3,  0.9,  0.3,  1.0,  0.4,  0.4,  0.0,  0.0, -2.8, -2.9,  0.0, -1.8, -2.6, -0.1,  3.1,  1.6, -3.5, -1.5, -1.4, -6.1, -6.1, -6.1, -6.1},	// S
-	{  0.8, -0.9,  0.0, -0.2,  0.0,  0.1, -0.2, -1.9, -0.2, -0.7, -1.6,  0.0, -0.8, -2.3, -0.5,  1.6,  3.8, -5.3, -2.1, -0.1, -6.1, -6.1, -6.1, -6.1},	// T
-	{ -3.6, -3.8, -4.5, -5.3, -6.1, -5.4, -5.8, -4.8, -0.3, -0.7, -0.2, -4.0, -2.1,  4.2, -3.6, -3.5, -5.3, 14.8,  4.9, -3.3, -6.1, -6.1, -6.1, -6.1},	// W
-	{ -2.4, -1.9, -1.5, -3.9, -0.7, -2.8, -2.4, -4.5,  2.1, -0.8,  0.0, -2.3, -0.9,  5.2, -4.5, -1.5, -2.1,  4.9,  8.3, -1.2, -6.1, -6.1, -6.1, -6.1},	// Y
-	{  0.0, -2.3, -2.6, -3.5,  1.8, -1.8, -2.3, -3.8, -2.3,  3.3,  2.0, -2.0,  1.4, -0.3, -2.5, -1.4, -0.1, -3.3, -1.2,  3.5, -6.1, -6.1, -6.1, -6.1},	// V
-	{ -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1},	// B
-	{ -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1},	// Z
-	{ -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1},	// X
-	{ -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1, -6.1}};	// *
-
-
 // *******************************************************************
-CFAMSA::CFAMSA(CParams& _params) 
-	: params(_params), instruction_set(params.instruction_set), final_profile(nullptr)
+CFAMSA::CFAMSA(CParams& _params) :
+	params(_params), 
+	instruction_set(params.instruction_set), 
+	final_profile(nullptr),
+	atp(_params.n_threads, _params.n_threads)
 {
 	initScoreMatrix();
 }
@@ -84,19 +60,21 @@ void CFAMSA::initScoreMatrix()
 {
 	score_matrix.resize(NO_AMINOACIDS);
 
+	auto& sm_matrix = ScoringMatrices::get_matrix(params.matrix_type);
+
 #ifdef HUGE_ALIGNMENTS
 	for(int i = 0; i < NO_AMINOACIDS; ++i)
 	{
-		score_vector.emplace_back(SM_MIQS[i][i]);
+		score_vector.emplace_back(sm_matrix[i][i]);
 		for(int j = 0; j < NO_AMINOACIDS; ++j)
-			score_matrix[i].emplace_back(SM_MIQS[i][j]);
+			score_matrix[i].emplace_back(sm_matrix[i][j]);
 	}
 #else
 	for(int i = 0; i < NO_AMINOACIDS; ++i)
 	{
-		score_vector.emplace_back((score_t) round(SM_MIQS[i][i] * cost_cast_factor));
+		score_vector.emplace_back((score_t) round(sm_matrix[i][i] * cost_cast_factor));
 		for(int j = 0; j < NO_AMINOACIDS; ++j)
-			score_matrix[i].emplace_back((score_t) round(SM_MIQS[i][j] * cost_cast_factor));
+			score_matrix[i].emplace_back((score_t) round(sm_matrix[i][j] * cost_cast_factor));
 	}
 #endif
 }
@@ -105,7 +83,7 @@ void CFAMSA::initScoreMatrix()
 void CFAMSA::adjustParams(int n_seqs)
 {
 
-	if ((params.gt_heuristic != GT::None) && (n_seqs < params.heuristic_threshold)) {
+	if ((params.gt_heuristic != GT::None) && (n_seqs < params.sample_size)) {
 		params.gt_heuristic = GT::None;
 	}
 
@@ -144,8 +122,8 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 				params.output_file_name, params.generate_square_matrix, params.calculate_pid);
 
 		}
-		else if (params.distance == Distance::sqrt_indel_div_lcs) {
-			gen = make_shared<DistanceCalculator<Distance::sqrt_indel_div_lcs>>(
+		else if (params.distance == Distance::indel075_div_lcs) {
+			gen = make_shared<DistanceCalculator<Distance::indel075_div_lcs>>(
 				params.n_threads, params.instruction_set, 
 				params.output_file_name, params.generate_square_matrix, params.calculate_pid);
 		}
@@ -158,8 +136,8 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 		if (params.distance == Distance::indel_div_lcs) {
 			gen = make_shared<SingleLinkage<Distance::indel_div_lcs>>(params.n_threads, params.instruction_set);
 		}
-		else if (params.distance == Distance::sqrt_indel_div_lcs) {
-			gen = make_shared<SingleLinkage<Distance::sqrt_indel_div_lcs>>(params.n_threads, params.instruction_set);
+		else if (params.distance == Distance::indel075_div_lcs) {
+			gen = make_shared<SingleLinkage<Distance::indel075_div_lcs>>(params.n_threads, params.instruction_set);
 		}
 	}
 	else if (params.gt_method == GT::MST_Prim) {
@@ -167,8 +145,8 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 		if (params.distance == Distance::indel_div_lcs) {
 			gen = make_shared<MSTPrim<Distance::indel_div_lcs>>(params.n_threads, params.instruction_set);
 		}
-		else if (params.distance == Distance::sqrt_indel_div_lcs) {
-			gen = make_shared<MSTPrim<Distance::sqrt_indel_div_lcs>>(params.n_threads, params.instruction_set);
+		else if (params.distance == Distance::indel075_div_lcs) {
+			gen = make_shared<MSTPrim<Distance::indel075_div_lcs>>(params.n_threads, params.instruction_set);
 		}
 	}
 	else if (params.gt_method == GT::UPGMA || params.gt_method == GT::UPGMA_modified) {
@@ -177,8 +155,8 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 			gen = make_shared<UPGMA<Distance::indel_div_lcs>>(params.n_threads, params.instruction_set,
 				(params.gt_method == GT::UPGMA_modified));
 		}
-		else if (params.distance == Distance::sqrt_indel_div_lcs) {
-			gen = make_shared<UPGMA<Distance::sqrt_indel_div_lcs>>(params.n_threads, params.instruction_set,
+		else if (params.distance == Distance::indel075_div_lcs) {
+			gen = make_shared<UPGMA<Distance::indel075_div_lcs>>(params.n_threads, params.instruction_set,
 				(params.gt_method == GT::UPGMA_modified));
 		}
 	}
@@ -187,8 +165,8 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 		if (params.distance == Distance::indel_div_lcs) {
 			gen = make_shared<NeighborJoining<Distance::indel_div_lcs>>(params.n_threads, params.instruction_set);
 		}
-		else if (params.distance == Distance::sqrt_indel_div_lcs) {
-			gen = make_shared<NeighborJoining<Distance::sqrt_indel_div_lcs>>(params.n_threads, params.instruction_set);
+		else if (params.distance == Distance::indel075_div_lcs) {
+			gen = make_shared<NeighborJoining<Distance::indel075_div_lcs>>(params.n_threads, params.instruction_set);
 		}
 	} else {
 
@@ -237,8 +215,8 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 				ft->registerObserver(make_shared<SeedDumper>(params.seed_file_name));
 			}
 		}
-		else if (params.distance == Distance::sqrt_indel_div_lcs) {
-			auto ft = make_shared<FastTree<Distance::sqrt_indel_div_lcs>>(
+		else if (params.distance == Distance::indel075_div_lcs) {
+			auto ft = make_shared<FastTree<Distance::indel075_div_lcs>>(
 				params.n_threads,
 				params.instruction_set,
 				dynamic_pointer_cast<IPartialGenerator>(gen),
@@ -352,7 +330,6 @@ void CFAMSA::shrinkSequences(std::vector<CSequence>& sequences) {
 	}
 }
 
-
 // *******************************************************************
 void CFAMSA::removeDuplicates(std::vector<CSequence*>& sorted_seqs, std::vector<int>& original2sorted) {
 	
@@ -374,13 +351,11 @@ void CFAMSA::removeDuplicates(std::vector<CSequence*>& sorted_seqs, std::vector<
 	sorted_seqs.erase(newend, sorted_seqs.end());
 }
 
-
-
 // *******************************************************************
 // Compute Alignment according to guide tree
 CProfile* CFAMSA::ComputeAlignment(std::vector<CGappedSequence*>& gapped_sequences, tree_structure& guide_tree)
 {
-	CProfile* profile = new CProfile(&params);
+	CProfile* profile = new CProfile(&params, &atp);
 
 	profile->Clear();
 
@@ -417,12 +392,12 @@ CProfile* CFAMSA::ComputeAlignment(std::vector<CGappedSequence*>& gapped_sequenc
 					if (prof1->Size() + prof2->Size() > ref_thr)
 					{
 						if (prof1->Size() <= ref_thr && prof1->Size() > 2)
-							RefineAlignment(prof1);
+							RefineAlignment(prof1, no_threads);
 						if (prof2->Size() <= ref_thr && prof2->Size() > 2)
-							RefineAlignment(prof2);
+							RefineAlignment(prof2, no_threads);
 					}
 
-					prof_sol = new CProfile(prof1, prof2, &params, no_threads, no_rows_per_box);
+					prof_sol = new CProfile(prof1, prof2, &params, no_threads, no_rows_per_box, &atp);
 
 					delete prof1;
 					delete prof2;
@@ -508,6 +483,7 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 		<< "Advanced params:\n"
 		<< "  no. of refinements: " << params.n_refinements << "\n"
 		<< "  refinement threshold: " << params.thr_refinement << "\n"
+		<< "  scroing matrix: " << ScoringMatrices::toString(params.matrix_type) << "\n"
 		<< "  gap open cost (rescalled): " << params.gap_open << "\n"
 		<< "  gap extension cost (rescalled): " << params.gap_ext << "\n"
 		<< "  gap terminal open cost (rescalled): " << params.gap_term_open << "\n"
@@ -526,7 +502,7 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 		LoadRefSequences();
 #endif
 
-	string instr_names[] = { "None", "SSE", "SSE2", "SSE3", "SSE3S", "SSE41", "SSE42", "AVX", "AVX2" };
+	string instr_names[] = { "None", "SSE", "SSE2", "SSE3", "SSE3S", "SSE41", "SSE42", "AVX", "AVX2", "AVX512", "NEON"};
 	LOG_VERBOSE << "Hardware configuration: " << endl
 		<< " Number of threads: " << params.n_threads << endl
 		<< " Instruction set: " << instr_names[(int)instruction_set] << endl << endl;
@@ -633,7 +609,7 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 
 			timers[TIMER_REFINMENT].StartTimer();
 			LOG_VERBOSE << "Computing refinement...";
-			if (!RefineAlignment(final_profile))
+			if (!RefineAlignment(final_profile, params.n_threads))
 				return false;
 			LOG_VERBOSE << "[OK]" << endl;
 			timers[TIMER_REFINMENT].StopTimer();
@@ -671,12 +647,15 @@ bool CFAMSA::ComputeMSA(vector<CSequence>& sequences)
 		}
 
 		// store stats
-		if (params.verbose_mode || params.very_verbose_mode) {
-			int64_t sackin;
-			sackin = tree.calculateSackinIndex();
+		if (params.areStatsStored()) {
+
+			// this is time consuming - only in very verbose
+			if (params.very_verbose_mode) {
+				int64_t sackin = tree.calculateSackinIndex();
+				statistics.put("guide_tree.sackin", sackin);
+				statistics.put("guide_tree.sackin_norm", sackin / (double)sequences.size());
+			}
 			statistics.put("input.n_duplicates", dups);
-			statistics.put("guide_tree.sackin", sackin);
-			statistics.put("guide_tree.sackin_norm", sackin / (double)sequences.size());
 			statistics.put("time.sort", timers[TIMER_SORTING].GetElapsedTime());
 			statistics.put("time.tree_build", timers[TIMER_TREE_BUILD].GetElapsedTime());
 			statistics.put("time.tree_store", timers[TIMER_TREE_STORE].GetElapsedTime());
@@ -707,9 +686,11 @@ bool CFAMSA::alignProfiles(vector<CGappedSequence>& p1, vector<CGappedSequence>&
 	prof_1.CalculateCountersScores();
 	prof_2.CalculateCountersScores();
 	
-	uint32_t no_rows_per_box = 0;
+	uint32_t no_rows_per_box = 4;
 
-	final_profile = new CProfile(&prof_1, &prof_2, &params, 1, no_rows_per_box);
+	refresh::active_thread_pool_v2 atp(1, 1);
+
+	final_profile = new CProfile(&prof_1, &prof_2, &params, 1, no_rows_per_box, &atp);
 	if (!final_profile) {
 		return false;
 	}
@@ -719,7 +700,7 @@ bool CFAMSA::alignProfiles(vector<CGappedSequence>& p1, vector<CGappedSequence>&
 
 	timers[TIMER_REFINMENT].StartTimer();
 	LOG_VERBOSE << "Computing refinement...";
-	if (!RefineAlignment(final_profile))
+	if (!RefineAlignment(final_profile, 1))
 		return false;
 	LOG_VERBOSE << "[OK]" << endl;
 	timers[TIMER_REFINMENT].StopTimer();

@@ -16,6 +16,12 @@
     <Filter Include="libraries">
       <UniqueIdentifier>{142c24dd-1f53-42a6-b0e5-a9aa8ea15d80}</UniqueIdentifier>
     </Filter>
+    <Filter Include="refresh">
+      <UniqueIdentifier>{2ddb2997-c4af-4599-823e-f08b2b60f859}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="simd">
+      <UniqueIdentifier>{5a563954-f8ec-4583-a19c-3a1db7df2a0f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="famsa.cpp" />
@@ -65,19 +71,7 @@
     <ClCompile Include="tree\Clustering.cpp">
       <Filter>tree</Filter>
     </ClCompile>
-    <ClCompile Include="lcs\lcsbp_avx_intr.cpp">
-      <Filter>lcs</Filter>
-    </ClCompile>
-    <ClCompile Include="lcs\lcsbp_avx2_intr.cpp">
-      <Filter>lcs</Filter>
-    </ClCompile>
     <ClCompile Include="utils\utils.cpp">
-      <Filter>utils</Filter>
-    </ClCompile>
-    <ClCompile Include="utils\utils_avx.cpp">
-      <Filter>utils</Filter>
-    </ClCompile>
-    <ClCompile Include="utils\utils_avx2.cpp">
       <Filter>utils</Filter>
     </ClCompile>
     <ClCompile Include="tree\FastTree.cpp">
@@ -89,9 +83,6 @@
     <ClCompile Include="core\profile_seq.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="utils\pooled_threads.cpp">
-      <Filter>utils</Filter>
-    </ClCompile>
     <ClCompile Include="tree\MSTPrim.cpp">
       <Filter>tree</Filter>
     </ClCompile>
@@ -101,15 +92,30 @@
     <ClCompile Include="core\params.cpp">
       <Filter>core</Filter>
     </ClCompile>
-    <ClCompile Include="lcs\lcsbp_neon_intr.cpp">
-      <Filter>lcs</Filter>
-    </ClCompile>
-    <ClCompile Include="utils\utils_neon.cpp">
-      <Filter>utils</Filter>
-    </ClCompile>
     <ClCompile Include="msa_refinement.cpp" />
     <ClCompile Include="..\libs\mimalloc\src\static.c">
       <Filter>libraries</Filter>
+    </ClCompile>
+    <ClCompile Include="simd\lcsbp_avx_intr.cpp">
+      <Filter>simd</Filter>
+    </ClCompile>
+    <ClCompile Include="simd\lcsbp_avx2_intr.cpp">
+      <Filter>simd</Filter>
+    </ClCompile>
+    <ClCompile Include="simd\lcsbp_avx512_intr.cpp">
+      <Filter>simd</Filter>
+    </ClCompile>
+    <ClCompile Include="simd\lcsbp_neon_intr.cpp">
+      <Filter>simd</Filter>
+    </ClCompile>
+    <ClCompile Include="simd\utils_avx.cpp">
+      <Filter>simd</Filter>
+    </ClCompile>
+    <ClCompile Include="simd\utils_avx2.cpp">
+      <Filter>simd</Filter>
+    </ClCompile>
+    <ClCompile Include="simd\utils_neon.cpp">
+      <Filter>simd</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -189,12 +195,6 @@
     <ClInclude Include="tree\NeighborJoining.h">
       <Filter>tree</Filter>
     </ClInclude>
-    <ClInclude Include="lcs\lcsbp_avx_intr.h">
-      <Filter>lcs</Filter>
-    </ClInclude>
-    <ClInclude Include="lcs\lcsbp_avx2_intr.h">
-      <Filter>lcs</Filter>
-    </ClInclude>
     <ClInclude Include="utils\utils.h">
       <Filter>utils</Filter>
     </ClInclude>
@@ -203,9 +203,6 @@
     </ClInclude>
     <ClInclude Include="tree\FastTree.h">
       <Filter>tree</Filter>
-    </ClInclude>
-    <ClInclude Include="utils\pooled_threads.h">
-      <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="tree\MSTPrim.h">
       <Filter>tree</Filter>
@@ -222,11 +219,29 @@
     <ClInclude Include="utils\statistics.h">
       <Filter>utils</Filter>
     </ClInclude>
-    <ClInclude Include="lcs\lcsbp_neon_intr.h">
-      <Filter>lcs</Filter>
-    </ClInclude>
     <ClInclude Include="utils\memory_monotonic.h">
       <Filter>utils</Filter>
+    </ClInclude>
+    <ClInclude Include="core\scoring_matrix.h">
+      <Filter>core</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\refresh\active_thread_pool\lib\active_thread_pool.h">
+      <Filter>refresh</Filter>
+    </ClInclude>
+    <ClInclude Include="..\libs\refresh\active_thread_pool\lib\utils.h">
+      <Filter>refresh</Filter>
+    </ClInclude>
+    <ClInclude Include="simd\lcsbp_avx_intr.h">
+      <Filter>simd</Filter>
+    </ClInclude>
+    <ClInclude Include="simd\lcsbp_avx2_intr.h">
+      <Filter>simd</Filter>
+    </ClInclude>
+    <ClInclude Include="simd\lcsbp_avx512_intr.h">
+      <Filter>simd</Filter>
+    </ClInclude>
+    <ClInclude Include="simd\lcsbp_neon_intr.h">
+      <Filter>simd</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

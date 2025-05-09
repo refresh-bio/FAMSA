@@ -18,15 +18,15 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 void mem_clear(void* ptr, size_t size);
 
-#if SIMD==SIMD_AVX1 || SIMD==SIMD_AVX2 || SIMD==SIMD_AVX512
+#if defined(SIMD_AVX) || defined(SIMD_AVX2) || defined(SIMD_AVX512)
 void mem_clear_avx(void* ptr, size_t size);
 #endif
 
-#if SIMD==SIMD_AVX2 || SIMD==SIMD_AVX512
+#if defined(SIMD_AVX2) || defined(SIMD_AVX512)
 void mem_clear_avx2(void* ptr, size_t size);
 #endif
 
-#if SIMD==SIMD_NEON
+#if defined(SIMD_NEON)
 void mem_clear_neon(void* ptr, size_t size);
 #endif
 
@@ -38,6 +38,16 @@ T max4(T x1, T x2, T x3, T x4)
 	T p2 = (x3 > x4) ? x3 : x4;
 	
 	return (p1 > p2) ? p1 : p2;
+}
+
+// *******************************************************************
+template<typename T>
+T max8(T x1, T x2, T x3, T x4, T x5, T x6, T x7, T x8) 
+{
+	T m1 = max4(x1, x2, x3, x4);
+	T m2 = max4(x5, x6, x7, x8);
+
+	return (m1 > m2) ? m1 : m2;
 }
 
 // *******************************************************************

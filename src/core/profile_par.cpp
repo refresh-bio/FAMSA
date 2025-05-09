@@ -6,8 +6,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 
 */
 
-#ifndef NO_PROFILE_PAR
-
 #include "../core/profile.h"
 #include "../core/sequence.h"
 #include "../core/queues.h"
@@ -20,25 +18,9 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <thread>
 #include <future>
 
-//#include "../utils/pooled_threads.h"
-
 #define max3(x, y, z)	(max((x), max((y), (z))))
 
 #define NINF(x)		((x) < -999 ? -999: (x))
-
-#define USE_ASYNC
-
-#ifdef _MSC_VER
-#include <barrier>
-#else
-#ifdef USE_NATIVE_BARRIERS
-#include <barrier>
-#else
-thread_local size_t __barrier_favorite_hash =
-std::hash<std::thread::id>()(std::this_thread::get_id());
-#include "atomic_wait/include/barrier"
-#endif
-#endif
 
 // ****************************************************************************
 void CProfile::ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t no_threads, uint32_t rows_per_box)
@@ -78,31 +60,30 @@ void CProfile::ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t 
 
 	vector<pair<score_t, score_t>> v_gap_corr;
 
-	if (no_threads > 4)
-	{
-		auto fut0 = async([&] {
-			for (int i = 0; i < no_dp_rows; ++i)
-				dp_rows[i].resize(prof2_width + 1);
-			});
+	refresh::active_thread_pool_v2::pool_state_t pool_state;
 
-		auto fut1 = async([&] {
-			matrix.set_zeros(params->instruction_set);
-			});
+	auto job_dp_row_resize = [&] {
+		for (int i = 0; i < no_dp_rows; ++i)
+			dp_rows[i].resize(prof2_width + 1);
+		};
 
-		auto fut2 = async([&] {
-			gap_corrections.resize(prof2_width + 1);
-			});
+	auto job_matrix_set_zeros = [&] {
+		matrix.set_zeros(params->instruction_set);
+		};
 
-		auto fut3 = async([&] {
-			n_gaps_prof2_to_change.resize(prof2_width + 1);
-			n_gaps_prof2_term_to_change.resize(prof2_width + 1);
-			gaps_prof2_change.resize(prof2_width + 1);
+	auto job_gap_correction_resize = [&] {
+		gap_corrections.resize(prof2_width + 1);
+		};
 
-			v_gap_corr.resize(prof2_width + 1);
-			});
+	auto job_n_gaps_resize = [&] {
+		n_gaps_prof2_to_change.resize(prof2_width + 1);
+		n_gaps_prof2_term_to_change.resize(prof2_width + 1);
+		gaps_prof2_change.resize(prof2_width + 1);
+		v_gap_corr.resize(prof2_width + 1);
+		};
 
+	auto job_prof2_gaps = [&] {
 		prof2_gaps.resize(prof2_width + 1);
-
 		for (size_t j = 0; j <= prof2_width; ++j)
 		{
 			prof2_gaps[j].open = scores2.get_value(j, GAP_OPEN);
@@ -110,128 +91,55 @@ void CProfile::ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t 
 			prof2_gaps[j].term_open = scores2.get_value(j, GAP_TERM_OPEN);
 			prof2_gaps[j].term_ext = scores2.get_value(j, GAP_TERM_EXT);
 		}
+		};
 
-		fut0.wait();
-		fut1.wait();
-		fut2.wait();
-		fut3.wait();
+	if (no_threads > 4)
+	{
+		atp->launch([&] { job_dp_row_resize(); }, &pool_state);
+		atp->launch([&] { job_matrix_set_zeros(); }, &pool_state);
+		atp->launch([&] { job_gap_correction_resize(); }, &pool_state);
+		atp->launch([&] { job_n_gaps_resize(); }, &pool_state);
+
+		job_prof2_gaps();
+
+		pool_state.busy_wait();
 	}	
 	else if (no_threads == 4)
 	{
-		auto fut0 = async([&] {
-			for (int i = 0; i < no_dp_rows; ++i)
-				dp_rows[i].resize(prof2_width + 1);
-			});
+		atp->launch([&] {job_dp_row_resize(); }, &pool_state);
+		atp->launch([&] {job_matrix_set_zeros(); }, &pool_state);
+		atp->launch([&] {job_gap_correction_resize(); job_n_gaps_resize(); }, &pool_state);
+		job_prof2_gaps();
 
-		auto fut1 = async([&] {
-			matrix.set_zeros(params->instruction_set);
-			});
-
-		auto fut2 = async([&] {
-			gap_corrections.resize(prof2_width + 1);
-
-			n_gaps_prof2_to_change.resize(prof2_width + 1);
-			n_gaps_prof2_term_to_change.resize(prof2_width + 1);
-			gaps_prof2_change.resize(prof2_width + 1);
-
-			v_gap_corr.resize(prof2_width + 1);
-			});
-
-		prof2_gaps.resize(prof2_width + 1);
-
-		for (size_t j = 0; j <= prof2_width; ++j)
-		{
-			prof2_gaps[j].open = scores2.get_value(j, GAP_OPEN);
-			prof2_gaps[j].ext = scores2.get_value(j, GAP_EXT);
-			prof2_gaps[j].term_open = scores2.get_value(j, GAP_TERM_OPEN);
-			prof2_gaps[j].term_ext = scores2.get_value(j, GAP_TERM_EXT);
-		}
-
-		fut0.wait();
-		fut1.wait();
-		fut2.wait();
+		pool_state.busy_wait();
 	}
 	else if (no_threads == 3)
 	{
-		auto fut0 = async([&] {
-			for (int i = 0; i < no_dp_rows; ++i)
-				dp_rows[i].resize(prof2_width + 1);
-			});
+		atp->launch([&] {job_dp_row_resize(); }, &pool_state);
+		atp->launch([&] {job_matrix_set_zeros(); }, &pool_state);
+		job_prof2_gaps();
+		job_n_gaps_resize();
+		job_gap_correction_resize();
 
-		auto fut1 = async([&] {
-			matrix.set_zeros(params->instruction_set);
-			});
-		
-		prof2_gaps.resize(prof2_width + 1);
-		gap_corrections.resize(prof2_width + 1);
-
-		n_gaps_prof2_to_change.resize(prof2_width + 1);
-		n_gaps_prof2_term_to_change.resize(prof2_width + 1);
-		gaps_prof2_change.resize(prof2_width + 1);
-
-		v_gap_corr.resize(prof2_width + 1);
-
-		for (size_t j = 0; j <= prof2_width; ++j)
-		{
-			prof2_gaps[j].open = scores2.get_value(j, GAP_OPEN);
-			prof2_gaps[j].ext = scores2.get_value(j, GAP_EXT);
-			prof2_gaps[j].term_open = scores2.get_value(j, GAP_TERM_OPEN);
-			prof2_gaps[j].term_ext = scores2.get_value(j, GAP_TERM_EXT);
-		}
-
-		fut0.wait();
-		fut1.wait();
+		pool_state.busy_wait();
 	}
 	else if (no_threads == 2)
 	{
-		auto fut = async([&] {
-			for (int i = 0; i < no_dp_rows; ++i)
-				dp_rows[i].resize(prof2_width + 1);
-			});
+		atp->launch([&] {job_dp_row_resize(); }, &pool_state);
+		job_matrix_set_zeros();
+		job_prof2_gaps();
+		job_n_gaps_resize();
+		job_gap_correction_resize();
 
-		matrix.set_zeros(params->instruction_set);
-		prof2_gaps.resize(prof2_width + 1);
-		gap_corrections.resize(prof2_width + 1);
-
-		n_gaps_prof2_to_change.resize(prof2_width + 1);
-		n_gaps_prof2_term_to_change.resize(prof2_width + 1);
-		gaps_prof2_change.resize(prof2_width + 1);
-
-		v_gap_corr.resize(prof2_width + 1);
-
-		for (size_t j = 0; j <= prof2_width; ++j)
-		{
-			prof2_gaps[j].open = scores2.get_value(j, GAP_OPEN);
-			prof2_gaps[j].ext = scores2.get_value(j, GAP_EXT);
-			prof2_gaps[j].term_open = scores2.get_value(j, GAP_TERM_OPEN);
-			prof2_gaps[j].term_ext = scores2.get_value(j, GAP_TERM_EXT);
-		}
-
-		fut.wait();
+		pool_state.busy_wait();
 	}
 	else
 	{
-		matrix.set_zeros(params->instruction_set);
-
-		for (int i = 0; i < no_dp_rows; ++i)
-			dp_rows[i].resize(prof2_width + 1);
-		
-		prof2_gaps.resize(prof2_width + 1);
-		gap_corrections.resize(prof2_width + 1);
-
-		n_gaps_prof2_to_change.resize(prof2_width + 1);
-		n_gaps_prof2_term_to_change.resize(prof2_width + 1);
-		gaps_prof2_change.resize(prof2_width + 1);
-
-		v_gap_corr.resize(prof2_width + 1);
-
-		for (size_t j = 0; j <= prof2_width; ++j)
-		{
-			prof2_gaps[j].open = scores2.get_value(j, GAP_OPEN);
-			prof2_gaps[j].ext = scores2.get_value(j, GAP_EXT);
-			prof2_gaps[j].term_open = scores2.get_value(j, GAP_TERM_OPEN);
-			prof2_gaps[j].term_ext = scores2.get_value(j, GAP_TERM_EXT);
-		}
+		job_dp_row_resize();
+		job_matrix_set_zeros();
+		job_prof2_gaps();
+		job_n_gaps_resize();
+		job_gap_correction_resize();
 	}
 
 	// Prepare ranges for threads
@@ -303,21 +211,10 @@ void CProfile::ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t 
 			gap_term_ext * gap_corrections[j].n_gap_cont_term_ext;
 	}
 
-#ifdef USE_ASYNC
-	vector<future<void>> v_fut(no_threads);
-#else
-//	vector<thread> v_thr;
-//	v_thr.reserve(no_threads);
-	vector<pooled_threads::thread> v_thr;
-#endif
-	barrier bar(no_threads);
+	refresh::spin_barrier bar(no_threads);
 
 	for (int t = 0; t < (int) no_threads; ++t)
-#ifdef USE_ASYNC
-		v_fut[t] = async([&, t]{
-#else
-		v_thr.emplace_back([&, t] {
-#endif
+		atp->launch([&, t]{
 			int my_id = t;
 			int curr_row_id = 1;
 			int my_col_from = v_thr_range[my_id].first;
@@ -532,15 +429,9 @@ void CProfile::ParAlignSeqProf(CProfile* profile1, CProfile* profile2, uint32_t 
 			for (size_t i = my_id; i < no_threads - 1; ++i)
 				bar.arrive_and_wait();
 		
-			});
+			}, &pool_state);
 
-#ifdef USE_ASYNC
-		for (auto& v : v_fut)
-			v.wait();
-#else
-	for (auto& t : v_thr)
-		t.join();
-#endif
+	pool_state.busy_wait();
 
 	// Construct alignment
 	ConstructProfile(profile1, profile2, matrix, dp_rows[prof1_width % no_dp_rows].back(), no_threads);
@@ -568,43 +459,44 @@ void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t
 	CProfileValues<score_t, NO_SYMBOLS>& scores1 = const_cast<CProfileValues<score_t, NO_SYMBOLS>&>(profile1->scores);
 	CProfileValues<score_t, NO_SYMBOLS>& scores2 = const_cast<CProfileValues<score_t, NO_SYMBOLS>&>(profile2->scores);
 
+	refresh::active_thread_pool_v2::pool_state_t pool_state;
+
 	// Precompute scores for gaps for profile2
 	vector<dp_gap_costs> prof2_gaps;
 	vector<dp_gap_corrections> gap_corrections2;
 
+	auto job_dp_resize = [&] {
+		for (int i = 0; i < (int)no_dp_rows; ++i)
+			dp_rows[i].resize(prof2_width + 1);
+		};
+
+	auto job_matrix_set_zeros = [&] {
+		matrix.set_zeros(params->instruction_set);
+		};
+
 	if (no_threads > 2)
 	{
-		auto fut0 = async([&] {
-			for (int i = 0; i < (int) no_dp_rows; ++i)
-				dp_rows[i].resize(prof2_width + 1);
-			});
-
-		auto fut1 = async([&] {
-			matrix.set_zeros(params->instruction_set);
-			});
+		atp->launch([&] {job_dp_resize(); }, &pool_state);
+		atp->launch([&] {job_matrix_set_zeros(); }, &pool_state);
 
 		prof2_gaps.resize(prof2_width + 1);
 		gap_corrections2.resize(prof2_width + 1);
 
-		fut0.wait();
-		fut1.wait();
+		pool_state.busy_wait();
 	}
 	else if (no_threads == 2)
 	{
-		auto fut = async([&] {
-			for (int i = 0; i < (int) no_dp_rows; ++i)
-				dp_rows[i].resize(prof2_width + 1);
-			});
+		atp->launch([&] {job_dp_resize(); }, &pool_state);
 
 		matrix.set_zeros(params->instruction_set);
 		prof2_gaps.resize(prof2_width + 1);
 		gap_corrections2.resize(prof2_width + 1);
 
-		fut.wait();
+		pool_state.busy_wait();
 	}
 	else
 	{
-		matrix.set_zeros(params->instruction_set);
+		job_matrix_set_zeros();
 
 		for (int i = 0; i < (int) no_dp_rows; ++i)
 			dp_rows[i].resize(prof2_width + 1);
@@ -699,21 +591,10 @@ void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t
 			gap_corrections1[i].n_gap_cont_ext, gap_corrections1[i].n_gap_cont_term_ext);
 	}
 
-#ifdef USE_ASYNC
-	vector<future<void>> v_fut(no_threads);
-#else
-	//	vector<thread> v_thr;
-	//	v_thr.reserve(no_threads);
-	vector<pooled_threads::thread> v_thr;
-#endif
-	barrier bar(no_threads);
+	refresh::spin_barrier bar(no_threads);
 
 	for (int t = 0; t < (int) no_threads; ++t)
-#ifdef USE_ASYNC
-		v_fut[t] = async([&, t] {
-#else
-		v_thr.emplace_back([&, t] {
-#endif
+		atp->launch([&, t] {
 			int my_id = t;
 			int curr_row_id = 1;
 			int my_col_from = v_thr_range[my_id].first;
@@ -1013,20 +894,12 @@ void CProfile::ParAlignProfProf(CProfile* profile1, CProfile* profile2, uint32_t
 			for (size_t i = my_id; i < no_threads - 1; ++i)
 				bar.arrive_and_wait();
 			
-			});
+			}, &pool_state);
 
-#ifdef USE_ASYNC
-	for (auto& v : v_fut)
-		v.wait();
-#else
-	for (auto& t : v_thr)
-		t.join();
-#endif
+	pool_state.busy_wait();
 
 	// Construct alignment
 	ConstructProfile(profile1, profile2, matrix, dp_rows[prof1_width % no_dp_rows].back(), no_threads);
 }
-
-#endif
 
 // EOF

@@ -56,7 +56,7 @@ void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_struct
 	CLCSBP lcsbp(instruction_set);
 	Transform<float, _distance> transform;
 
-	if ((!clustering && n_seqs > subtreeSize) || (clustering && n_seqs > clusteringThreshold)) {
+	if ((!clustering && n_seqs > subtreeSize) || (clustering && n_seqs > sampleSize)) {
 
 		float* dists = new float[sequences.size() * 2]; // second row will be used later
 		int* seed_ids = new int[subtreeSize];
@@ -350,5 +350,5 @@ int FastTree<_distance>::clusterSeeds(
 // Explicit template specializations for specified distance measures
 
 template class FastTree<Distance::indel_div_lcs>;
-template class FastTree<Distance::sqrt_indel_div_lcs>;
+template class FastTree<Distance::indel075_div_lcs>;
 

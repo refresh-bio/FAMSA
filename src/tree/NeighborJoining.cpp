@@ -122,4 +122,4 @@ void NeighborJoining<_distance>::computeTree(float* distances, int n_seq, tree_s
 // Explicit template specializations for specified distance measures
 
 template class NeighborJoining<Distance::indel_div_lcs>;
-template class NeighborJoining<Distance::sqrt_indel_div_lcs>;
+template class NeighborJoining<Distance::indel075_div_lcs>;

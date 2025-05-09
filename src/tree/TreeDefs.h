@@ -19,7 +19,7 @@ using tree_structure = std::vector<node_t>;
 // class representing distance
 enum class Distance {
 	indel_div_lcs,
-	sqrt_indel_div_lcs,
+	indel075_div_lcs,
 	neg_lcs_div_indel,
 	neg_lcs_div_minlen,
 	neg_lcs_div_len_corrected,
@@ -28,7 +28,7 @@ enum class Distance {
 
 inline static Distance str2dist(const std::string& s) {
 	if (s == "indel_div_lcs") { return Distance::indel_div_lcs; }
-	else if (s == "sqrt_indel_div_lcs") { return Distance::sqrt_indel_div_lcs; }
+	else if (s == "indel075_div_lcs") { return Distance::indel075_div_lcs; }
 	else if (s == "neg_lcs_div_indel") { return Distance::neg_lcs_div_indel; }
 	else if (s == "neg_lcs_div_minlen") { return Distance::neg_lcs_div_minlen; }
 	else if (s == "neg_lcs_div_len_corrected") { return Distance::neg_lcs_div_len_corrected; }
@@ -42,7 +42,7 @@ inline static Distance str2dist(const std::string& s) {
 inline static std::string dist2str(Distance d) {
 	switch (d) {
 	case Distance::indel_div_lcs:				return "indel_div_lcs";
-	case Distance::sqrt_indel_div_lcs:			return "sqrt_indel_div_lcs";
+	case Distance::indel075_div_lcs:			return "indel075_div_lcs";
 	case Distance::neg_lcs_div_indel:			return "neg_lcs_div_indel";
 	case Distance::neg_lcs_div_minlen:			return "neg_lcs_div_minlen";
 	case Distance::neg_lcs_div_len_corrected:	return "neg_lcs_div_len_corrected";

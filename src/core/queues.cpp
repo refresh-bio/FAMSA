@@ -65,7 +65,8 @@ CProfileQueue::~CProfileQueue()
 // *******************************************************************
 void CProfileQueue::CheckAlignInParallel(CProfile* prof1, CProfile* prof2, uint32_t& no_threads, uint32_t& no_rows_per_box)
 {
-	const uint32_t min_box_width_per_thread = 512;
+//	const uint32_t min_box_width_per_thread = 512;
+	const uint32_t min_box_width_per_thread = 256;
 	//	const uint32_t min_box_width_per_thread = 12;
 
 	uint32_t no_available_threads = max_no_threads - no_working_threads;

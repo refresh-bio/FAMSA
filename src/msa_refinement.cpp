@@ -68,9 +68,9 @@ void CFAMSA::RefineMostEmptyAndFullColumn(CProfile* profile_to_refine, vector<si
 // *******************************************************************
 // Refine alignment
 #ifdef DEBUG_MODE
-bool CFAMSA::RefineAlignment(string output_file_name)
+bool CFAMSA::RefineAlignment(string output_file_name, uint32_t no_threads)
 #else
-bool CFAMSA::RefineAlignment(CProfile*& profile_to_refine)
+bool CFAMSA::RefineAlignment(CProfile*& profile_to_refine, uint32_t no_threads)
 #endif
 {
 	// Restart generator
@@ -132,7 +132,7 @@ bool CFAMSA::RefineAlignment(CProfile*& profile_to_refine)
 	{
 		LOG_DEBUG << "Computing refinement - " << fixed << setprecision(1) << 100.0 * (double)i_succ_ref / (double)n_ref << "%    (" << i_succ_ref << " of " << n_ref << ")  \r";
 
-		CProfile profile1(&params), profile2(&params);
+		CProfile profile1(&params, &atp), profile2(&params, &atp);
 
 		RefineMostEmptyAndFullColumn(profile_to_refine, dest_prof_id, gap_stats, valid_gap_stats);
 		valid_gap_stats = true;
@@ -161,10 +161,9 @@ bool CFAMSA::RefineAlignment(CProfile*& profile_to_refine)
 			hist_size[min(9, size_min)]++;
 #endif
 
-			CProfile* prof = new CProfile(&params);
+			CProfile* prof = new CProfile(&params, &atp);
 
-			// TODO: Enable parallelization here!
-			prof->Align(&profile1, &profile2, 1, 0, &column_mapping1, &column_mapping2);
+			prof->Align(&profile1, &profile2, no_threads, 4, &column_mapping1, &column_mapping2);
 			sort(prof->data.begin(), prof->data.end(), [](CGappedSequence* p, CGappedSequence* q) {return p->id < q->id; });
 
 			if (!(*prof == *profile_to_refine))		// if the new profile is the same as previous do not score it

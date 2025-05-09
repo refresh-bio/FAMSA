@@ -13,6 +13,8 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "../core/params.h"
 #include "../utils/utils.h"
 
+#include "../../libs/refresh/active_thread_pool/lib/active_thread_pool.h"
+
 #include <vector>
 #include <tuple>
 #include <array>
@@ -23,7 +25,6 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <xmmintrin.h>
 #include <mmintrin.h>
 #endif
-
 
 using namespace std;
 
@@ -51,16 +52,18 @@ public:
 
 	void set_zeros(instruction_set_t instruction_set = instruction_set_t::none)
 	{
-#if SIMD==SIMD_NONE
+#if defined(SIMD_SSE2)
 		mem_clear(raw_data, n_rows * n_cols);
-#elif SIMD==SIMD_AVX1
+#elif defined(SIMD_AVX)
 		if (instruction_set < instruction_set_t::avx) {
 			mem_clear(raw_data, n_rows * n_cols);
 		}
 		else {
 			mem_clear_avx(raw_data, n_rows * n_cols);
 		}
-#elif SIMD==SIMD_AVX2 || SIMD==SIMD_AVX512
+
+#elif defined(SIMD_AVX2) || defined(SIMD_AVX512)
+
 		if (instruction_set < instruction_set_t::avx) {
 			mem_clear(raw_data, n_rows * n_cols);
 		}
@@ -69,11 +72,11 @@ public:
 		}
 		else {
 			mem_clear_avx2(raw_data, n_rows * n_cols);
-		}		
-#elif SIMD==SIMD_NEON
+		}
+#elif defined(SIMD_NEON)
 		mem_clear_neon(raw_data, n_rows * n_cols);
 #else
-		// Impossible to be here
+		mem_clear(raw_data, n_rows * n_cols);
 #endif
 	}
 
@@ -281,16 +284,18 @@ public:
 
 	void set_zeros(instruction_set_t instruction_set = instruction_set_t::none)
 	{
-#if SIMD==SIMD_NONE
-		memset(raw_data, 0, N_ROWS * n_cols * sizeof(T));
-#elif SIMD==SIMD_AVX1
+#if defined(SIMD_SSE2)
+		memset(raw_data, 0, N_ROWS * n_cols * sizeof(T))
+#elif defined(SIMD_AVX)
 		if (instruction_set < instruction_set_t::avx) {
 			memset(raw_data, 0, N_ROWS * n_cols * sizeof(T));
 		}
 		else {
 			mem_clear_avx(raw_data, N_ROWS * n_cols * sizeof(T));
 		}
-#elif SIMD==SIMD_AVX2 || SIMD==SIMD_AVX512
+
+#elif defined(SIMD_AVX2) || defined(SIMD_AVX512)
+
 		if (instruction_set < instruction_set_t::avx) {
 			memset(raw_data, 0, N_ROWS * n_cols * sizeof(T));
 		}
@@ -300,10 +305,13 @@ public:
 		else {
 			mem_clear_avx2(raw_data, N_ROWS * n_cols * sizeof(T));
 		}
-#elif SIMD==SIMD_NEON
+#elif defined(SIMD_NEON)
 		mem_clear_neon(raw_data, N_ROWS * n_cols * sizeof(T));
-#endif			
+#else
+		memset(raw_data, 0, N_ROWS * n_cols * sizeof(T));
+#endif
 	}
+
 
 	size_t get_num_of_non_zeros(void)
 	{
@@ -385,6 +393,7 @@ public:
 // *********************************************************************************
 class CProfile {
 	CParams *params;
+	refresh::active_thread_pool_v2* atp{ nullptr };
 
 	struct dp_row_elem_t {
 		score_t D, H, V;
@@ -466,9 +475,10 @@ public:
 
 public:
 	CProfile(CParams *_params = nullptr);
+	CProfile(CParams *_params, refresh::active_thread_pool_v2* atp);
 	CProfile(const CGappedSequence &gapped_sequence, CParams *_params);
 	CProfile(const CProfile &profile);
-	CProfile(CProfile *profile1, CProfile *profile2, CParams *_params, uint32_t no_threads, uint32_t no_rows_per_box);
+	CProfile(CProfile *profile1, CProfile *profile2, CParams *_params, uint32_t no_threads, uint32_t no_rows_per_box, refresh::active_thread_pool_v2 *atp);
 	~CProfile();
 
 	bool operator==(const CProfile &profile) const;
@@ -490,6 +500,8 @@ public:
 	score_t CalculateTotalScore(void);
 
 	void Swap(CProfile &profile);
+
+	refresh::active_thread_pool_v2* get_atp() { return atp; }
 };
 
 #endif

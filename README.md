@@ -22,7 +22,7 @@ Progressive algorithm for large-scale multiple sequence alignments.
   * the family PF00005 of 3 million ABC transporters was aligned in 5 minutes and 24 GB of RAM.
 * Remarkable time and memory optimizations - SLINK has been replaced with Prim’s minimum spanning tree algorithm when constructing default (single linkage) guide trees. NOTE: This may change quality results slightly compared to FAMSA 1 due to different ties resolution.
 * Neighbour joining guide trees (`-gt nj` option). NOTE: Neighbour joining trees are calculated with a use of original *O*(*N*<sup>3</sup>) algorithm, thus their applicability on large sets is limited (unless they are used as subtrees with Medoid Tree heuristic).
-* Option for compressing output aligment to gzip (`-gz` switch).
+* Support of gzipped inputs, option for gzipping output aligments (`-gz` switch).
 * Compatibility with ARM64 8 architecture (including Apple M1).
 * Duplicate removal - redundant sequences are by default removed prior the alignment and restored afterwards (feature introduced in revision 2.1.0). This can change output alignments when a family contains duplicates. The old behaviour can be obtained by using `-keep-duplicates` switch.
 * Profile-profile alignments (available by specifying two input FASTA files; introduced in revision 2.2.0).
@@ -71,19 +71,20 @@ For detailed instructions how to set up Bioconda, please refer to the [Bioconda 
 A user-friendly [PyFAMSA](https://github.com/althonos/pyfamsa) module authored by [Martin Larralde](https://github.com/althonos/) allows running analyzes directly from Python.
 Finally, FAMSA can be built from the sources distributed as:
 
-* Visual Studio 2019 solution for Windows,
-* MAKE project for Linux and OS X (g++-5 required, g++-8 recommended).
+* Visual Studio 2022 solution for Windows,
+* GNU Make project for Linux and macOS (gmake 4.3 and gcc/g++ 11 or newer required).
 
 FAMSA can be built for x86-64 and ARM64 8 architectures (including Apple M1 based on ARM64 8.4 core) and takes advantage of AVX2 (x86-64) and NEON (ARM) CPU extensions. The default target platform is x86-64 with AVX2 extensions. This, however, can be changed by setting `PLATFORM` variable for `make`:
 
 ```bash
-make PLATFORM=none    # unspecified platform, no extensions
-make PLATFORM=sse4    # x86-64 with SSE4.1 
-make PLATFORM=avx     # x86-64 with AVX 
-make PLATFORM=avx2    # x86-64 with AVX2 (default)
-make PLATFORM=native  # x86-64 with AVX2 and native architecture
-make PLATFORM=arm8    # ARM64 8 with NEON  
-make PLATFORM=m1      # ARM64 8.4 (especially Apple M1) with NEON 
+gmake PLATFORM=none    # unspecified platform, no extensions
+gmake PLATFORM=sse4    # x86-64 with SSE4.1 
+gmake PLATFORM=avx     # x86-64 with AVX 
+gmake PLATFORM=avx2    # x86-64 with AVX2 (default)
+gmake PLATFORM=avx512  # x86-64 with AVX512 
+gmake PLATFORM=native  # x86-64 with native architecture
+gmake PLATFORM=arm8    # ARM64 8 with NEON  
+gmake PLATFORM=m1      # ARM64 8.4 (especially Apple M1) with NEON 
 ```   
 
 Note, that x86-64 binaries determine the supported extensions at runtime, which makes them backwards-compatible. For instance, the AVX executable will also work on SSE-only platform, but with limited performance. An additional `make` option can be used to force static linking (may be helpful when binary portability is desired): `make STATIC_LINK=true`
@@ -96,9 +97,9 @@ The latest speed improvements in FAMSA limited the usefullness of the GPU mode. 
 `famsa [options] <input_file> [<input_file_2>] <output_file>`
 
 Positional parameters:
-* `input_file`, `input_file_2` - input files in FASTA format (first input can be replaced with STDIN string to read from standard input); action depends on the number of input files:
+* `input_file`, `input_file_2` - input files in FASTA format (optionally gzipped); first input can be replaced with STDIN string to read from standard input; action depends on the number of input files:
     * one input - multiple sequence alignment (input gaps, if present, are removed prior the alignment),
-	* two inputs - profile-profile aligment (gaps are preserved).
+    * two inputs - profile-profile aligment (gaps are preserved).
 * `output_file` - output file (pass STDOUT when writing to standard output); available outputs:
     * alignment in FASTA format,
     * guide tree in Newick format (`-gt_export` option specified),
@@ -106,7 +107,7 @@ Positional parameters:
 
 Options:
 * `-help` - show advanced options
-* `-t <value>` - no. of threads, 0 means all available (default: 0)
+* `-t <value>` - no. of threads, NOTE: exceeding number of physical (not logical) cores decreases performance, 0 indicates half of all the logical cores (default: 0)
 * `-v` - verbose mode, show timing information (default: disabled)
 
 * `-gt <sl | upgma | nj | import <file>>` - the guide tree method (default: sl):

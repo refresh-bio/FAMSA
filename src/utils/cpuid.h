@@ -11,6 +11,8 @@ typedef unsigned __int32  uint32_t;
 #include <stdint.h>
 #endif
 
+#include <immintrin.h>
+
 class CPUID {
   uint32_t regs[4];
 

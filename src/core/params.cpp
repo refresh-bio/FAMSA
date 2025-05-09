@@ -8,7 +8,7 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include "params.h"
 #include "../utils/log.h"
 
-#if SIMD==SIMD_AVX1 || SIMD==SIMD_AVX2 || SIMD==SIMD_AVX512
+#if defined(SIMD_SSE2) || defined(SIMD_AVX) || defined(SIMD_AVX2) || defined(SIMD_AVX512)
 #include "../utils/cpuid.h"
 #endif
 
@@ -30,27 +30,40 @@ CParams::CParams() {
 #endif
 
 	// verify instruction sets
-#if SIMD==SIMD_AVX1 || SIMD==SIMD_AVX2 || SIMD==SIMD_AVX512
+#if defined(SIMD_AVX) || defined(SIMD_AVX2) || defined(SIMD_AVX512)
 	if ((CPUID(1).ECX() >> 28) & 1)
+	{
 		instruction_set = instruction_set_t::avx;
+	}
+#endif
+
+#if defined(SIMD_AVX2) || defined(SIMD_AVX512)
 	if ((CPUID(7).EBX() >> 5) & 1)
+	{
 		instruction_set = instruction_set_t::avx2;
+	}
 #endif
 
-#if SIMD==SIMD_NEON
-	// !!! Check if NEON is supported
+#if defined(SIMD_AVX512)
+	if (((CPUID(7).EBX() >> 16) & 3) == 3)	// bit 16 (AVX512f) and 17 (AVX512dq) set 
+	{
+		uint64_t xcr0 = _xgetbv(0);
+		if((xcr0 & 0xE0) == 0xE0)
+			instruction_set = instruction_set_t::avx512;
+	}
 #endif
 
+#if defined(SIMD_NEON)
+	instruction_set = instruction_set_t::neon;
+#endif
 };
-
 
 //****************************************************************************
 // Show command-line parameters
 void CParams::show_usage(bool expert)
 {
 	string bool2str[]{ "disabled", "enabled" };
-	
-	
+		
 	LOG_NORMAL
 		<< "Usage:\n"
 		<< "  famsa [options] <input_file> [<input_file_2>] <output_file>\n\n"
@@ -67,7 +80,8 @@ void CParams::show_usage(bool expert)
 
 		<< "Options:\n"
 		<< "  -help - print this message\n"
-		<< "  -t <value> - no. of threads, 0 means all available (default: " << n_threads << ")\n"
+		<< "  -t <value> - no. of threads, NOTE: exceeding number of physical (not logical) cores decreases performance,\n" 
+		<< "      0 indicates half of all the logical cores (default: " << n_threads << ")\n"
 		<< "  -v - verbose mode, show timing information (default: disabled)\n\n"
 
 		<< "  -gt <sl | upgma | nj | import <file>> - guide tree method (default: sl):\n"
@@ -75,9 +89,6 @@ void CParams::show_usage(bool expert)
 		<< "      * upgma - UPGMA\n"
 		<< "      * nj - neighbour joining\n"
 		<< "      * import <file> - imported from a Newick file\n"
-	//	<< "  -dist <measure> - pairwise distance measure:\n"
-	//	<< "      * indel_div_lcs (default)\n"
-	//	<< "      * sqrt_indel_div_lcs\n\n"
 
 		<< "  -medoidtree - use MedoidTree heuristic for speeding up tree construction (default: disabled)\n"
 		<< "  -medoid_threshold <n_seqs> - if specified, medoid trees are used only for sets with <n_seqs> or more\n"
@@ -90,16 +101,22 @@ void CParams::show_usage(bool expert)
 
 		<< "  -gz - enable gzipped output (default: " << bool2str[gzippd_output] << ")\n"
 		<< "  -gz-lev <value> - gzip compression level [0-9] (default: " << gzip_level << ")\n"
+		<< "  -remove-rare-columns <value> - remove columns with less than <rare_column_threshold> fraction of non-gap characters\n"
 		<< "  -refine_mode <on | off | auto> - refinement mode (default: auto - the refinement is enabled for sets <= " << thr_refinement << " seq.)\n\n";
 
 		
 	if (expert) {
 		LOG_NORMAL << "Advanced options:\n"
 			<< "  -r <value> - no. of refinement iterations (default: " << n_refinements << ")\n"
+			<< "  -sm <MIQS | PFASUM31 | PFASUM40 | PFASUM60> - scoring matrix (default: " << ScoringMatrices::toString(matrix_type) << ")\n"
 			<< "  -go <value> - gap open cost (default: " << gap_open << ")\n"
 			<< "  -ge <value> - gap extension cost (default: " << gap_ext << ")\n"
 			<< "  -tgo <value> - terminal gap open cost (default: " << gap_term_open << ")\n"
 			<< "  -tge <value> - terminal gap extenstion cost (default: " << gap_term_ext << ")\n"
+
+			<< "  -dist <measure> - pairwise distance measure:\n"
+			<< "      * indel_div_lcs (default)\n"
+			<< "      * indel075_div_lcs\n\n"
 
 			<< "  -gsd <value> - gap cost scaller div-term (default: " << scaler_div << ")\n"
 			<< "  -gsl <value> - gap cost scaller log-term (default: " << scaler_log << ")\n"
@@ -149,6 +166,10 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 	string aux;
 	if (findOption(params, "-refine_mode", aux)) {
 		refinement_mode = Refinement::fromString(aux);
+	}
+
+	if (findOption(params, "-sm", aux)) {
+		matrix_type = ScoringMatrices::fromString(aux);
 	}
 	 
 	// user params
@@ -202,6 +223,19 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 	}
 	gzip_level = g_lev;
 
+	float rct = 1.0;
+	if (findOption(params, "-remove-rare-columns", rct) && (rct < 0 || rct > 1))
+	{
+		LOG_NORMAL << "Incorrect rare column threshold: " << rct << " was changed to default value: " << rare_column_threshold << endl;
+		rct = rare_column_threshold;
+	}
+	
+	if (rct < 1.0)
+	{
+		remove_rare_columns = true;
+		rare_column_threshold = rct;
+	}	
+
 	keepDuplicates = findSwitch(params, "-keep-duplicates");
 		
 #ifdef DEVELOPER_MODE
@@ -215,6 +249,8 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 		
 	verbose_mode = findSwitch(params, "-v");
 	very_verbose_mode = findSwitch(params, "-vv");
+
+	findOption(params, "-stats", stats_file_name);
 	
 	// remaining parameters are positionals
 	if (params.size() < 2 || params.size() > 3) {
@@ -246,10 +282,10 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 
 	// adjust automatically
 	if (n_threads == 0) {
-		n_threads = std::thread::hardware_concurrency();
+		n_threads = std::thread::hardware_concurrency() / 2;
 		// if hardware_concurrency fails
 		if (n_threads == 0) {
-			n_threads = 8;
+			n_threads = 1;
 		}
 	}
 

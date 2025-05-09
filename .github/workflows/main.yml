@@ -9,45 +9,53 @@ on:
  
 jobs:
   
-  make-tests:
+ ########################################################################################
+  make:
     name: Make
     strategy:
+      fail-fast: false
       matrix:
         machine: [ubuntu-latest, macOS-13]
-    runs-on: ['${{ matrix.machine }}']
-    
-    env: 
-      REF_DIR: ./test/adeno_fiber
-      INPUT: ./test/adeno_fiber/adeno_fiber
- 
+        include:
+        - {machine: ubuntu-latest, gmake_install_command: 'gmake --version', compiler: 12}
+        - {machine: macOS-13, gmake_install_command: 'brew install make && gmake --version', compiler: 12}
+        
+    runs-on: ['${{ matrix.machine }}']   
+
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: recursive
-    - name: make
-      run: |
-        g++ --version
-        make -j
-        
-    - name: copy sl->slink references
-      run: |
-        cp ./test/adeno_fiber/sl.fasta ./test/adeno_fiber/slink.fasta
-        cp ./test/hemopexin/medoid-sl.fasta ./test/hemopexin/medoid-slink.fasta  
+
+    - name: install gmake
+      run: ${{ matrix.gmake_install_command }}    
     
+    - name: get tags
+      run: | 
+        cd ./libs/igraph
+        git fetch --prune --unshallow
+        echo exit code $?
+        git tag --list
+      continue-on-error: true 
+      
+    - name: make
+      run: | 
+        gmake -j CXX=g++-${{matrix.compiler}} CC=gcc-${{matrix.compiler}} STATIC_LINK=true PLATFORM=avx2
+        cp ./bin/famsa ./famsa
     - name: tar artifacts
-      run: tar -cvf famsa.tar ./famsa ./test   
+      run: tar -cvf famsa.tar ./famsa ./test/adeno_fiber/* ./test/hemopexin/*
     
     - uses: actions/upload-artifact@v4
       with:
         name: executable-artifact-${{ matrix.machine }}
         path: ./famsa.tar    
-      
-    
+        
+   
   ########################################################################################    
     
   full-tree:
     name: Full tree (adeno-fiber)
-    needs: make-tests
+    needs: make
     strategy:
       fail-fast: false
       matrix:

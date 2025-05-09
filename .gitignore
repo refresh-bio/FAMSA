@@ -9,3 +9,10 @@ FAMSA.VC.db
 *.opendb
 /.vs
 /src/famsa.vcxproj.user
+*.famsa_aln
+/famsa.stats
+/famsa0
+*.o
+/famsa
+/obj
+/bin

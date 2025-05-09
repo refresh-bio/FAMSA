@@ -9,10 +9,11 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #include <cstring>
 #include "../core/defs.h"
 
-#if SIMD==SIMD_NEON
-
-void mem_clear_neon(void* ptr, size_t size)
+#if defined(SIMD_AVX2) || defined(SIMD_AVX512)
+void mem_clear_avx2(void* ptr, size_t size)
 {
 	memset(ptr, 0, size);
 }
 #endif
+
+

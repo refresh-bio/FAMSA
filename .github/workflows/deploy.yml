@@ -14,7 +14,7 @@ jobs:
     strategy:
       matrix:
         machine: [x64_linux, x64_mac, arm64_linux, arm64_mac]
-    runs-on: [self-hosted, kmer-db, '${{ matrix.machine }}']
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
     
     steps:
     - name: clean
@@ -24,6 +24,22 @@ jobs:
       with:
         submodules: recursive
 
+  ########################################################################################
+  checkout-windows:
+    name: checkout (Windows)
+    strategy:
+      matrix:
+        machine: [x64_windows]
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
+    
+    steps:
+    - name: clean
+      run: Remove-Item -Path "${{ github.workspace }}/*" -Recurse -Force 
+
+    - uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
 ########################################################################################
   make:
     name: Make
@@ -33,35 +49,62 @@ jobs:
       matrix:
         machine: [x64_linux]
         platform: [avx2]
-        compiler: [g++-13]
-        static: [true]
+        compiler: [13]
         include:
-        - {machine: arm64_linux, platform: arm8, compiler: g++-12, static: true}
-        - {machine: x64_mac, platform: avx2, compiler: g++-13, static: false}
-        - {machine: arm64_mac, platform: m1, compiler: g++-13, static: false}
+        - {machine: arm64_linux, platform: arm8, compiler: 12}
+        - {machine: x64_mac, platform: avx2, compiler: 13}
+        - {machine: arm64_mac, platform: m1, compiler: 13}
        
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']  
         
     steps:
     - name: make 
-      run: make -j32 CXX=${{matrix.compiler}} STATIC_LINK=${{ matrix.static }} PLATFORM=${{ matrix.platform }}
+      run: gmake -j32 CXX=g++-${{matrix.compiler}} CC=gcc-${{matrix.compiler}} STATIC_LINK=true PLATFORM=${{ matrix.platform }}
     - name: tar artifacts
-      run: tar -cvzf famsa.tar.gz famsa LICENSE
+      run: tar -cvzf famsa.tar.gz LICENSE -C ./bin famsa 
+
+
+########################################################################################
+  make-windows:
+    name: Make (Windows)
+    needs: checkout-windows
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: [x64_windows]
+     
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']  
+
+    env:
+      MSBUILD: "C:/Microsoft Visual Studio/2022/Community/MSBuild/Current/Bin/MSBuild.exe"
+        
+    steps:
+    - name: make 
+      run: | 
+        & "$env:MSBUILD" FAMSA.sln /p:Configuration=Release /p:Platform=x64 /m
+    - name: tar artifacts
+      run: tar -cvzf famsa.tar.gz LICENSE -C ./x64/Release famsa.exe 
 
       
 ########################################################################################
   help:
     name: Print usage
-    needs: make
+    needs: 
+      - make
+      - make-windows
     strategy:
       fail-fast: false
       matrix:
         machine: [x64_linux, x64_mac, arm64_linux, arm64_mac]
+        exec: [./bin/famsa]
+        include:
+          - {machine: x64_windows, exec: ./x64/Release/famsa.exe}
+        
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
         
     steps:
     - name: help
-      run: ./famsa
+      run: ${{ matrix.exec }}
 
 ########################################################################################
   upload:
@@ -70,7 +113,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [x64_linux, x64_mac, arm64_linux, arm64_mac]
+        machine: [x64_linux, x64_mac, arm64_linux, arm64_mac, x64_windows]
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
     
     steps:

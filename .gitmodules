@@ -4,6 +4,9 @@
 [submodule "libs/libdeflate"]
 	path = libs/libdeflate
 	url = https://github.com/refresh-bio-dependencies/libdeflate
-[submodule "libs/atomic_wait"]
-	path = libs/atomic_wait
-	url = https://github.com/refresh-bio-dependencies/atomic_wait
+[submodule "libs/zlib-ng"]
+	path = libs/zlib-ng
+	url = https://github.com/refresh-bio-dependencies/zlib-ng.git
+[submodule "libs/isa-l"]
+	path = libs/isa-l
+	url = https://github.com/refresh-bio-dependencies/isa-l.git

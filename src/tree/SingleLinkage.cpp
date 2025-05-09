@@ -327,4 +327,4 @@ void SingleLinkage<_distance>::runPartial(std::vector<CSequence*>& sequences, tr
 // Explicit template specializations for specified distance measures
 
 template class SingleLinkage<Distance::indel_div_lcs>;
-template class SingleLinkage<Distance::sqrt_indel_div_lcs>;
+template class SingleLinkage<Distance::indel075_div_lcs>;
