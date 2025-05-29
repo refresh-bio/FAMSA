@@ -58,7 +58,7 @@ private:
 	
 public:	
 //	ScoringMatrices::matrix_type_t matrix_type = ScoringMatrices::matrix_type_t::MIQS;
-	ScoringMatrices::matrix_type_t matrix_type = ScoringMatrices::matrix_type_t::PFASUM40;
+	ScoringMatrices::matrix_type_t matrix_type = ScoringMatrices::matrix_type_t::PFASUM43;
 
 	score_t gap_open;
 	score_t gap_ext;

@@ -70,8 +70,8 @@ class ScoringMatrices
 		{	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.000000	,	-10.00000,	12	}
 		} };
 
-	// PFASUM 40
-	inline static std::array<std::array<double, 24>, 24> PFASUM40 = { {
+	// PFASUM 43
+	inline static std::array<std::array<double, 24>, 24> PFASUM43 = { {
 		{	3.602925	,	-0.945825	,	-1.150350	,	-1.229775	,	0.492375	,	-0.457575	,	-0.574350	,	0.284250	,	-1.438200	,	-0.863925	,	-0.872400	,	-0.921750	,	-0.335475	,	-1.544625	,	-0.513600	,	0.729375	,	0.063900	,	-2.088525	,	-1.773075	,	0.136200	,	-4.194675	,	-3.529575	,	-13.40048	,	-11	},
 		{	-0.945825	,	5.731950	,	0.223200	,	-0.320850	,	-2.810025	,	1.603350	,	0.711900	,	-1.578450	,	0.809250	,	-3.125925	,	-2.697225	,	2.750175	,	-1.748550	,	-3.287625	,	-0.984225	,	-0.249525	,	-0.368550	,	-1.833225	,	-1.481550	,	-2.586375	,	-3.073275	,	-1.927425	,	-13.41682	,	-11	},
 		{	-1.150350	,	0.223200	,	5.742150	,	2.227200	,	-2.314125	,	0.881700	,	0.696075	,	0.298575	,	1.008825	,	-3.707475	,	-3.654825	,	0.983700	,	-2.317875	,	-3.330300	,	-0.792675	,	1.094775	,	0.375975	,	-3.303450	,	-1.572600	,	-3.231750	,	-0.538875	,	-2.232450	,	-13.31977	,	-11	},
@@ -127,7 +127,7 @@ class ScoringMatrices
 		} };
 
 	public:
-		enum class matrix_type_t { MIQS, PFASUM31, PFASUM40, PFASUM60};
+		enum class matrix_type_t { MIQS, PFASUM31, PFASUM43, PFASUM60};
 
 		static inline std::array<std::array<double, 24>, 24>& get_matrix(const matrix_type_t matrix_type)
 		{
@@ -136,22 +136,22 @@ class ScoringMatrices
 				return MIQS;
 			case matrix_type_t::PFASUM31:
 				return PFASUM31;
-			case matrix_type_t::PFASUM40:
-				return PFASUM40;
+			case matrix_type_t::PFASUM43:
+				return PFASUM43;
 			case matrix_type_t::PFASUM60:
 				return PFASUM60;
 			default:
 				assert(0);
 			}
-			return PFASUM40;
+			return PFASUM43;
 		}
 
 		static std::string toString(matrix_type_t v) {
 			switch (v) {
 			case matrix_type_t::MIQS:		return "MIQS";
 			case matrix_type_t::PFASUM31:	return "PFASUM31";
-			case matrix_type_t::PFASUM40:	return "PFASUM40";
-			case matrix_type_t::PFASUM60:	return "PFASUM30";
+			case matrix_type_t::PFASUM43:	return "PFASUM43";
+			case matrix_type_t::PFASUM60:	return "PFASUM60";
 			default:
 				throw new std::runtime_error("Error: Illegal scoring matrix type.");
 			}
@@ -162,7 +162,7 @@ class ScoringMatrices
 		static matrix_type_t fromString(const std::string& name) {
 			if (name == "MIQS" || name == "miqs") { return matrix_type_t::MIQS; }
 			if (name == "PFASUM31" || name == "pfasum31") { return matrix_type_t::PFASUM31; }
-			if (name == "PFASUM40" || name == "pfasum40") { return matrix_type_t::PFASUM40; }
+			if (name == "PFASUM43" || name == "pfasum43") { return matrix_type_t::PFASUM43; }
 			if (name == "PFASUM60" || name == "pfasum60") { return matrix_type_t::PFASUM60; }
 
 			// something went wrong

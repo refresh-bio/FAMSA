@@ -108,7 +108,7 @@ void CParams::show_usage(bool expert)
 	if (expert) {
 		LOG_NORMAL << "Advanced options:\n"
 			<< "  -r <value> - no. of refinement iterations (default: " << n_refinements << ")\n"
-			<< "  -sm <MIQS | PFASUM31 | PFASUM40 | PFASUM60> - scoring matrix (default: " << ScoringMatrices::toString(matrix_type) << ")\n"
+			<< "  -sm <MIQS | PFASUM31 | PFASUM43 | PFASUM60> - scoring matrix (default: " << ScoringMatrices::toString(matrix_type) << ")\n"
 			<< "  -go <value> - gap open cost (default: " << gap_open << ")\n"
 			<< "  -ge <value> - gap extension cost (default: " << gap_ext << ")\n"
 			<< "  -tgo <value> - terminal gap open cost (default: " << gap_term_open << ")\n"
