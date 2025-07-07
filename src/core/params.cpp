@@ -91,17 +91,16 @@ void CParams::show_usage(bool expert)
 		<< "      * import <file> - imported from a Newick file\n"
 
 		<< "  -medoidtree - use MedoidTree heuristic for speeding up tree construction (default: disabled)\n"
-		<< "  -medoid_threshold <n_seqs> - if specified, medoid trees are used only for sets with <n_seqs> or more\n"
 		<< "  -gt_export - export a guide tree to output file in Newick format\n"
 		<< "  -dist_export - export a distance matrix to output file in CSV format\n"
 		<< "  -square_matrix - generate a square distance matrix instead of a default triangle\n"
 		<< "  -pid - generate pairwise identity (the number of matching residues divided by the shorter sequence length) instead of distance\n"
-		<< "  -keep-duplicates - keep duplicated sequences during alignment\n"
+		<< "  -keep_duplicates - keep duplicated sequences during alignment\n"
 		<< "                     (default: disabled - duplicates are removed prior and restored after the alignment).\n\n"
 
 		<< "  -gz - enable gzipped output (default: " << bool2str[gzippd_output] << ")\n"
-		<< "  -gz-lev <value> - gzip compression level [0-9] (default: " << gzip_level << ")\n"
-		<< "  -remove-rare-columns <value> - remove columns with less than <rare_column_threshold> fraction of non-gap characters\n"
+		<< "  -gz_lev <value> - gzip compression level [0-9] (default: " << gzip_level << ")\n"
+		<< "  -trim_columns <fraction> - remove columns with less <fraction> of non-gap characters\n"
 		<< "  -refine_mode <on | off | auto> - refinement mode (default: auto - the refinement is enabled for sets <= " << thr_refinement << " seq.)\n\n";
 
 		
@@ -216,7 +215,7 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 	findOption(params, "-dump_seeds", seed_file_name);
 
 	int g_lev = gzip_level;
-	if (findOption(params, "-gz-lev", g_lev) && (g_lev < 0 || g_lev > 12))
+	if ((findOption(params, "-gz-lev", g_lev) || findOption(params, "-gz_lev", g_lev)) && (g_lev < 0 || g_lev > 12))
 	{
 		LOG_NORMAL << "Incorrect gzip level: " << g_lev << " was changed to default value: " << gzip_level << endl;
 		g_lev = gzip_level;
@@ -224,7 +223,7 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 	gzip_level = g_lev;
 
 	float rct = 1.0;
-	if (findOption(params, "-remove-rare-columns", rct) && (rct < 0 || rct > 1))
+	if (findOption(params, "-trim_columns", rct) && (rct < 0 || rct > 1))
 	{
 		LOG_NORMAL << "Incorrect rare column threshold: " << rct << " was changed to default value: " << rare_column_threshold << endl;
 		rct = rare_column_threshold;
@@ -236,7 +235,7 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 		rare_column_threshold = rct;
 	}	
 
-	keepDuplicates = findSwitch(params, "-keep-duplicates");
+	keepDuplicates = findSwitch(params, "-keep-duplicates") || findSwitch(params, "-keep_duplicates");
 		
 #ifdef DEVELOPER_MODE
 	findOption(params, "-shuffle", shuffle)

@@ -348,7 +348,7 @@ public:
 		auto pc7 = seq7->data;
 		auto pc8 = seq8->data;
 
-		size_t i;
+		size_t i = 0;
 
 #if 0
 		// For some reason, this code is not faster than the one below

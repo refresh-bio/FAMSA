@@ -1,4 +1,4 @@
-# FAMSA
+# FAMSA2
 
 [![GitHub downloads](https://img.shields.io/github/downloads/refresh-bio/famsa/total.svg?style=flag&label=GitHub%20downloads)](https://github.com/refresh-bio/FAMSA/releases)
 [![Bioconda downloads](https://img.shields.io/conda/dn/bioconda/famsa.svg?style=flag&label=Bioconda%20downloads)](https://anaconda.org/bioconda/famsa)
@@ -14,19 +14,13 @@
 ![macOS](https://img.shields.io/badge/%E2%80%8B-macOS-00A98F?logo=apple)
 [![PyPI](https://img.shields.io/pypi/v/pyfamsa?label=PyFAMSA)](https://pypi.org/project/pyfamsa)
 
-Progressive algorithm for large-scale multiple sequence alignments.
+FAMSA2 is a progressive algorithm for large-scale multiple sequence alignments:
+* the entire Pfam-A v37.1 (~22 thousand families, ~62 million sequences) was analyzed in 8 hours,	
+* the family PF00005 of 3 million ABC transporters was aligned in 5 minutes and 18 GB of RAM.
 
-## New features in FAMSA 2
-* Fast guide tree heuristic called Medoid Tree (`-medoidtree` switch) for ultra-scale alignments:
-  * the entire Pfam-A v33.1 in its largest NCBI variant (over 18 thousand families, 60 GB of raw FASTA files) was analyzed in 8 hours,	
-  * the family PF00005 of 3 million ABC transporters was aligned in 5 minutes and 24 GB of RAM.
-* Remarkable time and memory optimizations - SLINK has been replaced with Prim’s minimum spanning tree algorithm when constructing default (single linkage) guide trees. NOTE: This may change quality results slightly compared to FAMSA 1 due to different ties resolution.
-* Neighbour joining guide trees (`-gt nj` option). NOTE: Neighbour joining trees are calculated with a use of original *O*(*N*<sup>3</sup>) algorithm, thus their applicability on large sets is limited (unless they are used as subtrees with Medoid Tree heuristic).
-* Support of gzipped inputs, option for gzipping output aligments (`-gz` switch).
-* Compatibility with ARM64 8 architecture (including Apple M1).
-* Duplicate removal - redundant sequences are by default removed prior the alignment and restored afterwards (feature introduced in revision 2.1.0). This can change output alignments when a family contains duplicates. The old behaviour can be obtained by using `-keep-duplicates` switch.
-* Profile-profile alignments (available by specifying two input FASTA files; introduced in revision 2.2.0).
+## Overview and features
 
+![extHomFam-SP-comparison](./img/overview.png)
 
 ## Quick start
 
@@ -115,8 +109,7 @@ Options:
     * `upgma` - UPGMA,
     * `nj` - neighbour joining,
     * `import <file>` - import from a Newick file.
-* `-medoidtree` - use MedoidTree heuristic for speeding up tree construction (default: disabled)
-* `-medoid_threshold <n_seqs>` - if specified, medoid trees are used only for sets with `n_seqs` or more
+* `-medoidtree` - use medoid tree for fast approximated guide trees (default: disabled)
 * `-gt_export` - export a guide tree to output file in the Newick format
 * `-dist_export` - export a distance matrix to output file in CSV format
 * `-square_matrix` - generate a square distance matrix instead of a default triangle
@@ -124,6 +117,7 @@ Options:
 * `-keep-duplicates` - keep duplicated sequences during alignment (default: disabled - duplicates are removed prior and restored after the alignment)
 * `-gz` - enable gzipped output (default: disabled)
 * `-gz-lev <value>` - gzip compression level [0-9] (default: 7)
+* `-trim_columns <fraction>` - remove columns with less than `fraction` of non-gap characters
 * `-refine_mode <on | off | auto>` - refinement mode (default: `auto` - the refinement is enabled for sets <= 1000 seq.)
 
 
@@ -153,37 +147,33 @@ The major algorithmic features in FAMSA are:
 * The new heuristic based on K-Medoid clustering for generating fast guide trees. Medoid trees can be calculated in *O*(*N* log*N*) time and work with all types of subtrees (single linkage, UPGMA, NJ). The heuristic can be enabled with `-medoidtree` switch and allow aligning millions of sequences in minutes.
 
 ## Experimental results
-The analysis was performed on our extHomFam 2 benchmark produced by combining Homstrad (March 2020) references with Pfam 33.1 families (NCBI variant). The data set was deposited at Zenodo: [https://zenodo.org/record/6524237](https://zenodo.org/record/6524237). The following algorithms were investigated:
+The analysis was performed on our extHomFam v37.1 benchmark produced by combining Homstrad references with Pfam v37.1 families (see Datasets section). The following algorithms were investigated:
 
 | Name  | Version  | Command line  |
 |---|---|---|
-| Clustal&Omega;  | 1.2.4 |  `clustalo --threads=32 -i <input> -o <output>` |
-| Clustal&Omega; iter2  | 1.2.4   | `clustalo --threads=32 --iter 2 -i <input> -o <output>` |
-| MAFFT PartTree  |  7.453 | `mafft --thread 32 --anysymbol --quiet --parttree <input> -o <output>` |
-| MAFFT DPPartTree  |  7.453 |  `mafft --thread 32 --anysymbol --quiet --dpparttree <input> -o <output>` |
-| Kalign3 | 3.3.2 | `kalign -i <input> -o <output>` | 
-| FAMSA  | 1.6.2  | `famsa -t 32 <input> <output>`  |
-| FAMSA 2 | 2.0.1  | `famsa -t 32 -gz <input> <output>`  |
-| FAMSA 2 Medoid | 2.0.1  | `famsa -t 32 -medoidtree -gt upgma -gz <input> <output>`  |
+| Clustal&Omega;  | 1.2.4 |  `./clustalo --threads=32 -i <input> -o <output>` |
+| MAFFT DPPartTree  |  7.526 |  `./mafft --thread 32 --anysymbol --quiet --dpparttree <input> -o <output>` |
+| Kalign3 | 3.4.1 | `./kalign --type protein -n 32 -f fasta -i <input> -o <output>` | 
+| Muscle5 | 5.3 | `./muscle -super5 <input> -output <output> --threads 32` |
+| T-Coffee regressive | 13.46.0.919e8c6b |  `./clustalo --threads=32 -i <input> --guidetree-out <guide_tree> --force -o /dev/null`<br>`./t_coffee -reg -reg_method mafftsparsecore_msa -reg_tree <guide_tree> -seq <input> -reg_nseq 100 -reg_thread 32 -outfile <output>` |
+| FAMSA  | 1.1  | `./famsa -t 32 <input> <output>`  |
+| FAMSA 2 | 2.4.1  | `./famsa -t 32 -gz <input> <output>`  |
+| FAMSA 2 Medoid | 2.4.1  | `./famsa -t 32 -medoidtree -gz <input> <output>`  |
 
 
-The tests were performed with 32 computing threads on a machine with AMD Ryzen Threadripper 3990X CPU and 256 GB of RAM. For each extHomFam 2 subset we measured a fraction of properly aligned columns (TC score) as well as a total running time and a maximum memory requirements. The results are presented in the figure below. Notches at boxplots indicate 95% confidence interval for median, triangle represent means. The missing series for some algorithm-set pairs indicate that the running times exceeded a week. Kalign3 failed to process 10 families (5 in second, 3 in fourth, and 2 in the largest subset). FAMSA 2 alignments were stored in gzip format (`-gz` switch). 
+The tests were performed with 32 computing threads on a machine with AMD Epyc 9554 CPU and 1152 GiB (approx. 1237 GB) of RAM. We measured a fraction of properly aligned residue pairs and columns (SP and TC scores, respectively) as well as a total running time and a peak memory usage. The results are presented in the figure below. Notches at boxplots indicate 95% confidence interval for median, triangle represent means. FAMSA 2 alignments were stored in gzip format (`-gz` switch). 
 
-![extHomFam-v2-TC-comparison](https://user-images.githubusercontent.com/14868954/171652224-af88d980-5b49-4dcc-95e7-4de5dc152fb3.png)
+![extHomFam-SP-comparison](./img/extHomFam.png)
 
 
-The most important observations are as follows: 
-* FAMSA 2 was superior in terms of accuracy to all the competitors. Only on the smallest families (*N* < 10k) Clustal&Omega; kept up with our algorithm.
-* The advantage of FAMSA 2 increased with the number of sequences and reached 20-30 percent points for (100k, 250k] subset. 
-* FAMSA 2 with medoid trees offered astonishing throughput (a familiy PF00005 of 3 million ABC transporters was aligned in 5 minutes) with accuracy only slightly inferior to that of the default single linkage trees.
-* None of the competing algorithms was able to complete all the families in the largest [250k, 3M) subset.
-* The memory requirements of FAMSA 2 allow ultra-scale analyzes at a desktop computer (24 GB for 3M sequences).
+
 
 ## Datasets
 
 Benchmark data sets developed and used in the FAMSA study:
 * extHomFam: [https://doi.org/10.7910/DVN/BO2SVW](https://doi.org/10.7910/DVN/BO2SVW)
 * extHomFam 2: [https://zenodo.org/record/6524237](https://zenodo.org/record/6524237)
+* extHomFam v37.1: 
 
 ## Citing
 [Deorowicz, S., Debudaj-Grabysz, A., Gudyś, A. (2016) FAMSA: Fast and accurate multiple sequence alignment of huge protein families. 
