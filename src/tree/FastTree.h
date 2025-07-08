@@ -30,8 +30,10 @@ public:
 		instruction_set_t instruction_set,
 		std::shared_ptr<IPartialGenerator> partialGenerator, 
 		int subtreeSize,
-		std::shared_ptr<IClustering> clustering,
-		int sampleSize);
+		int sampleSize,
+		int numEvaluations,
+		int threshold,
+		std::shared_ptr<IClustering> clustering);
 
 	virtual void run(std::vector<CSequence*>& sequences, tree_structure& tree) override;
 
@@ -42,9 +44,10 @@ public:
 protected:
 	std::shared_ptr<IPartialGenerator> partialGenerator;
 	int subtreeSize;
-	std::shared_ptr<IClustering> clustering;
 	int sampleSize;
-	int clusteringThreshold;
+	int numEvaluations;
+	int threshold;
+	std::shared_ptr<IClustering> clustering;
 
 	std::vector<std::shared_ptr<IFastTreeObserver>> observers;
 
@@ -61,5 +64,13 @@ protected:
 		int n_seeds,
 		int n_samples,
 		int * seed_ids,
-		float * similarity_row);
+		float * similarity_row,
+		uint32_t seed);
+
+	float makeEvaluation(
+		std::vector<CSequence*>& sequences,
+		int eval_num,
+		int & nseeds,
+		int*& seed_ids,
+		int*& assignments);
 };

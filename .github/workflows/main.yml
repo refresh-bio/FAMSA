@@ -135,7 +135,7 @@ jobs:
         
     - name: medoid + ${{matrix.tree}}  (non-default params)
       run: |
-        ./famsa -medoidtree -gt ${{matrix.tree}} -gt_export -subtree_size 10 -sample_size 100 -cluster_fraction 0.2 -cluster_iters 1 ${INPUT} medoid-${{matrix.tree}}-params.dnd
+        ./famsa -medoidtree -gt ${{matrix.tree}} -gt_export -subtree_size 10 -sample_size 100 -medoid_threshold 100 -cluster_fraction 0.2 -cluster_iters 1 ${INPUT} medoid-${{matrix.tree}}-params.dnd
         cmp  medoid-${{matrix.tree}}-params.dnd ${REF_DIR}/medoid-${{matrix.tree}}-params.dnd
         
   ########################################################################################        

@@ -272,7 +272,7 @@ jobs:
         
     - name: medoid + ${{matrix.tree}}  (non-default params)
       run: |
-        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} -gt_export -subtree_size 10 -sample_size 100 -cluster_fraction 0.2 -cluster_iters 1 ./test/${{matrix.INPUT}}/${{matrix.INPUT}} medoid-${{matrix.tree}}-params.dnd
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} -gt_export -subtree_size 10 -sample_size 100 -medoid_threshold 100 -cluster_fraction 0.2 -cluster_iters 1 ./test/${{matrix.INPUT}}/${{matrix.INPUT}} medoid-${{matrix.tree}}-params.dnd
         ${{matrix.wsl}} diff --strip-trailing-cr  medoid-${{matrix.tree}}-params.dnd ./test/${{matrix.INPUT}}/medoid-${{matrix.tree}}-params.dnd
   
   ########################################################################################    

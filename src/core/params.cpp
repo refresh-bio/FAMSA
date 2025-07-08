@@ -200,11 +200,13 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 		gt_heuristic = GT::ClusterTree;
 	}
 
-	findOption(params, "-medoid_threshold", heuristic_threshold);
-	findOption(params, "-subtree_size", subtree_size);
-	findOption(params, "-sample_size", sample_size);
-	findOption(params, "-cluster_fraction", cluster_fraction);
-	findOption(params, "-cluster_iters", cluster_iters);
+	findOption(params, "-medoid_threshold", medoid.threshold);
+	findOption(params, "-subtree_size", medoid.subtree_size);
+	findOption(params, "-sample_size", medoid.sample_size);
+	findOption(params, "-num_evals", medoid.num_evaluations);
+	findOption(params, "-cluster_fraction", medoid.cluster_fraction);
+	findOption(params, "-cluster_iters", medoid.cluster_iters);
+
 
 	export_tree = findSwitch(params, "-gt_export");
 	export_distances = findSwitch(params, "-dist_export");

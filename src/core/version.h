@@ -9,14 +9,18 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"2.4.1"
-#define FAMSA_DATE		"2025-05-09"
+#define FAMSA_VER		"2.5.0"
+#define FAMSA_DATE		"2025-07-07"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+2.5.0 (2025-07-07)
+- Updated seed selection in medoid clustering. 
+
 2.4.1 (2025-05-09)
 - Added AVX512 support.
 - Added gzipped inputs support.

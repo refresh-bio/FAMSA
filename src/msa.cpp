@@ -83,7 +83,7 @@ void CFAMSA::initScoreMatrix()
 void CFAMSA::adjustParams(int n_seqs)
 {
 
-	if ((params.gt_heuristic != GT::None) && (n_seqs < params.sample_size)) {
+	if ((params.gt_heuristic != GT::None) && (n_seqs < params.medoid.threshold)) {
 		params.gt_heuristic = GT::None;
 	}
 
@@ -179,7 +179,7 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 		// part-tree versus medoid-tree
 		shared_ptr<IClustering> clustering = (params.gt_heuristic == GT::PartTree)
 			? nullptr
-			: make_shared<CLARANS>(params.cluster_fraction, params.cluster_iters);
+			: make_shared<CLARANS>(params.medoid.cluster_fraction, params.medoid.cluster_iters);
 
 		// local seed dumper
 		class SeedDumper : public IFastTreeObserver {
@@ -205,9 +205,11 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 				params.n_threads,
 				params.instruction_set,
 				dynamic_pointer_cast<IPartialGenerator>(gen),
-				params.subtree_size,
-				clustering,
-				params.sample_size);
+				params.medoid.subtree_size,
+				params.medoid.sample_size,
+				params.medoid.num_evaluations,
+				params.medoid.threshold,
+				clustering);
 
 			gen = ft;
 
@@ -220,9 +222,11 @@ std::shared_ptr<AbstractTreeGenerator> CFAMSA::createTreeGenerator(const CParams
 				params.n_threads,
 				params.instruction_set,
 				dynamic_pointer_cast<IPartialGenerator>(gen),
-				params.subtree_size,
-				clustering,
-				params.sample_size);
+				params.medoid.subtree_size,
+				params.medoid.sample_size,
+				params.medoid.num_evaluations,
+				params.medoid.threshold,
+				clustering);
 
 			gen = ft;
 

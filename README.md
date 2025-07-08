@@ -15,7 +15,7 @@
 [![PyPI](https://img.shields.io/pypi/v/pyfamsa?label=PyFAMSA)](https://pypi.org/project/pyfamsa)
 
 FAMSA2 is a progressive algorithm for large-scale multiple sequence alignments:
-* the entire Pfam-A v37.1 (~22 thousand families, ~62 million sequences) was analyzed in 8 hours,	
+* the entire Pfam-A v37.0 (~22 thousand families, ~62 million sequences) was analyzed in 8 hours,	
 * the family PF00005 of 3 million ABC transporters was aligned in 5 minutes and 18 GB of RAM.
 
 ## Overview and features
@@ -114,9 +114,9 @@ Options:
 * `-dist_export` - export a distance matrix to output file in CSV format
 * `-square_matrix` - generate a square distance matrix instead of a default triangle
 * `-pid` - calculate percent identity (the number of matching residues divided by the shorter sequence length) instead of distance
-* `-keep-duplicates` - keep duplicated sequences during alignment (default: disabled - duplicates are removed prior and restored after the alignment)
+* `-keep_duplicates` - keep duplicated sequences during alignment (default: disabled - duplicates are removed prior and restored after the alignment)
 * `-gz` - enable gzipped output (default: disabled)
-* `-gz-lev <value>` - gzip compression level [0-9] (default: 7)
+* `-gz_lev <value>` - gzip compression level [0-9] (default: 7)
 * `-trim_columns <fraction>` - remove columns with less than `fraction` of non-gap characters
 * `-refine_mode <on | off | auto>` - refinement mode (default: `auto` - the refinement is enabled for sets <= 1000 seq.)
 
@@ -147,7 +147,7 @@ The major algorithmic features in FAMSA are:
 * The new heuristic based on K-Medoid clustering for generating fast guide trees. Medoid trees can be calculated in *O*(*N* log*N*) time and work with all types of subtrees (single linkage, UPGMA, NJ). The heuristic can be enabled with `-medoidtree` switch and allow aligning millions of sequences in minutes.
 
 ## Experimental results
-The analysis was performed on our extHomFam v37.1 benchmark produced by combining Homstrad references with Pfam v37.1 families (see Datasets section). The following algorithms were investigated:
+The analysis was performed on our extHomFam v37.0 benchmark produced by combining Homstrad references with Pfam v37.0 families (see Data sets section). The following algorithms were investigated:
 
 | Name  | Version  | Command line  |
 |---|---|---|
@@ -157,23 +157,23 @@ The analysis was performed on our extHomFam v37.1 benchmark produced by combinin
 | Muscle5 | 5.3 | `./muscle -super5 <input> -output <output> --threads 32` |
 | T-Coffee regressive | 13.46.0.919e8c6b |  `./clustalo --threads=32 -i <input> --guidetree-out <guide_tree> --force -o /dev/null`<br>`./t_coffee -reg -reg_method mafftsparsecore_msa -reg_tree <guide_tree> -seq <input> -reg_nseq 100 -reg_thread 32 -outfile <output>` |
 | FAMSA  | 1.1  | `./famsa -t 32 <input> <output>`  |
-| FAMSA 2 | 2.4.1  | `./famsa -t 32 -gz <input> <output>`  |
-| FAMSA 2 Medoid | 2.4.1  | `./famsa -t 32 -medoidtree -gz <input> <output>`  |
+| FAMSA2 | 2.4.1  | `./famsa -t 32 -gz <input> <output>`  |
+| FAMSA2 Medoid | 2.4.1  | `./famsa -t 32 -medoidtree -gz <input> <output>`  |
 
 
-The tests were performed with 32 computing threads on a machine with AMD Epyc 9554 CPU and 1152 GiB (approx. 1237 GB) of RAM. We measured a fraction of properly aligned residue pairs and columns (SP and TC scores, respectively) as well as a total running time and a peak memory usage. The results are presented in the figure below. Notches at boxplots indicate 95% confidence interval for median, triangle represent means. FAMSA 2 alignments were stored in gzip format (`-gz` switch). 
+The tests were performed with 32 computing threads on a machine with AMD Epyc 9554 CPU and 1152 GiB (approx. 1237 GB) of RAM. We measured a fraction of properly aligned residue pairs and columns (SP and TC scores, respectively) as well as a total running time and a peak memory usage. The results are presented in the figure below. Notches at boxplots indicate 95% confidence interval for median, triangle represent means. FAMSA2 alignments were stored in gzip format (`-gz` switch). 
 
 ![extHomFam-SP-comparison](./img/extHomFam.png)
 
 
+## Data sets
 
+Data sets developed and used in the FAMSA2 study:
+* extHomFam v37.0: [https://doi.org/10.5281/zenodo.6524236](https://doi.org/10.5281/zenodo.6524236)
 
-## Datasets
-
-Benchmark data sets developed and used in the FAMSA study:
-* extHomFam: [https://doi.org/10.7910/DVN/BO2SVW](https://doi.org/10.7910/DVN/BO2SVW)
+Older data sets:
 * extHomFam 2: [https://zenodo.org/record/6524237](https://zenodo.org/record/6524237)
-* extHomFam v37.1: 
+* extHomFam: [https://doi.org/10.7910/DVN/BO2SVW](https://doi.org/10.7910/DVN/BO2SVW)
 
 ## Citing
 [Deorowicz, S., Debudaj-Grabysz, A., Gudyś, A. (2016) FAMSA: Fast and accurate multiple sequence alignment of huge protein families. 

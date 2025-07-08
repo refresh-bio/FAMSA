@@ -25,15 +25,18 @@ FastTree<_distance>::FastTree(
 	instruction_set_t instruction_set,
 	std::shared_ptr<IPartialGenerator> partialGenerator, 
 	int subtreeSize, 
-	std::shared_ptr<IClustering> clustering,
-	int sampleSize)
+	int sampleSize,
+	int numEvaluations,
+	int threshold,
+	std::shared_ptr<IClustering> clustering)
 	: 
 		AbstractTreeGenerator(n_threads, instruction_set),
 		partialGenerator(partialGenerator),
 		subtreeSize(subtreeSize),
-		clustering(clustering),
 		sampleSize(sampleSize),
-		clusteringThreshold(3 * subtreeSize)
+		numEvaluations(numEvaluations),
+		threshold(threshold),
+		clustering(clustering)
 {}
 
 
@@ -53,45 +56,65 @@ template <Distance _distance>
 void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_structure& tree, int previousTop, bool parallel, int depth)
 {
 	int n_seqs = (int)sequences.size();
-	CLCSBP lcsbp(instruction_set);
-	Transform<float, _distance> transform;
 
-	if ((!clustering && n_seqs > subtreeSize) || (clustering && n_seqs > sampleSize)) {
 
-		float* dists = new float[sequences.size() * 2]; // second row will be used later
-		int* seed_ids = new int[subtreeSize];
+	if ((!clustering && n_seqs > subtreeSize) || (clustering && n_seqs > threshold)) {
 
-		float* dist_row = dists;
-		int n_seeds;
+		int* seed_ids = nullptr;
+		int* assignments = nullptr;
+		float best_cost = std::numeric_limits<float>::max();
+		int best_eval = -1;
+		int n_seeds = -1;
 
-		if (clustering == nullptr) {
-			n_seeds = randomSeeds(sequences, subtreeSize, seed_ids, dist_row);
+		std::vector<int*> v_seed_ids(numEvaluations);
+		std::vector<int*> v_assignments(numEvaluations);
+		std::vector<int> v_n_seeds(numEvaluations);
+		std::vector<float> costs(numEvaluations);
+		
+		if (false) {
+			std::vector<std::thread> workers(numEvaluations);
+			
+			for (int eval = 0; eval < numEvaluations; ++eval) {
+				workers[eval] = std::thread([this, &sequences, eval, &v_n_seeds, &v_seed_ids, &v_assignments, &costs]() {
+					costs[eval] = this->makeEvaluation(sequences, eval, v_n_seeds[eval], v_seed_ids[eval], v_assignments[eval]);
+				});
+			}
+
+			for (int eval = 0; eval < numEvaluations; ++eval) {
+				workers[eval].join();
+			}
+
 		}
 		else {
-			n_seeds = clusterSeeds(sequences, subtreeSize, sampleSize, seed_ids, dist_row);
+			for (int eval = 0; eval < numEvaluations; ++eval) {
+				costs[eval] = makeEvaluation(sequences, eval, v_n_seeds[eval], v_seed_ids[eval], v_assignments[eval]);
+			}
+		}
+	
+
+		// gather results
+		for (int eval = 0; eval < numEvaluations; ++eval) {
+			if (costs[eval] < best_cost) {
+				delete[] assignments;
+				delete[] seed_ids;
+
+				best_cost = costs[eval];
+				best_eval = eval;
+
+				assignments = v_assignments[eval];
+				seed_ids = v_seed_ids[eval];
+				n_seeds = v_n_seeds[eval];
+			}
+			else {
+				delete[] v_assignments[eval];
+				delete[] v_seed_ids[eval];
+			}
 		}
 
-		//
-		// Clustering 
-		//
-		// assume all sequences are clustered to 0'th seed at the beginning
+
 		std::vector<CSequence*> seeds(n_seeds);
-		int* assignments = new int[n_seqs];
-		std::fill_n(assignments, n_seqs, 0);
-
-		// make assignments of all sequences to seeds
-		float* current_row = dists + n_seqs;
-		seeds[0] = sequences[seed_ids[0]];
-		for (int k = 1; k < n_seeds; ++k) {
+		for (int k = 0; k < n_seeds; ++k) {
 			seeds[k] = sequences[seed_ids[k]];
-			calculateDistanceVector<CSequence*, float, decltype(transform)>(transform, seeds[k], sequences.data(), n_seqs, current_row, lcsbp);
-
-			for (int j = 0; j < n_seqs; ++j) {
-				if (current_row[j] < dist_row[j]) { 	// use dist_row for storing smallest distances 
-					dist_row[j] = current_row[j];
-					assignments[j] = k;
-				}
-			}
 		}
 
 		// notify observers
@@ -122,8 +145,7 @@ void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_struct
 		delete[] histogram;
 		delete[] assignments;
 		delete[] seed_ids;
-		delete[] dists;
-
+		
 		// process child nodes
 		std::vector<int> subroots(seeds.size(), -1);
 
@@ -246,6 +268,70 @@ void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_struct
 
 // *******************************************************************
 template <Distance _distance>
+float FastTree<_distance>::makeEvaluation(
+	std::vector<CSequence*>& sequences,
+	int eval_num,
+	int& n_seeds,
+	int* & seed_ids,
+	int* & assignments)
+{
+
+	CLCSBP lcsbp(instruction_set);
+	Transform<float, _distance> transform;
+	
+	size_t n_seqs = sequences.size();
+	float* dists = new float[sequences.size() * 2]; // second row will be used later
+	seed_ids = new int[subtreeSize];
+
+	float* dist_row = dists;
+
+	uint32_t seed = (eval_num == 0)
+		? std::mt19937::default_seed
+		: std::hash<uint32_t>()((uint32_t)eval_num);
+	
+	if (clustering == nullptr) {
+		n_seeds = randomSeeds(sequences, subtreeSize, seed_ids, dist_row);
+	}
+	else {
+		n_seeds = clusterSeeds(sequences, subtreeSize, sampleSize, seed_ids, dist_row, seed);
+	}
+
+	//
+	// Clustering 
+	//
+	// assume all sequences are clustered to 0'th seed at the beginning
+	assignments = new int[n_seqs];
+	std::fill_n(assignments, n_seqs, 0);
+
+	// make assignments of all sequences to seeds
+	float* current_row = dists + n_seqs;
+	// there are already distances to 0'th seed 
+	for (int k = 1; k < n_seeds; ++k) {
+		calculateDistanceVector<CSequence*, float, decltype(transform)>(
+			transform,
+			sequences[seed_ids[k]],
+			sequences.data(),
+			n_seqs,
+			current_row,
+			lcsbp);
+
+		for (int j = 0; j < n_seqs; ++j) {
+			if (current_row[j] < dist_row[j]) { 	// use dist_row for storing smallest distances 
+				dist_row[j] = current_row[j];
+				assignments[j] = k;
+			}
+		}
+	}
+
+	float cost = std::accumulate(dist_row, dist_row + n_seqs, 0.0f);
+	
+	delete[] dists;
+
+	return cost;
+}
+
+// *******************************************************************
+template <Distance _distance>
 int FastTree<_distance>::randomSeeds(
 	std::vector<CSequence*>& sequences,
 	int n_seeds,
@@ -282,7 +368,9 @@ int FastTree<_distance>::clusterSeeds(
 	int n_seeds,
 	int n_samples,
 	int * seed_ids,
-	float * dist_row)
+	float * dist_row,
+	uint32_t seed
+	)
 {
 	CLCSBP lcsbp(instruction_set);
 	int n_seqs = (int)sequences.size();
@@ -293,6 +381,7 @@ int FastTree<_distance>::clusterSeeds(
 	Transform<float, _distance> transform;
 
 	// calculate distances 0'th (longest) vs all (first row)
+	//CSequence ref(sequences[0]);
 	calculateDistanceVector<CSequence*, float, decltype(transform)>(transform, sequences[0], sequences.data(), (int) n_seqs, dist_row, lcsbp);
 
 	if (n_samples >= n_seqs) {
@@ -302,7 +391,7 @@ int FastTree<_distance>::clusterSeeds(
 	}
 	else {
 
-		std::mt19937 mt;
+		std::mt19937 mt(seed);
 		int* randomIds = new int[n_seqs];
 		std::iota(randomIds, randomIds + n_seqs, 0);
 		partial_shuffle(randomIds + 1, randomIds + n_samples, randomIds + n_seqs, mt);

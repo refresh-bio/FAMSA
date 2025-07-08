@@ -82,13 +82,20 @@ public:
 	GT::Heuristic gt_heuristic		= GT::None;
 //	Distance distance				= Distance::indel_div_lcs;
 	Distance distance				= Distance::indel075_div_lcs;
-	int heuristic_threshold			= 0;
 	
 	int guide_tree_seed				= 0;
-	int subtree_size				= 100;
-	int sample_size					= 2000;
-	float cluster_fraction			= 0.1f;
-	int cluster_iters				= 2;
+
+	struct {
+		int subtree_size = 100;
+		int sample_size = 2000;
+		int num_evaluations = 1;
+		int threshold = 2000;
+
+		float cluster_fraction = 0.1f;
+		int cluster_iters = 2;
+
+	} medoid;
+
 
 	string guide_tree_in_file;
 	bool export_distances				= false;
