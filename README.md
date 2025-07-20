@@ -166,15 +166,21 @@ The tests were performed with 32 computing threads on a machine with AMD Epyc 95
 ![extHomFam-SP-comparison](./img/extHomFam.png)
 
 
-## Data sets
+## Datasets
 
-Data sets developed and used in the FAMSA2 study:
-* extHomFam v37.0: [https://doi.org/10.5281/zenodo.6524236](https://doi.org/10.5281/zenodo.6524236)
+Datasets developed and used in the FAMSA2 study:
+* extHomFam v37.0: structure-based benchmark combining Pfam v37.0 families with Homstrad reference alignments ([https://doi.org/10.5281/zenodo.6524236](https://doi.org/10.5281/zenodo.6524236))
+* afdb_clusters v1.0: AlphaFold-derived structure-based benchmark ([https://zenodo.org/records/16082639](https://zenodo.org/records/16082639))
+* simulated_msa v1.0: simulated multiple sequence alignments with known phylogenies ([https://zenodo.org/records/15971353](https://zenodo.org/records/15971353))
+* active_sites v1.0: enzyme domain sequences with annotated active sites from Pfam v37.1 ([https://zenodo.org/records/16023627](https://zenodo.org/records/16023627))
 
-Older data sets:
+Older datasets:
 * extHomFam 2: [https://zenodo.org/record/6524237](https://zenodo.org/record/6524237)
 * extHomFam: [https://doi.org/10.7910/DVN/BO2SVW](https://doi.org/10.7910/DVN/BO2SVW)
 
 ## Citing
+
+[Gudyś, A., Zieleziński, A., Notredame, C., Deorowicz, S. (2025) bioRxiv, doi: https://doi.org/10.1101/2025.07.15.664876](https://doi.org/10.1101/2025.07.15.664876)
+
 [Deorowicz, S., Debudaj-Grabysz, A., Gudyś, A. (2016) FAMSA: Fast and accurate multiple sequence alignment of huge protein families. 
 Scientific Reports, 6, 33964](https://www.nature.com/articles/srep33964)
