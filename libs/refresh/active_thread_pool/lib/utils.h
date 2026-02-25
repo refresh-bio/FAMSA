@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cinttypes>
+#include <thread>
 
 namespace refresh
 {
@@ -14,6 +15,14 @@ namespace refresh
 			_mm_pause();
 #elif defined(__aarch64__)
 			std::this_thread::yield();
+#elif defined(__riscv) && (__riscv_xlen == 64)
+    #if defined(__riscv_zihintpause)
+			// Use the RISC-V pause hint if available
+			__asm__ __volatile__("pause");
+    #else
+			// Fallback: yield to scheduler to reduce power while spinning
+			std::this_thread::yield();
+    #endif
 #else
 			__builtin_ia32_pause();
 			//			_mm_pause();

@@ -618,37 +618,37 @@ define CHECK_OS_ARCH
 	$(if $(shell grep -q 'avx512' /proc/cpuinfo && echo yes),$(eval CPU_EXTENSIONS_DEFS+=-DSIMD_AVX512),)
 	$(if $(shell grep -q 'neon' /proc/cpuinfo && echo yes),$(eval CPU_EXTENSIONS_DEFS+=-DSIMD_NEON),)
 
-	$(if $(filter arm8,$(1)), \
-		$(eval ARCH_FLAGS:=-march=armv8-a -DARCH_ARM) \
-		$(info *** ARMv8 with NEON extensions ***), \
-		$(if $(filter m1,$(1)), \
-			$(eval ARCH_FLAGS:=-march=armv8.4-a -DARCH_ARM -DSIMD_NEON) \
-			$(info *** Apple M1 (or newer) with NEON extensions ***), \
-			$(if $(filter sse2,$(1)), \
-				$(eval ARCH_FLAGS:=-msse2 -m64 -DARCH_X64 -DSIMD_SSE2) \
-				$(info *** x86-64 with SSE2 extensions ***), \
-				$(if $(filter avx,$(1)), \
-					$(eval ARCH_FLAGS:=-mavx -m64 -DARCH_X64 -DSIMD_AVX) \
-					$(info *** x86-64 with AVX extensions ***), \
-					$(if $(filter avx2,$(1)), \
-						$(eval ARCH_FLAGS:=-mavx2 -m64 -DARCH_X64 -DSIMD_AVX2) \
-						$(info *** x86-64 with AVX2 extensions ***), \
-						$(if $(filter avx512,$(1)), \
-							$(eval ARCH_FLAGS:=-mavx512f -mavx512dq -m64 -DARCH_X64 -DSIMD_AVX512) \
-							$(info *** x86-64 with AVX512 extensions ***), \
-							$(if $(filter generic,$(1)), \
-								$(if $(filter x86_64,$(ARCH_TYPE)), \
-									$(eval ARCH_FLAGS:=-DARCH_X64) \
-									$(info *** Unspecified platform - using generic compilation for x86_64 ***), \
-									$(eval ARCH_FLAGS:=-DARCH_ARM) \
-									$(info *** Unspecified platform - using generic compilation for ARM ***)), \
-								$(if $(filter x86_64,$(ARCH_TYPE)), \
-									$(eval ARCH_FLAGS:=-march=native -DARCH_X64) \
-									$(eval ARCH_FLAGS+=$(CPU_EXTENSIONS_DEFS)) \
-									$(info *** Unspecified platform - using native compilation for x86_64 ***), \
-									$(eval ARCH_FLAGS:=-march=native -DARCH_ARM -DSIMD_NEON) \
-									$(eval ARCH_FLAGS+=$(CPU_EXTENSIONS_DEFS)) \
-									$(info *** Unspecified platform - using native compilation for ARM ***)))))))))
+	# Simplified platform selection to avoid deep nested if() causing syntax errors
+	$(eval PLATFORM_ARG:=$(strip $(1)))
+	# Explicit targets
+	$(if $(filter rv64gcv,$(PLATFORM_ARG)),$(eval ARCH_FLAGS:=-march=rv64gcv -mabi=lp64d -DARCH_RISCV -DSIMD_RVV) $(info *** RISC-V rv64gcv (vector) ***),)
+	$(if $(and $(filter rv64g,$(PLATFORM_ARG)),$(filter-out rv64gcv,$(PLATFORM_ARG))),$(eval ARCH_FLAGS:=-march=rv64g -mabi=lp64d -DARCH_RISCV) $(info *** RISC-V rv64g (scalar) ***),)
+	$(if $(filter arm8,$(PLATFORM_ARG)),$(eval ARCH_FLAGS:=-march=armv8-a -DARCH_ARM) $(info *** ARMv8 ***),)
+	$(if $(filter m1,$(PLATFORM_ARG)),$(eval ARCH_FLAGS:=-march=armv8.4-a -DARCH_ARM -DSIMD_NEON) $(info *** Apple M1/ARMv8.4 ***),)
+	$(if $(filter sse2,$(PLATFORM_ARG)),$(eval ARCH_FLAGS:=-msse2 -m64 -DARCH_X64 -DSIMD_SSE2) $(info *** x86_64 SSE2 ***),)
+	$(if $(filter avx,$(PLATFORM_ARG)),$(eval ARCH_FLAGS:=-mavx -m64 -DARCH_X64 -DSIMD_AVX) $(info *** x86_64 AVX ***),)
+	$(if $(filter avx2,$(PLATFORM_ARG)),$(eval ARCH_FLAGS:=-mavx2 -m64 -DARCH_X64 -DSIMD_AVX2) $(info *** x86_64 AVX2 ***),)
+	$(if $(filter avx512,$(PLATFORM_ARG)),$(eval ARCH_FLAGS:=-mavx512f -mavx512dq -m64 -DARCH_X64 -DSIMD_AVX512) $(info *** x86_64 AVX512 ***),)
+	# Generic build
+	$(if $(filter generic,$(PLATFORM_ARG)), \
+		$(if $(filter x86_64,$(ARCH_TYPE)),$(eval ARCH_FLAGS:=-DARCH_X64) $(info *** generic x86_64 ***), \
+			$(if $(filter aarch64 arm%,$(ARCH_TYPE)),$(eval ARCH_FLAGS:=-DARCH_ARM -DSIMD_NEON) $(info *** generic ARM ***), \
+				$(if $(filter riscv64,$(ARCH_TYPE)),$(eval ARCH_FLAGS:=-DARCH_RISCV) $(info *** generic RISC-V ***),) \
+			) \
+		) \
+	,)
+	# Native fallback if still empty
+	$(if $(ARCH_FLAGS),, \
+		$(if $(filter x86_64,$(ARCH_TYPE)),$(eval ARCH_FLAGS:=-march=native -DARCH_X64 $(CPU_EXTENSIONS_DEFS)) $(info *** native x86_64 ***), \
+			$(if $(filter aarch64 arm%,$(ARCH_TYPE)),$(eval ARCH_FLAGS:=-march=native -DARCH_ARM -DSIMD_NEON $(CPU_EXTENSIONS_DEFS)) $(info *** native ARM ***), \
+				$(if $(filter riscv64,$(ARCH_TYPE)),$(eval ARCH_FLAGS:=-march=rv64g -mabi=lp64d -DARCH_RISCV) $(info *** native RISC-V rv64g ***),) \
+			) \
+		) \
+	)
+	# Auto-detect RVV if riscv64 native and vector present and not forced scalar
+	$(if $(and $(filter riscv64,$(ARCH_TYPE)),$(filter-out rv64gcv,$(PLATFORM_ARG))), \
+		$(if $(shell grep -qi 'rvv' /proc/cpuinfo && echo yes),$(eval ARCH_FLAGS:=-march=rv64gcv -mabi=lp64d -DARCH_RISCV -DSIMD_RVV) $(info *** auto RVV enabled ***),) \
+	)
 	
 	$(if $(filter Darwin,$(OS_TYPE)), \
 		$(eval SDK_PATH:=$(shell $(CXX) -v 2>&1 | grep -- '--with-sysroot' | sed -E 's/.*--with-sysroot=([^ ]+).*/\1/')) \

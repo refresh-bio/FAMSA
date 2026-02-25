@@ -3,9 +3,10 @@ all: famsa
 # *** REFRESH makefile utils
 include refresh.mk
 
-$(call INIT_SUBMODULES)
-$(call INIT_GLOBALS)
-$(call CHECK_OS_ARCH, $(PLATFORM))
+$(eval $(call INIT_SUBMODULES))
+$(eval $(call INIT_GLOBALS))
+$(eval $(call CHECK_OS_ARCH,$(PLATFORM)))
+
 
 # *** Project directories
 $(call SET_SRC_OBJ_BIN,src,obj,bin)
@@ -29,6 +30,7 @@ $(call SET_FLAGS, $(TYPE))
 
 $(call SET_COMPILER_VERSION_ALLOWED, GCC, Linux_x86_64, 11, 20)
 $(call SET_COMPILER_VERSION_ALLOWED, GCC, Linux_aarch64, 11, 20)
+$(call SET_COMPILER_VERSION_ALLOWED, GCC, Linux_riscv64, 11, 20)
 $(call SET_COMPILER_VERSION_ALLOWED, GCC, Darwin_x86_64, 11, 13)
 $(call SET_COMPILER_VERSION_ALLOWED, GCC, Darwin_arm64, 11, 13)
 
@@ -62,7 +64,7 @@ $(OBJ_SIMD_DIR)/utils_avx.cpp.o: $(SRC_SIMD_DIR)/utils_avx.cpp
 $(OBJ_SIMD_DIR)/utils_avx2.cpp.o: $(SRC_SIMD_DIR)/utils_avx2.cpp
 	@mkdir -p $(OBJ_SIMD_DIR)
 	$(CXX) $(CPP_FLAGS_AVX2) $(OPTIMIZATION_FLAGS) $(ARCH_FLAGS) $(INCLUDE_DIRS) -MMD -MF $@.d -c $< -o $@
-else
+else ifeq ($(ARCH_TYPE),aarch64)
 SRC_SIMD := $(SRC_SIMD_DIR)/lcsbp_neon_intr.cpp $(SRC_SIMD_DIR)/utils_neon.cpp 
 $(OBJ_SIMD_DIR)/lcsbp_neon_intr.cpp.o: $(SRC_SIMD_DIR)/lcsbp_neon_intr.cpp
 	@mkdir -p $(OBJ_SIMD_DIR)
@@ -70,6 +72,12 @@ $(OBJ_SIMD_DIR)/lcsbp_neon_intr.cpp.o: $(SRC_SIMD_DIR)/lcsbp_neon_intr.cpp
 $(OBJ_SIMD_DIR)/utils_neon.cpp.o: $(SRC_SIMD_DIR)/utils_neon.cpp
 	@mkdir -p $(OBJ_SIMD_DIR)
 	$(CXX) $(CPP_FLAGS_NEON) $(OPTIMIZATION_FLAGS) $(ARCH_FLAGS) $(INCLUDE_DIRS) -MMD -MF $@.d -c $< -o $@
+else ifeq ($(ARCH_TYPE),riscv64)
+# No SIMD implementation yet for RISC-V; use classic scalar paths only
+SRC_SIMD :=
+else
+# Fallback for any other arch: no SIMD
+SRC_SIMD :=
 endif
 
 OBJ_SIMD := $(patsubst $(SRC_SIMD_DIR)/%.cpp, $(OBJ_SIMD_DIR)/%.cpp.o, $(SRC_SIMD))
