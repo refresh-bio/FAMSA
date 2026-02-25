@@ -26,7 +26,7 @@ FAMSA2 is a progressive algorithm for large-scale multiple sequence alignments:
 
 ```bash
 git clone https://github.com/refresh-bio/FAMSA --recursive
-cd FAMSA && make
+cd FAMSA && gmake
 
 # align sequences with default parameters (single linkage tree)
 ./famsa ./test/adeno_fiber/adeno_fiber sl.aln
@@ -68,7 +68,7 @@ Finally, FAMSA can be built from the sources distributed as:
 * Visual Studio 2022 solution for Windows,
 * GNU Make project for Linux and macOS (gmake 4.3 and gcc/g++ 11 or newer required).
 
-FAMSA can be built for x86-64 and ARM64 8 architectures (including Apple M1 based on ARM64 8.4 core) and takes advantage of AVX2 (x86-64) and NEON (ARM) CPU extensions. The default target platform is x86-64 with AVX2 extensions. This, however, can be changed by setting `PLATFORM` variable for `make`:
+FAMSA can be built for x86-64 and ARM64 8 architectures (including Apple M1 based on ARM64 8.4 core) and takes advantage of AVX2 (x86-64) and NEON (ARM) CPU extensions. The default target platform is x86-64 with AVX2 extensions. This, however, can be changed by setting `PLATFORM` variable for `gmake`:
 
 ```bash
 gmake PLATFORM=none    # unspecified platform, no extensions
@@ -81,7 +81,7 @@ gmake PLATFORM=arm8    # ARM64 8 with NEON
 gmake PLATFORM=m1      # ARM64 8.4 (especially Apple M1) with NEON 
 ```   
 
-Note, that x86-64 binaries determine the supported extensions at runtime, which makes them backwards-compatible. For instance, the AVX executable will also work on SSE-only platform, but with limited performance. An additional `make` option can be used to force static linking (may be helpful when binary portability is desired): `make STATIC_LINK=true`
+Note, that x86-64 binaries determine the supported extensions at runtime, which makes them backwards-compatible. For instance, the AVX executable will also work on SSE-only platform, but with limited performance. An additional `gmake` option can be used to force static linking (may be helpful when binary portability is desired): `gmake STATIC_LINK=true`
 
 The latest speed improvements in FAMSA limited the usefullness of the GPU mode. Thus, starting from the 1.5.0 version, there is no support of GPU in FAMSA. If maximum throughput is required, we encourage using new medoid trees feature (`-medoidtree` switch) which allows processing gigantic data sets in short time (e.g., the familiy of 3 million ABC transporters was analyzed in five minutes). 
 
