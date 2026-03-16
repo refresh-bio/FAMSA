@@ -1,4 +1,4 @@
-### REFRESH group macros - v.1.0.16 (2025-03-03)
+### REFRESH group macros - v.1.24 (2026-03-12)
 
 ### Macros for initialization
 define INIT_GLOBALS
@@ -29,7 +29,7 @@ define ADD_ZLIB_NG
 	$(info *** Adding zlib-ng ***)
 	$(eval ZLIB_DIR:=$(1))
 	$(eval ZLIB_A_DIR:=$(1)/build-g++/zlib-ng)
-	$(eval ZLIB_A:=$(ZLIB_A_DIR)/libz.a)
+	$(eval ZLIB_A:=$(ZLIB_A_DIR)/libz-ng.a)
 	$(eval INCLUDE_DIRS+=-I$(ZLIB_DIR)/build-g++ -I$(ZLIB_DIR)/build-g++/zlib-ng)
 	$(eval LIBRARY_FILES+=$(ZLIB_A))
 	$(eval LINKER_DIRS+=-L $(ZLIB_A_DIR))
@@ -37,7 +37,7 @@ define ADD_ZLIB_NG
 
 	$(eval zlib-ng: $(ZLIB_A))
 	$(eval $(ZLIB_A) : ; \
-		cd $(ZLIB_DIR) && cmake $(CMAKE_OSX_FIX) -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_C_COMPILER=$(CC) -B build-g++/zlib-ng -S . -DZLIB_COMPAT=ON; cmake --build build-g++/zlib-ng --config Release)
+		cd $(ZLIB_DIR) && cmake $(CMAKE_OSX_FIX) -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_C_COMPILER=$(CC) -B build-g++/zlib-ng -S . -DZLIB_COMPAT=OFF -DWITH_GZFILEOP=ON; cmake --build build-g++/zlib-ng --config Release)
 endef
 
 # Propose zlib-ng (to be considered by CHOOSE_...)
@@ -45,11 +45,11 @@ define PROPOSE_ZLIB_NG
 	$(info *** Proposing zlib-ng ***)
 	$(eval ZLIB_DIR:=$(1))
 	$(eval ZLIB_A_DIR:=$(1)/build-g++/zlib-ng)
-	$(eval ZLIB_A:=$(ZLIB_A_DIR)/libz.a)
+	$(eval ZLIB_A:=$(ZLIB_A_DIR)/libz-ng.a)
 
 	$(eval zlib-ng: $(ZLIB_A))
 	$(eval $(ZLIB_A) : ; \
-		cd $(ZLIB_DIR) && cmake $(CMAKE_OSX_FIX) -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_C_COMPILER=$(CC) -B build-g++/zlib-ng -S . -DZLIB_COMPAT=ON; cmake --build build-g++/zlib-ng --config Release)
+		cd $(ZLIB_DIR) && cmake $(CMAKE_OSX_FIX) -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_C_COMPILER=$(CC) -B build-g++/zlib-ng -S . -DZLIB_COMPAT=OFF -DWITH_GZFILEOP=ON; cmake --build build-g++/zlib-ng --config Release)
 endef
 
 # Propose isa-l (to be considered by CHOOSE_...)
@@ -84,7 +84,7 @@ endef
 # Add zstd
 define ADD_LIBZSTD
 	$(info *** Adding libzstd ***)
-	$(eval INCLUDE_DIRS+=-I$(1))
+	$(eval INCLUDE_DIRS+=-I$(1)/lib)
 	$(eval LIBZSTD_DIR:=$(1))
 	$(eval LIBZSTD_A_DIR:=$(1))
 	$(eval LIBZSTD_A:=$(1)/lib/libzstd.a)
@@ -95,6 +95,22 @@ define ADD_LIBZSTD
 	$(eval libzstd: $(LIBZSTD_A))
 	$(eval $(LIBZSTD_A): ; \
 		cd $(LIBZSTD_DIR) && $(MAKE))
+endef
+
+# Add agc
+define ADD_AGC
+$(info *** Adding agc ***)
+	$(eval INCLUDE_DIRS+=-I$(1)/src/lib-cxx)
+	$(eval AGC_DIR:=$(1))
+	$(eval LIBAGC_A_DIR:=$(1)/bin)
+	$(eval LIBAGC_A:=$(1)/bin/libagc.a)
+	$(eval LIBRARY_FILES+=$(LIBAGC_A))
+	$(eval LINKER_DIRS+=-L $(LIBAGC_A_DIR))
+	$(eval PREBUILD_JOBS+=agc)
+
+	$(eval agc: $(LIBAGC_A))
+	$(eval $(LIBAGC_A): ; \
+		cd $(AGC_DIR) && $(MAKE))
 endef
 
 # Add mimalloc
@@ -136,6 +152,26 @@ define ADD_REFRESH_PARALLEL_QUEUES_MONITOR
 	$(eval refresh_parallel_queues_monitor_obj: $(REFRESH_PARALLEL_QUEUES_MONITOR_OBJ))
 	$(eval $(REFRESH_PARALLEL_QUEUES_MONITOR_OBJ): ; \
 		cd $(REFRESH_PARALLEL_QUEUES_MONITOR_DIR) && $(CXX) $(CPP_FLAGS) $(OPTIMIZATION_FLAGS) $(DEFINE_FLAGS) $(INCLUDE_DIRS) -c parallel-queues-monitor.cpp -o parallel-queues-monitor.cpp.o)
+endef
+
+# Add RADULS
+# The third parameter is required record len
+# raduls own makefile handles how to rebuild depending on this value
+# so it will not rebuild if it already have build for given record length
+# but we need to force running it so we use additional RADULS_FORCE rule
+define ADD_RADULS
+	$(info *** Adding Raduls ***)
+	$(eval RADULS_DIR:=$(1)/Raduls)
+	$(eval RADULS_A:=$(1)/Raduls/libraduls.a)
+	$(eval INCLUDE_DIRS+=-I$(1)/Raduls)
+	$(eval LIBRARY_FILES+=$(RADULS_A))
+	$(eval LINKER_DIRS+=-L$(1)/Raduls)
+	$(eval PREBUILD_JOBS+=raduls)
+
+	$(eval raduls: $(RADULS_A))
+	$(eval $(RADULS_A): RADULS_FORCE ; \
+		cd $(RADULS_DIR) && $(MAKE) -j RADULS_DISPATCH_ONLY_REC_SIZE=true RADULS_MAX_REC_SIZE_IN_BYTES=$(strip $(2)) libraduls.a)
+	$(eval RADULS_FORCE:)
 endef
 
 # Add RADULS-inplace
@@ -213,7 +249,53 @@ define ADD_CHEMFILES
 
 	$(eval chemfiles: $(CHEMFILES_A))
 	$(eval $(CHEMFILES_A) : ; \
-		mkdir -p $(CHEMFILES_DIR)/build && cd $(CHEMFILES_DIR)/build && cmake .. && cmake --build . -j)
+		mkdir -p $(CHEMFILES_DIR)/build && cd $(CHEMFILES_DIR)/build && cmake -DCMAKE_CXX_FLAGS="-DCHEMFILES_DONT_USE_MMAP" $(CMAKE_OSX_FIX) -DCMAKE_CXX_COMPILER=$(CXX) -DCMAKE_C_COMPILER=$(CC) .. && cmake --build . -j)
+endef
+
+# Add hwloc
+define ADD_HWLOC
+	$(info *** Adding hwloc ***)
+	$(eval HWLOC_DIR:=$(abspath $(1)))
+	$(eval HWLOC_A_DIR:=$(HWLOC_DIR)/build)
+	$(eval HWLOC_A:=$(HWLOC_A_DIR)/lib/libhwloc.a)
+	$(eval INCLUDE_DIRS+=-I$(HWLOC_A_DIR)/include)
+	$(eval LIBRARY_FILES+=$(HWLOC_A))
+	$(eval LINKER_DIRS+=-L $(HWLOC_A_DIR))
+	$(eval PREBUILD_JOBS+=hwloc)
+	$(eval DUMMY_TOOLS := ACLOCAL=: AUTOCONF=: AUTOHEADER=: AUTOMAKE=:)
+
+	$(eval hwloc: $(HWLOC_A))
+	$(eval $(HWLOC_A) : ; \
+		cd $(HWLOC_DIR) && \
+		$(abspath $(1))/configure --prefix="$(HWLOC_A_DIR)" --enable-static --disable-shared --disable-opencl --disable-cuda --disable-libxml2 && \
+		$(MAKE) -C . $(DUMMY_TOOLS) -j && \
+		$(MAKE) -C . $(DUMMY_TOOLS) install)
+endef
+
+# Add oneTBB
+define ADD_ONETBB
+	$(info *** Adding oneTBB ***)
+	$(eval TBB_DIR:=$(abspath $(1)))
+	$(eval TBB_BUILD_DIR:=$(TBB_DIR)/build_gcc)
+	$(eval TBB_INST_DIR:=$(TBB_DIR)/install_gcc)
+	$(eval TBB_A:=$(TBB_INST_DIR)/lib/libtbb.a)
+
+	$(eval INCLUDE_DIRS+=-I$(TBB_DIR)/include)
+	$(eval LIBRARY_FILES+=$(TBB_A))
+	$(eval LINKER_DIRS+=-L $(TBB_INST_DIR))
+	$(eval PREBUILD_JOBS+=oneTBB)
+
+	$(eval oneTBB: $(TBB_A))
+	$(eval $(TBB_A) : ; \
+		mkdir -p $(TBB_BUILD_DIR) && cd $(TBB_BUILD_DIR) && \
+		cmake $(TBB_DIR) \
+				-DCMAKE_BUILD_TYPE=Release \
+				-DBUILD_SHARED_LIBS=OFF \
+				-DTBB_TEST=OFF \
+				-DTBB_HWLOC_CONFIG=ON \
+				-DHWLOC_ROOT="$(HWLOC_A_DIR)" \
+				-DCMAKE_INSTALL_PREFIX="$(TBB_INST_DIR)" && \
+			$(MAKE) -j && $(MAKE) install)
 endef
 
 # Add Pybind11
@@ -228,6 +310,73 @@ endef
 define ADD_REFRESH_LIB
 	$(info *** Adding REFRESH libs ***)
 	$(eval REFRESH_DIR:=-I$(1))
+endef
+
+# Add REFRESH VECTOR libs
+define ADD_REFRESH_VECTOR_LIB
+	$(info *** Adding REFRESH VECTOR libs ***)
+	$(eval REFRESH_DIR:=-I$(1))
+	$(eval SRC_REFRESH_VECTOR_DIR := $(1)/refresh/vector_functions/lib)
+	$(eval OBJ_REFRESH_VECTOR_DIR := $(OBJ_DIR)/refresh/vector_functions/lib)
+	$(eval REFRESH_VECTOR_FACTORY_OBJ := $(OBJ_REFRESH_VECTOR_DIR)/vectorized_functions.cpp.o)
+	$(eval REFRESH_VECTOR_SERIAL_OBJ := $(OBJ_REFRESH_VECTOR_DIR)/impl_serial.cpp.o)
+
+	$(eval PREBUILD_JOBS+= \
+		refresh_vector_factory_obj \
+		refresh_vector_serial_obj)
+	$(eval refresh_vector_factory_obj: $(REFRESH_VECTOR_FACTORY_OBJ))
+	$(eval refresh_vector_serial_obj: $(REFRESH_VECTOR_SERIAL_OBJ))
+	$(eval $(REFRESH_VECTOR_FACTORY_OBJ): ; \
+		mkdir -p $(OBJ_REFRESH_VECTOR_DIR) ; \
+		$(CXX) -O3 -std=c++20 -c $(SRC_REFRESH_VECTOR_DIR)/vectorized_functions.cpp -o $(OBJ_REFRESH_VECTOR_DIR)/vectorized_functions.cpp.o)
+	$(eval $(REFRESH_VECTOR_SERIAL_OBJ): ; \
+		mkdir -p $(OBJ_REFRESH_VECTOR_DIR) ; \
+		$(CXX) -O3 -std=c++20 -c $(SRC_REFRESH_VECTOR_DIR)/impl_serial.cpp -o $(OBJ_REFRESH_VECTOR_DIR)/impl_serial.cpp.o)
+	$(eval LIBRARY_FILES += $(REFRESH_VECTOR_FACTORY_OBJ) \
+		$(REFRESH_VECTOR_SERIAL_OBJ))
+
+	$(if $(filter x86_64,$(ARCH_TYPE)), \
+		$(eval REFRESH_VECTOR_SSE42_OBJ := $(OBJ_REFRESH_VECTOR_DIR)/impl_sse42.cpp.o)
+		$(eval REFRESH_VECTOR_AVX_OBJ := $(OBJ_REFRESH_VECTOR_DIR)/impl_avx.cpp.o)
+		$(eval REFRESH_VECTOR_AVX2_OBJ := $(OBJ_REFRESH_VECTOR_DIR)/impl_avx2.cpp.o)
+		$(eval REFRESH_VECTOR_AVX512_OBJ := $(OBJ_REFRESH_VECTOR_DIR)/impl_avx512.cpp.o)
+		$(eval PREBUILD_JOBS+= \
+			refresh_vector_sse42_obj \
+			refresh_vector_avx_obj \
+			refresh_vector_avx2_obj \
+			refresh_vector_avx512_obj)
+		$(eval refresh_vector_sse42_obj: $(REFRESH_VECTOR_SSE42_OBJ))
+		$(eval refresh_vector_avx_obj: $(REFRESH_VECTOR_AVX_OBJ))
+		$(eval refresh_vector_avx2_obj: $(REFRESH_VECTOR_AVX2_OBJ))
+		$(eval refresh_vector_avx512_obj: $(REFRESH_VECTOR_AVX512_OBJ))
+		$(eval $(REFRESH_VECTOR_SSE42_OBJ): ; \
+			mkdir -p $(OBJ_REFRESH_VECTOR_DIR) ; \
+			$(CXX) -O3 -msse4.2 -std=c++20 -c $(SRC_REFRESH_VECTOR_DIR)/impl_sse42.cpp -o $(OBJ_REFRESH_VECTOR_DIR)/impl_sse42.cpp.o)
+		$(eval $(REFRESH_VECTOR_AVX_OBJ): ; \
+			mkdir -p $(OBJ_REFRESH_VECTOR_DIR) ; \
+			$(CXX) -O3 -mavx -std=c++20 -c $(SRC_REFRESH_VECTOR_DIR)/impl_avx.cpp -o $(OBJ_REFRESH_VECTOR_DIR)/impl_avx.cpp.o)
+		$(eval $(REFRESH_VECTOR_AVX2_OBJ): ; \
+			mkdir -p $(OBJ_REFRESH_VECTOR_DIR) ; \
+			$(CXX) -O3 -mavx2 -std=c++20 -c $(SRC_REFRESH_VECTOR_DIR)/impl_avx2.cpp -o $(OBJ_REFRESH_VECTOR_DIR)/impl_avx2.cpp.o)
+		$(eval $(REFRESH_VECTOR_AVX512_OBJ): ; \
+			mkdir -p $(OBJ_REFRESH_VECTOR_DIR) ; \
+			$(CXX) -O3 -mavx512f -mavx512dq -mavx512bw -std=c++20 -c $(SRC_REFRESH_VECTOR_DIR)/impl_avx512.cpp -o $(OBJ_REFRESH_VECTOR_DIR)/impl_avx512.cpp.o)
+		$(eval LIBRARY_FILES += \
+			$(REFRESH_VECTOR_SSE42_OBJ) \
+			$(REFRESH_VECTOR_AVX_OBJ) \
+			$(REFRESH_VECTOR_AVX2_OBJ) \
+			$(REFRESH_VECTOR_AVX512_OBJ)), \
+# ************************************************
+		$(eval REFRESH_VECTOR_NEON_OBJ := $(OBJ_REFRESH_VECTOR_DIR)/impl_neon.cpp.o)
+		$(eval PREBUILD_JOBS+= \
+			refresh_vector_neon_obj)
+		$(eval refresh_vector_neon_obj: $(REFRESH_VECTOR_NEON_OBJ))
+		$(eval $(REFRESH_VECTOR_NEON_OBJ): ; \
+			mkdir -p $(OBJ_REFRESH_VECTOR_DIR) ; \
+			$(CXX) -O3 -march=armv8-a -std=c++20 -c $(SRC_REFRESH_VECTOR_DIR)/impl_neon.cpp -o $(OBJ_REFRESH_VECTOR_DIR)/impl_neon.cpp.o)
+		$(eval LIBRARY_FILES += \
+			$(REFRESH_VECTOR_NEON_OBJ)) \
+	)		
 endef
 
 # Add StatsLib
@@ -549,12 +698,12 @@ define SET_FLAGS
 		) \
 	)
 
-	$(eval CPP_FLAGS_SSE2:=$(CPPFLAGS) -msse2)
-	$(eval CPP_FLAGS_SSE4:=$(CPPFLAGS) -msse4)
-	$(eval CPP_FLAGS_AVX:=$(CPPFLAGS) -mavx)
-	$(eval CPP_FLAGS_AVX2:=$(CPPFLAGS) -mavx2)
-	$(eval CPP_FLAGS_AVX512:=$(CPPFLAGS) -mavx512f -mavx512dq)
-	$(eval CPP_FLAGS_NEON:=$(CPPFLAGS))
+	$(eval CPP_FLAGS_SSE2:=$(CPP_FLAGS) -msse2)
+	$(eval CPP_FLAGS_SSE4:=$(CPP_FLAGS) -msse4)
+	$(eval CPP_FLAGS_AVX:=$(CPP_FLAGS) -mavx)
+	$(eval CPP_FLAGS_AVX2:=$(CPP_FLAGS) -mavx2)
+	$(eval CPP_FLAGS_AVX512:=$(CPP_FLAGS) -mavx512f -mavx512dq)
+	$(eval CPP_FLAGS_NEON:=$(CPP_FLAGS))
 
 	$(eval INCLUDE_DIRS+=$(REFRESH_DIR))
 	$(info Prebuild jobs: $(PREBUILD_JOBS))
@@ -592,7 +741,7 @@ define CHOOSE_GZIP_DECOMPRESSION
 		$(eval C_FLAGS+=-DREFRESH_USE_IGZIP) \
 		$(eval CPP_FLAGS+=-DREFRESH_USE_IGZIP), \
 		$(info zlib-ng will be used for gzip decompression) \
-		$(eval GZ_LIB:=libz.a) \
+		$(eval GZ_LIB:=libz-ng.a) \
 		$(eval LIBRARY_FILES+=$(ZLIB_A)) \
 		$(eval LINKER_DIRS+=-L $(ZLIB_A_DIR))
 		$(eval C_FLAGS+=-DREFRESH_USE_ZLIB) \
@@ -613,11 +762,18 @@ define CHECK_OS_ARCH
 
 	$(eval CPU_EXTENSIONS_DEFS:=)
 
-	$(if $(shell grep -q 'avx' /proc/cpuinfo && echo yes),$(eval CPU_EXTENSIONS_DEFS+=-DSIMD_AVX),)
-	$(if $(shell grep -q 'avx2' /proc/cpuinfo && echo yes),$(eval CPU_EXTENSIONS_DEFS+=-DSIMD_AVX2),)
-	$(if $(shell grep -q 'avx512' /proc/cpuinfo && echo yes),$(eval CPU_EXTENSIONS_DEFS+=-DSIMD_AVX512),)
-	$(if $(shell grep -q 'neon' /proc/cpuinfo && echo yes),$(eval CPU_EXTENSIONS_DEFS+=-DSIMD_NEON),)
-
+	$(if $(filter Darwin,$(OS_TYPE)), \
+		$(if $(shell sysctl -n machdep.cpu.features machdep.cpu.leaf7_features 2>/dev/null | tr ' ' '\n' | grep -qi '^avx$$' && echo yes),  $(eval CPU_EXTENSIONS_DEFS+=-DSIMD_AVX),) \
+		$(if $(shell sysctl -n machdep.cpu.features machdep.cpu.leaf7_features 2>/dev/null | tr ' ' '\n' | grep -qi '^avx2$$' && echo yes), $(eval CPU_EXTENSIONS_DEFS+=-DSIMD_AVX2),) \
+		$(if $(shell sysctl -n machdep.cpu.features machdep.cpu.leaf7_features 2>/dev/null | tr ' ' '\n' | grep -qi 'avx512' && echo yes),   $(eval CPU_EXTENSIONS_DEFS+=-DSIMD_AVX512),) \
+		$(if $(filter arm64,$(ARCH_TYPE)),$(eval CPU_EXTENSIONS_DEFS+=-DSIMD_NEON),) \
+	, \
+		$(if $(shell grep -q 'avx' /proc/cpuinfo && echo yes),   $(eval CPU_EXTENSIONS_DEFS+=-DSIMD_AVX),) \
+		$(if $(shell grep -q 'avx2' /proc/cpuinfo && echo yes),  $(eval CPU_EXTENSIONS_DEFS+=-DSIMD_AVX2),) \
+		$(if $(shell grep -q 'avx512' /proc/cpuinfo && echo yes),$(eval CPU_EXTENSIONS_DEFS+=-DSIMD_AVX512),) \
+		$(if $(shell grep -q 'neon' /proc/cpuinfo && echo yes),  $(eval CPU_EXTENSIONS_DEFS+=-DSIMD_NEON),) \
+	)
+	
 	$(if $(filter arm8,$(1)), \
 		$(eval ARCH_FLAGS:=-march=armv8-a -DARCH_ARM) \
 		$(info *** ARMv8 with NEON extensions ***), \
@@ -696,11 +852,24 @@ clean-libzstd:
 clean-raduls-inplace:
 	-cd $(RADULS_INPLACE_DIR) && $(MAKE) clean
 
+clean-raduls:
+	-cd $(RADULS_DIR) && $(MAKE) clean
+
+clean-agc:
+	-cd $(AGC_DIR) && $(MAKE) clean
+
 clean-igraph:
 	-rm -r $(IGRAPH_DIR)/build
 
+clean-hwloc:
+	-rm -r $(HWLOC_DIR)/build
+
 clean-mimalloc_obj:
 	-rm $(MIMALLOC_OBJ)
+
+clean-onetbb:
+	-rm $(TBB_DIR)/build_gcc
+	-rm $(TBB_DIR)/install_gcc
 
 clean-cdflib_obj:
 	-rm $(CDFLIB_OBJ)
@@ -808,6 +977,9 @@ _testing:
 	$(call show_var_opt,MIMALLOC_OBJ)
 
 	$(info * raduls *)
+	$(call show_var_opt,RADULS_DIR)
+	$(call show_var_opt,RADULS_A_DIR)
+	$(call show_var_opt,RADULS_A)
 	$(call show_var_opt,RADULS_INPLACE_DIR)
 	$(call show_var_opt,RADULS_INPLACE_A_DIR)
 	$(call show_var_opt,RADULS_INPLACE_A)
@@ -816,6 +988,16 @@ _testing:
 	$(call show_var_opt,IGRAPH_DIR)
 	$(call show_var_opt,IGRAPH_A_DIR)
 	$(call show_var_opt,IGRAPH_A)
+	
+	$(info * agc *)
+	$(call show_var_opt,AGC_DIR)
+	$(call show_var_opt,AGC_A_DIR)
+	$(call show_var_opt,AGC_A)
+	
+	$(info * hwloc *)
+	$(call show_var_opt,HWLOC_DIR)
+	$(call show_var_opt,HWLOC_A_DIR)
+	$(call show_var_opt,HWLOC_A)
 	
 	$(info * SBWT *)
 	$(call show_var_opt,SBWT_DIR)

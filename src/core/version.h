@@ -9,14 +9,17 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"2.5.0"
-#define FAMSA_DATE		"2025-07-07"
+#define FAMSA_VER		"2.5.1"
+#define FAMSA_DATE		"2026-03-16"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+2.5.1 (2026-03-16)
+- Makefile fix for mac ARM architectures.
 
 2.5.0 (2025-07-07)
 - Updated seed selection in medoid clustering. 

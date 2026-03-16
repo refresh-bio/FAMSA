@@ -40,7 +40,7 @@
 #endif
 
 #ifdef REFRESH_STREAM_DECOMPRESSION_ENABLE_ZLIB
-#include <zlib.h>
+#include <zlib-ng.h>
 #endif
 
 #ifdef REFRESH_STREAM_DECOMPRESSION_ENABLE_ZSTD
@@ -463,7 +463,7 @@ namespace refresh
 	{
 		constexpr static std::array<uint8_t, 2> magic_numbers = { 0x1f, 0x8b };
 
-		z_stream state;
+		zng_stream state;
 
 		enum class internal_state_t { none, file_start, before_header, inside };
 		internal_state_t internal_state = internal_state_t::none;
@@ -477,7 +477,7 @@ namespace refresh
 			state.zfree = NULL;
 			state.opaque = NULL;
 
-			inflateInit2(&state, 15 + 32);
+			zng_inflateInit2(&state, 15 + 32);
 
 			internal_state = internal_state_t::file_start;
 		}
@@ -492,7 +492,7 @@ namespace refresh
 			if (!std::equal(magic_numbers.begin(), magic_numbers.begin() + in_state_len, state.next_in))
 				return false;
 
-			if (inflate(&state, Z_NO_FLUSH) != Z_OK)
+			if (zng_inflate(&state, Z_NO_FLUSH) != Z_OK)
 				return false;
 
 			if (!load_new_part())
@@ -525,7 +525,7 @@ namespace refresh
 				stream_in->release(in_buffer_data);
 
 			if(internal_state != internal_state_t::none)
-				inflateEnd(&state);
+				zng_inflateEnd(&state);
 		}
 
 		static bool knows_it(const std::string& file_name, const char* data, const size_t size)
@@ -547,12 +547,12 @@ namespace refresh
 			readed = 0;
 
 			state.next_out = (uint8_t*)ptr;
-			state.avail_out = out_buffer_size;
+			state.avail_out = (uint32_t) out_buffer_size;
 
 			if (internal_state == internal_state_t::before_header || internal_state == internal_state_t::file_start)
 			{
 				if(internal_state == internal_state_t::before_header)
-					inflateReset(&state);
+					zng_inflateReset(&state);
 
 				if (!check_header())
 				{
@@ -571,13 +571,13 @@ namespace refresh
 					if (!load_new_part())
 						return -1;
 
-				int ret = inflate(&state, Z_NO_FLUSH);
+				int ret = zng_inflate(&state, Z_NO_FLUSH);
 
 				if (ret == Z_DATA_ERROR)
 					return -3;														// Error, broken gzip file
 
 				readed = state.next_out - (uint8_t*)ptr;
-				state.avail_in = (uint32_t)in_buffer_filled - (state.next_in - (uint8_t*)in_buffer_data);
+				state.avail_in = (uint32_t)in_buffer_filled - (uint32_t) (state.next_in - (uint8_t*)in_buffer_data);
 				state.avail_out = (uint32_t)(out_buffer_size - readed);
 
 				if (ret == Z_STREAM_END)
@@ -904,7 +904,8 @@ namespace refresh
 			return 0;
 		}
 
-		int getline(std::string& str)
+		template <typename S>
+		inline int getline(S& str)
 		{
 			str.clear();
 
@@ -912,7 +913,10 @@ namespace refresh
 
 			while (true)
 			{
-				auto q = std::find(buffer + pos, buffer + filled, (char) 0x0a);
+//				auto q = std::find(buffer + pos, buffer + filled, (char) 0x0a);
+				auto q = (char*)memchr(buffer + pos, 0x0a, filled - pos);
+				if (!q)
+					q = buffer + filled;
 
 				str.append(buffer + pos, q);
 
