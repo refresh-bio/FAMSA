@@ -83,7 +83,12 @@ gmake PLATFORM=m1      # ARM64 8.4 (especially Apple M1) with NEON
 
 Note, that x86-64 binaries determine the supported extensions at runtime, which makes them backwards-compatible. For instance, the AVX executable will also work on SSE-only platform, but with limited performance. An additional `gmake` option can be used to force static linking (may be helpful when binary portability is desired): `gmake STATIC_LINK=true`
 
-The latest speed improvements in FAMSA limited the usefullness of the GPU mode. Thus, starting from the 1.5.0 version, there is no support of GPU in FAMSA. If maximum throughput is required, we encourage using new medoid trees feature (`-medoidtree` switch) which allows processing gigantic data sets in short time (e.g., the familiy of 3 million ABC transporters was analyzed in five minutes). 
+### macOS support 
+
+Due to usage of C++ features not supported by clang compiler, FAMSA requires g++ for compilation. As `g++` command on macOS systems maps to `clang`, one needs to install gcc/g++ and specify its version using gmake arguments. For instance, if gcc/g++ 11 is available (the lowest supported version), please use the following command line:
+```bash
+gmake -j CXX=g++-11 CC=gcc-11
+```
 
 
 ## Usage
