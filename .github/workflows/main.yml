@@ -15,10 +15,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [ubuntu-latest, macOS-13]
+        machine: [ubuntu-latest, macOS-14]
         include:
-        - {machine: ubuntu-latest, gmake_install_command: 'gmake --version', compiler: 12}
-        - {machine: macOS-13, gmake_install_command: 'brew install make && gmake --version', compiler: 12}
+        - {machine: ubuntu-latest, gmake_install_command: 'gmake --version', compiler: 13, platform: avx2}
+        - {machine: macOS-14, gmake_install_command: 'brew install make && gmake --version', compiler: 13, platform: m1}
         
     runs-on: ['${{ matrix.machine }}']   
 
@@ -29,18 +29,10 @@ jobs:
 
     - name: install gmake
       run: ${{ matrix.gmake_install_command }}    
-    
-    - name: get tags
-      run: | 
-        cd ./libs/igraph
-        git fetch --prune --unshallow
-        echo exit code $?
-        git tag --list
-      continue-on-error: true 
-      
+     
     - name: make
       run: | 
-        gmake -j CXX=g++-${{matrix.compiler}} CC=gcc-${{matrix.compiler}} STATIC_LINK=true PLATFORM=avx2
+        gmake -j CXX=g++-${{matrix.compiler}} CC=gcc-${{matrix.compiler}} STATIC_LINK=true PLATFORM=${{matrix.platform}}
         cp ./bin/famsa ./famsa
     - name: tar artifacts
       run: tar -cvf famsa.tar ./famsa ./test/adeno_fiber/* ./test/hemopexin/*
@@ -60,7 +52,7 @@ jobs:
       fail-fast: false
       matrix:
         tree: [sl, upgma]
-        machine: [ubuntu-latest, macOS-13]
+        machine: [ubuntu-latest, macOS-14]
    
     runs-on: ['${{ matrix.machine }}']
   
@@ -101,7 +93,7 @@ jobs:
       fail-fast: false
       matrix:
         tree: [sl, upgma, nj]
-        machine: [ubuntu-latest, macOS-13]
+        machine: [ubuntu-latest, macOS-14]
    
     runs-on: ['${{ matrix.machine }}']
       
@@ -146,7 +138,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        machine: [ubuntu-latest, macOS-13]
+        machine: [ubuntu-latest, macOS-14]
    
     runs-on: ['${{ matrix.machine }}']
         

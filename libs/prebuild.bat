@@ -28,7 +28,7 @@ cd ..
 
 @echo "zlib-ng"
 cd zlib-ng 
-cmake -B build-vs -S . -DZLIB_COMPAT=ON 
+cmake -B build-vs -S .
 cmake --build build-vs --config Debug
 cmake --build build-vs --config Release
 cd ..

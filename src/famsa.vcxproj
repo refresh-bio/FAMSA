@@ -151,7 +151,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>..\libs\isa-l\isa-l_static.lib;..\libs\zlib-ng\build-vs\Release\zlibstatic.lib;../libs/libdeflate/build_vs/Debug/deflatestatic.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\libs\isa-l\isa-l_static.lib;..\libs\zlib-ng\build-vs\Debug\zlibstatic-ngd.lib;../libs/libdeflate/build_vs/Debug/deflatestatic.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>call $(SolutionDir)\libs\prebuild.bat $(SolutionDir)</Command>
@@ -219,7 +219,7 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <Profile>true</Profile>
-      <AdditionalDependencies>..\libs\isa-l\isa-l_static.lib;..\libs\zlib-ng\build-vs\Release\zlibstatic.lib;../libs/libdeflate/build_vs/Release/deflatestatic.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>..\libs\isa-l\isa-l_static.lib;..\libs\zlib-ng\build-vs\Release\zlibstatic-ng.lib;../libs/libdeflate/build_vs/Release/deflatestatic.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PreBuildEvent>
       <Command>call $(SolutionDir)\libs\prebuild.bat $(SolutionDir)</Command>
