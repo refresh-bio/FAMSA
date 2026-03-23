@@ -79,7 +79,7 @@ void CParams::show_usage(bool expert)
 		<< "      * distance matrix in CSV format (-dist_export option specified),\n\n"
 
 		<< "Options:\n"
-		<< "  -help - print this message\n"
+		<< "  -help - print help message (including advanced parameters)\n"
 		<< "  -t <value> - no. of threads, NOTE: exceeding number of physical (not logical) cores decreases performance,\n" 
 		<< "      0 indicates half of all the logical cores (default: " << n_threads << ")\n"
 		<< "  -v - verbose mode, show timing information (default: disabled)\n\n"
@@ -90,7 +90,12 @@ void CParams::show_usage(bool expert)
 		<< "      * nj - neighbour joining\n"
 		<< "      * import <file> - imported from a Newick file\n"
 
-		<< "  -medoidtree - use MedoidTree heuristic for speeding up tree construction (default: disabled)\n"
+		<< "  -medoidtree - use medoid tree heuristic for speeding up tree construction (default: disabled)\n"
+		<< "  " << OPTION_MEDOID_SEEDS << " <value> - number of seeds k in medoid trees (default: " << medoid.num_seeds << ")\n"
+		<< "  " << OPTION_MEDOID_THRESHOLD << " <value> - minimum subset size M to apply medoid tree heuristic (default: " << medoid.threshold << ", " << OPTION_MEDOID_THRESHOLD << " >= " << OPTION_MEDOID_SEEDS << ")\n"
+//		<< "  " << OPTION_MEDOID_SAMPLE << " <value> - sample size in medoid trees(default: same as )\n"
+//		<< "  " << OPTION_MEDOID_EVALS << " <value> - number of samples evaluated during seed selection in medoid trees (default: " << medoid.num_evaluations << ")\n\n"
+
 		<< "  -gt_export - export a guide tree to output file in Newick format\n"
 		<< "  -dist_export - export a distance matrix to output file in CSV format\n"
 		<< "  -square_matrix - generate a square distance matrix instead of a default triangle\n"
@@ -103,7 +108,6 @@ void CParams::show_usage(bool expert)
 		<< "  -trim_columns <fraction> - remove columns with less <fraction> of non-gap characters\n"
 		<< "  -refine_mode <on | off | auto> - refinement mode (default: auto - the refinement is enabled for sets <= " << thr_refinement << " seq.)\n\n";
 
-		
 	if (expert) {
 		LOG_NORMAL << "Advanced options:\n"
 			<< "  -r <value> - no. of refinement iterations (default: " << n_refinements << ")\n"
@@ -121,7 +125,9 @@ void CParams::show_usage(bool expert)
 			<< "  -gsl <value> - gap cost scaller log-term (default: " << scaler_log << ")\n"
 			<< "  -dgr - disable gap cost rescaling (default: enabled)\n"
 			<< "  -dgo - disable gap optimization (default: enabled)\n"
-			<< "  -dsp - disable sum of pairs optimization during refinement (default: enabled)\n";
+			<< "  -dsp - disable sum of pairs optimization during refinement (default: enabled)\n\n";
+
+
 #ifdef DEVELOPER_MODE
 		LOG_NORMAL << "  -ref <file_name> - load referential sequences (for benchmarks) and calculate the minimal subtree size containing them\n"
 			<< "  -vv - very verbose mode, show timing information (default: disabled)\n";
@@ -200,10 +206,14 @@ bool CParams::parse(int argc, char** argv, bool& showExpert)
 		gt_heuristic = GT::ClusterTree;
 	}
 
-	findOption(params, "-medoid_threshold", medoid.threshold);
-	findOption(params, "-subtree_size", medoid.subtree_size);
-	findOption(params, "-sample_size", medoid.sample_size);
-	findOption(params, "-num_evals", medoid.num_evaluations);
+	findOption(params, OPTION_MEDOID_SEEDS, medoid.num_seeds);
+	findOption(params, OPTION_MEDOID_THRESHOLD, medoid.threshold);
+	
+	if (!findOption(params, OPTION_MEDOID_SAMPLE, medoid.sample_size)) {
+		medoid.sample_size = medoid.threshold;
+	}
+	
+	findOption(params, OPTION_MEDOID_EVALS, medoid.num_evaluations);
 	findOption(params, "-cluster_fraction", medoid.cluster_fraction);
 	findOption(params, "-cluster_iters", medoid.cluster_iters);
 

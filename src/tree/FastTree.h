@@ -29,7 +29,7 @@ public:
 		int n_threads, 
 		instruction_set_t instruction_set,
 		std::shared_ptr<IPartialGenerator> partialGenerator, 
-		int subtreeSize,
+		int numSeeds,
 		int sampleSize,
 		int numEvaluations,
 		int threshold,
@@ -43,7 +43,7 @@ public:
 
 protected:
 	std::shared_ptr<IPartialGenerator> partialGenerator;
-	int subtreeSize;
+	int numSeeds;
 	int sampleSize;
 	int numEvaluations;
 	int threshold;

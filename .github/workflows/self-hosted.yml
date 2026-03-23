@@ -151,7 +151,7 @@ jobs:
   ########################################################################################    
     
   full-tree:
-    name: adeno-fiber - full tree
+    name: full tree (adeno-fiber)
     needs: small-tests
     strategy:
       fail-fast: false
@@ -196,7 +196,7 @@ jobs:
   ########################################################################################    
 
   full-tree-duplicates:
-    name: adeno-fiber - duplicates
+    name: full tree + duplicates (adeno-fiber)
     needs: small-tests
     strategy:
       fail-fast: false
@@ -234,7 +234,7 @@ jobs:
  ########################################################################################    
     
   medoid-tree:
-    name: hemopexin - medoid tree
+    name: medoid tree (hemopexin)
     needs: small-tests
     strategy:
       fail-fast: false
@@ -270,15 +270,50 @@ jobs:
         ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -gt import medoid-${{matrix.tree}}.dnd ./test/${{matrix.INPUT}}/${{matrix.INPUT}} medoid-${{matrix.tree}}.dnd.fasta
         ${{matrix.wsl}} diff --strip-trailing-cr medoid-${{matrix.tree}}.dnd.fasta ./test/${{matrix.INPUT}}/medoid-${{matrix.tree}}.fasta
         
-    - name: medoid + ${{matrix.tree}}  (non-default params)
+  ########################################################################################    
+    
+  medoid-tree-params:
+    name: medoid tree params (hemopexin)
+    needs: small-tests
+    strategy:
+      fail-fast: false
+      matrix:
+        machine: [x64_linux, arm64_linux, x64_mac, arm64_mac, x64_windows]
+        tree: [sl]
+        INPUT: [hemopexin]
+        include:
+        - {machine: x64_linux, compiler: 11, wsl: ""}
+        - {machine: x64_linux, compiler: 12, wsl: ""}
+        - {machine: arm64_linux, compiler: 12, wsl: ""}
+        - {machine: x64_mac, compiler: 12, wsl: ""}
+        - {machine: arm64_mac, compiler: 12, wsl: ""}
+        - {machine: x64_windows, compiler: exe, wsl: "wsl"}
+
+        params:
+        - {name: seeds10, cmd: '-medoid_seeds 10'}
+        - {name: th1000, cmd:  '-medoid_threshold 1000'}
+        - {name: evals5, cmd: '-medoid_evals 5'}
+        - {name: frac0.2, cmd: '-cluster_fraction 0.2'}
+        - {name: iters1, cmd: '-cluster_iters 1'}
+        - {name: th1000_sample100, cmd: '-medoid_threshold 1000 -medoid_sample 100'}
+        - {name: th100,  cmd:  '-medoid_threshold 100'}
+        - {name: th100_sample10, cmd: '-medoid_threshold 100 -medoid_sample 10'}
+        - {name: th10_sample100, cmd: '-medoid_threshold 10 -medoid_sample 100'}
+        - {name: seeds10_th100_sample100_evals1_frac0.2_iters1, cmd: '-medoid_seeds 10 -medoid_threshold 100 -medoid_sample 100 -medoid_evals 1 -cluster_fraction 0.2 -cluster_iters 1'}
+    
+    runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
+      
+    steps:  
+    
+    - name: medoid params ${{matrix.params.name}} 
       run: |
-        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -medoidtree -gt ${{matrix.tree}} -gt_export -subtree_size 10 -sample_size 100 -medoid_threshold 100 -cluster_fraction 0.2 -cluster_iters 1 ./test/${{matrix.INPUT}}/${{matrix.INPUT}} medoid-${{matrix.tree}}-params.dnd
-        ${{matrix.wsl}} diff --strip-trailing-cr  medoid-${{matrix.tree}}-params.dnd ./test/${{matrix.INPUT}}/medoid-${{matrix.tree}}-params.dnd
-  
+        ${{matrix.wsl}} ./famsa.${{matrix.compiler}} -medoidtree -gt_export ${{matrix.params.cmd}} ./test/${{matrix.INPUT}}/${{matrix.INPUT}} medoid-${{matrix.params.name}}.dnd
+        ${{matrix.wsl}} diff --strip-trailing-cr medoid-${{matrix.params.name}}.dnd ./test/${{matrix.INPUT}}/medoid-${{matrix.params.name}}.dnd
+        
   ########################################################################################    
 
   medoid-tree-duplicates:
-    name: hemopexin - duplicates
+    name: medoid tree + duplicates (hemopexin)
     needs: small-tests
     strategy:
       fail-fast: false
@@ -332,7 +367,7 @@ jobs:
   ########################################################################################        
          
   other-tests:
-    name: adeno-fiber - other tests
+    name: other tests (adeno-fiber)
     needs: small-tests
     strategy:
       fail-fast: false
@@ -422,7 +457,7 @@ jobs:
 
 ########################################################################################
   huge-tree:
-    name: LRR - 100k trees
+    name: medoid 100k (LRR)
     runs-on: [self-hosted, famsa, '${{ matrix.machine }}']
     needs: 
     - full-tree

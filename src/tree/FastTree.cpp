@@ -24,7 +24,7 @@ FastTree<_distance>::FastTree(
 	int n_threads,
 	instruction_set_t instruction_set,
 	std::shared_ptr<IPartialGenerator> partialGenerator, 
-	int subtreeSize, 
+	int numSeeds, 
 	int sampleSize,
 	int numEvaluations,
 	int threshold,
@@ -32,12 +32,14 @@ FastTree<_distance>::FastTree(
 	: 
 		AbstractTreeGenerator(n_threads, instruction_set),
 		partialGenerator(partialGenerator),
-		subtreeSize(subtreeSize),
-		sampleSize(sampleSize),
+		numSeeds(numSeeds),
+		sampleSize(std::max(sampleSize, numSeeds)), // sample cannot be smaller than numSeeds
 		numEvaluations(numEvaluations),
-		threshold(threshold),
+		threshold(std::max(threshold, numSeeds)), // threshold cannot be smaller than numSeeds
 		clustering(clustering)
-{}
+{
+	
+}
 
 
 // *******************************************************************
@@ -58,7 +60,7 @@ void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_struct
 	int n_seqs = (int)sequences.size();
 
 
-	if ((!clustering && n_seqs > subtreeSize) || (clustering && n_seqs > threshold)) {
+	if ((!clustering && n_seqs > numSeeds) || (clustering && n_seqs > threshold)) {
 
 		int* seed_ids = nullptr;
 		int* assignments = nullptr;
@@ -66,12 +68,13 @@ void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_struct
 		int best_eval = -1;
 		int n_seeds = -1;
 
-		std::vector<int*> v_seed_ids(numEvaluations);
-		std::vector<int*> v_assignments(numEvaluations);
-		std::vector<int> v_n_seeds(numEvaluations);
-		std::vector<float> costs(numEvaluations);
-		
 		if (false) {
+			// multithreaded evaluation
+			std::vector<int*> v_seed_ids(numEvaluations);
+			std::vector<int*> v_assignments(numEvaluations);
+			std::vector<int> v_n_seeds(numEvaluations);
+			std::vector<float> costs(numEvaluations);
+
 			std::vector<std::thread> workers(numEvaluations);
 			
 			for (int eval = 0; eval < numEvaluations; ++eval) {
@@ -84,34 +87,46 @@ void FastTree<_distance>::doStep(std::vector<CSequence*>& sequences, tree_struct
 				workers[eval].join();
 			}
 
+			// gather results
+			for (int eval = 0; eval < numEvaluations; ++eval) {
+				if (costs[eval] < best_cost) {
+					delete[] assignments;
+					delete[] seed_ids;
+
+					best_cost = costs[eval];
+					best_eval = eval;
+
+					assignments = v_assignments[eval];
+					seed_ids = v_seed_ids[eval];
+					n_seeds = v_n_seeds[eval];
+				}
+				else {
+					delete[] v_assignments[eval];
+					delete[] v_seed_ids[eval];
+				}
+			}
 		}
 		else {
 			for (int eval = 0; eval < numEvaluations; ++eval) {
-				costs[eval] = makeEvaluation(sequences, eval, v_n_seeds[eval], v_seed_ids[eval], v_assignments[eval]);
+				int local_n_seeds;
+				int* local_seed_ids;
+				int* local_assignments;
+
+				float cost = makeEvaluation(sequences, eval, local_n_seeds, local_seed_ids, local_assignments);
+				if (cost < best_cost) {
+					delete[] assignments;
+					delete[] seed_ids;
+
+					assignments = local_assignments;
+					seed_ids = local_seed_ids;
+					n_seeds = local_n_seeds;
+					
+					best_cost = cost;
+					best_eval = eval;
+				}	
 			}
 		}
 	
-
-		// gather results
-		for (int eval = 0; eval < numEvaluations; ++eval) {
-			if (costs[eval] < best_cost) {
-				delete[] assignments;
-				delete[] seed_ids;
-
-				best_cost = costs[eval];
-				best_eval = eval;
-
-				assignments = v_assignments[eval];
-				seed_ids = v_seed_ids[eval];
-				n_seeds = v_n_seeds[eval];
-			}
-			else {
-				delete[] v_assignments[eval];
-				delete[] v_seed_ids[eval];
-			}
-		}
-
-
 		std::vector<CSequence*> seeds(n_seeds);
 		for (int k = 0; k < n_seeds; ++k) {
 			seeds[k] = sequences[seed_ids[k]];
@@ -275,25 +290,35 @@ float FastTree<_distance>::makeEvaluation(
 	int* & seed_ids,
 	int* & assignments)
 {
+	auto murmur3_32 = [](uint32_t h) {
+		h ^= h >> 16;
+		h *= 0x85ebca6b;
+		h ^= h >> 13;
+		h *= 0xc2b2ae35;
+		h ^= h >> 16;
+		return h;
+		};
 
 	CLCSBP lcsbp(instruction_set);
 	Transform<float, _distance> transform;
 	
 	size_t n_seqs = sequences.size();
 	float* dists = new float[sequences.size() * 2]; // second row will be used later
-	seed_ids = new int[subtreeSize];
+	seed_ids = new int[numSeeds];
 
 	float* dist_row = dists;
 
 	uint32_t seed = (eval_num == 0)
 		? std::mt19937::default_seed
-		: std::hash<uint32_t>()((uint32_t)eval_num);
+		: murmur3_32((uint32_t)eval_num);
 	
+	//LOG_NORMAL << "Evaluation " << eval_num << ", rng seed: " << seed << std::flush << endl;
+
 	if (clustering == nullptr) {
-		n_seeds = randomSeeds(sequences, subtreeSize, seed_ids, dist_row);
+		n_seeds = randomSeeds(sequences, numSeeds, seed_ids, dist_row);
 	}
 	else {
-		n_seeds = clusterSeeds(sequences, subtreeSize, sampleSize, seed_ids, dist_row, seed);
+		n_seeds = clusterSeeds(sequences, numSeeds, sampleSize, seed_ids, dist_row, seed);
 	}
 
 	//

@@ -85,7 +85,7 @@ Note, that x86-64 binaries determine the supported extensions at runtime, which 
 
 ### macOS support 
 
-Due to usage of C++ features not supported by clang compiler, FAMSA requires g++ for compilation. As `g++` command on macOS systems maps to `clang`, one needs to install gcc/g++ and specify its version using gmake arguments. For instance, if gcc/g++ 11 is available (the lowest supported version), please use the following command line:
+Due to usage of C++ features not supported by clang compiler, FAMSA requires g++ for compilation. As `g++` command on macOS systems maps to `clang`, one needs to install gcc/g++ and specify its binary using gmake arguments. For instance, if gcc/g++ 11 is available (the lowest supported version), please use the following command line:
 ```bash
 gmake -j CXX=g++-11 CC=gcc-11
 ```
@@ -109,12 +109,15 @@ Options:
 * `-t <value>` - no. of threads, NOTE: exceeding number of physical (not logical) cores decreases performance, 0 indicates half of all the logical cores (default: 0)
 * `-v` - verbose mode, show timing information (default: disabled)
 
-* `-gt <sl | upgma | nj | import <file>>` - the guide tree method (default: sl):
+* `-gt <sl | upgma | nj | import <file>>` - the guide tree method (default: `sl`):
     * `sl` - single linkage,
     * `upgma` - UPGMA,
     * `nj` - neighbour joining,
     * `import <file>` - import from a Newick file.
 * `-medoidtree` - use medoid tree for fast approximated guide trees (default: disabled)
+* `-medoid_seeds <value>` - number of seeds *k* in medoid trees (default: 100)
+* `-medoid_threshold <value>` - minimum subset size *M* to apply medoid tree heuristic (default: 2000)
+
 * `-gt_export` - export a guide tree to output file in the Newick format
 * `-dist_export` - export a distance matrix to output file in CSV format
 * `-square_matrix` - generate a square distance matrix instead of a default triangle
@@ -149,7 +152,8 @@ Note, that when importing the tree, the branch lengths are not taken into accoun
 The major algorithmic features in FAMSA are:
 * Pairwise distances based on the longest common subsequence (LCS). Thanks to the bit-level parallelism and utilization of SIMD extensions, LCS can be computed very fast. 
 * Single-linkage guide trees. While being very accurate, single-linkage trees can be established without storing entire distance matrix, which makes them suitable for large alignments. Although, the alternative guide tree algorithms like UPGMA and neighbour joining are also provided.
-* The new heuristic based on K-Medoid clustering for generating fast guide trees. Medoid trees can be calculated in *O*(*N* log*N*) time and work with all types of subtrees (single linkage, UPGMA, NJ). The heuristic can be enabled with `-medoidtree` switch and allow aligning millions of sequences in minutes.
+* The new heuristic based on K-Medoid clustering for generating fast guide trees to align millions of sequences in minutes. Medoid trees can be calculated in *O*(*MN* log*N*) time with *M* being the maximum subtree size. Medoid trees work with all types of subtrees (single linkage, UPGMA, NJ). The heuristic can be enabled with `-medoidtree` and is controlled by two parameters: the number of seed sequences *k* (`-medoid_seeds`) and the maximum subtree size *M* (`-medoid_threshold`).
+
 
 ## Experimental results
 The analysis was performed on our extHomFam v37.0 benchmark produced by combining Homstrad references with Pfam v37.0 families (see Data sets section). The following algorithms were investigated:
@@ -174,7 +178,9 @@ The tests were performed with 32 computing threads on a machine with AMD Epyc 95
 ## Datasets
 
 Datasets developed and used in the FAMSA2 study:
-* extHomFam v37.0: structure-based benchmark combining Pfam v37.0 families with Homstrad reference alignments ([https://doi.org/10.5281/zenodo.6524236](https://doi.org/10.5281/zenodo.6524236))
+* extHomFam v37.0: structure-based benchmark combining Pfam v37.0 families with Homstrad reference alignments
+  * full dataset: [https://doi.org/10.5281/zenodo.6524236](https://doi.org/10.5281/zenodo.6524236)
+  * the largest 121 families downsampled: [https://doi.org/10.5281/zenodo.18418209](https://doi.org/10.5281/zenodo.18418209)
 * afdb_clusters v1.0: AlphaFold-derived structure-based benchmark ([https://zenodo.org/records/16082639](https://zenodo.org/records/16082639))
 * simulated_msa v1.0: simulated multiple sequence alignments with known phylogenies ([https://zenodo.org/records/15971353](https://zenodo.org/records/15971353))
 * active_sites v1.0: enzyme domain sequences with annotated active sites from Pfam v37.1 ([https://zenodo.org/records/16023627](https://zenodo.org/records/16023627))

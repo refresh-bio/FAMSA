@@ -9,14 +9,21 @@ Authors: Sebastian Deorowicz, Agnieszka Debudaj-Grabysz, Adam Gudys
 #ifndef _VERSION_H
 #define _VERSION_H
 
-#define FAMSA_VER		"2.5.1"
-#define FAMSA_DATE		"2026-03-16"
+#define FAMSA_VER		"2.5.2"
+#define FAMSA_DATE		"2026-03-23"
 #define FAMSA_AUTHORS	"S. Deorowicz, A. Debudaj-Grabysz, A. Gudys"
 
 #endif
 
 /*
 Version history:
+
+2.5.2 (2026-03-23)
+- Medoid tree parameters exposed in the interface: 
+	- medoid_seeds - number of seeds k in medoid trees,
+	- medoid_threshold - minimum subset size M to apply medoid tree heuristic (auto adjust to M >= k),
+	Note: Parameter names differ from the undocumented medoid tree params from the previous release.  	
+
 
 2.5.1 (2026-03-16)
 - Makefile fix for mac ARM architectures.

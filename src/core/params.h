@@ -51,6 +51,11 @@ public:
 class CParams
 {
 private:
+	const string OPTION_MEDOID_SEEDS = "-medoid_seeds";
+	const string OPTION_MEDOID_SAMPLE = "-medoid_sample";
+	const string OPTION_MEDOID_THRESHOLD = "-medoid_threshold";
+	const string OPTION_MEDOID_EVALS = "-medoid_evals";
+	
 	double gap_open_base					= 14.85;
 	double gap_ext_base						= 1.25;
 	double gap_term_open_base				= 0.66;
@@ -86,7 +91,7 @@ public:
 	int guide_tree_seed				= 0;
 
 	struct {
-		int subtree_size = 100;
+		int num_seeds = 100;
 		int sample_size = 2000;
 		int num_evaluations = 1;
 		int threshold = 2000;
