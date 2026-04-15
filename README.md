@@ -191,7 +191,7 @@ Older datasets:
 
 ## Citing
 
-[Gudyś, A., Zieleziński, A., Notredame, C., Deorowicz, S. (2025) bioRxiv, doi: https://doi.org/10.1101/2025.07.15.664876](https://doi.org/10.1101/2025.07.15.664876)
+[Gudyś, A., Zieleziński, A., Notredame, C., Deorowicz, S. (2026) Nature Biotechnology, https://doi.org/10.1038/s41587-026-03095-3](https://doi.org/10.1038/s41587-026-03095-3)
 
 [Deorowicz, S., Debudaj-Grabysz, A., Gudyś, A. (2016) FAMSA: Fast and accurate multiple sequence alignment of huge protein families. 
 Scientific Reports, 6, 33964](https://www.nature.com/articles/srep33964)
