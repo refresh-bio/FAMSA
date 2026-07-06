@@ -2,9 +2,8 @@
 
 [![GitHub downloads](https://img.shields.io/github/downloads/refresh-bio/famsa/total.svg?style=flag&label=GitHub%20downloads)](https://github.com/refresh-bio/FAMSA/releases)
 [![Bioconda downloads](https://img.shields.io/conda/dn/bioconda/famsa.svg?style=flag&label=Bioconda%20downloads)](https://anaconda.org/bioconda/famsa)
-[![Biocontainer downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fmmseqs.com%2Fbiocontainer.php%3Fcontainer%3Dfamsa)](https://biocontainers.pro/tools/famsa)
-[![Build and tests](../../workflows/GitHub%20Actions%20CI/badge.svg)](../../actions/workflows/main.yml)
-[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) [![Join the chat at https://gitter.im/refresh-bio/FAMSA](https://badges.gitter.im/refresh-bio/FAMSA.svg)](https://gitter.im/refresh-bio/FAMSA?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build and tests](../../workflows/Build%20and%20tests/badge.svg)](../../actions/workflows/main.yml)
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0)
 
 ![x86-64](https://img.shields.io/static/v1?label=%E2%80%8B&message=x86-64&color=yellow&logo=PCGamingWiki&logoColor=white)
 ![ARM](https://img.shields.io/static/v1?label=%E2%80%8B&message=ARM&color=yellow&logo=Raspberry%20Pi&logoColor=white)
@@ -191,7 +190,7 @@ Older datasets:
 
 ## Citing
 
-[Gudyś, A., Zieleziński, A., Notredame, C., Deorowicz, S. (2026) Nature Biotechnology, https://doi.org/10.1038/s41587-026-03095-3](https://doi.org/10.1038/s41587-026-03095-3)
+[Gudyś, A., Zieleziński, A., Notredame, C., Deorowicz, S. (2026) Fast and accurate multiple-protein-sequence alignment at scale with FAMSA2. Nature Biotechnology, https://doi.org/10.1038/s41587-026-03095-3](https://doi.org/10.1038/s41587-026-03095-3)
 
 [Deorowicz, S., Debudaj-Grabysz, A., Gudyś, A. (2016) FAMSA: Fast and accurate multiple sequence alignment of huge protein families. 
 Scientific Reports, 6, 33964](https://www.nature.com/articles/srep33964)
