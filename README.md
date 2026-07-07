@@ -194,3 +194,7 @@ Older datasets:
 
 [Deorowicz, S., Debudaj-Grabysz, A., Gudyś, A. (2016) FAMSA: Fast and accurate multiple sequence alignment of huge protein families. 
 Scientific Reports, 6, 33964](https://www.nature.com/articles/srep33964)
+
+## Funding
+This work was supported by the National Science Centre, Poland, project [DEC-2022/45/B/ST6/03032].
+
