@@ -12,6 +12,7 @@
 ![Linux](https://img.shields.io/static/v1?label=%E2%80%8B&message=Linux&color=00A98F&logo=linux&logoColor=white)
 ![macOS](https://img.shields.io/badge/%E2%80%8B-macOS-00A98F?logo=apple)
 [![PyPI](https://img.shields.io/pypi/v/pyfamsa?label=PyFAMSA)](https://pypi.org/project/pyfamsa)
+[![WebInterface](https://img.shields.io/badge/%20-Online%20interface-blue.svg?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgNjAwIj48cGF0aCBmaWxsPSIjZmZmIiBkPSJNNDUwIDQwMEgxODBjLTYwIDAtMTEwLTQ1LTExMC0xMDAgMC01MiA0My05NSA5Ny0xMDAgMjEtNzQgODgtMTMwIDE2OC0xMzAgNzkgMCAxNDYgNTQgMTY4IDEyNSA2NiAzIDEyMiA1MCAxMjIgMTA1IDAgNTgtNTEgMTAwLTE3NSAxMDB6Ii8+PC9zdmc+)](https://refresh-bio.github.io/tools/famsa/)
 
 FAMSA2 is a progressive algorithm for large-scale multiple sequence alignments:
 * the entire Pfam-A v37.0 (~22 thousand families, ~62 million sequences) was analyzed in 8 hours,	
