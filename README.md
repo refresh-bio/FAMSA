@@ -21,6 +21,11 @@ FAMSA2 is a progressive algorithm for large-scale multiple sequence alignments:
 
 ![extHomFam-SP-comparison](./img/overview.png)
 
+## Online version
+The simplest way to align proteins is to run FAMSA directly in the browser without installation. 
+Because it is compiled to WebAssembly, all computations run locally on the device &ndash; your data never leaves your machine.
+The <a href="https://refresh-bio.github.io/tools/famsa/">online version</a> supports input files up to 100,000 sequences.
+
 ## Quick start
 
 ```bash
