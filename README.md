@@ -12,6 +12,10 @@
 ![Linux](https://img.shields.io/static/v1?label=%E2%80%8B&message=Linux&color=00A98F&logo=linux&logoColor=white)
 ![macOS](https://img.shields.io/badge/%E2%80%8B-macOS-00A98F?logo=apple)
 [![PyPI](https://img.shields.io/pypi/v/pyfamsa?label=PyFAMSA)](https://pypi.org/project/pyfamsa)
+[![WebInterface](https://img.shields.io/badge/%20-Web%20app-blue.svg?logo=data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA2MDAgNjAwIj48cGF0aCBmaWxsPSIjZmZmIiBkPSJNNDUwIDQwMEgxODBjLTYwIDAtMTEwLTQ1LTExMC0xMDAgMC01MiA0My05NSA5Ny0xMDAgMjEtNzQgODgtMTMwIDE2OC0xMzAgNzkgMCAxNDYgNTQgMTY4IDEyNSA2NiAzIDEyMiA1MCAxMjIgMTA1IDAgNTgtNTEgMTAwLTE3NSAxMDB6Ii8+PC9zdmc+)](https://refresh-bio.github.io/tools/famsa/)
+
+[![Nature Biotechnology 10.1038/s41587-026-03095-3](https://img.shields.io/badge/Nat%20Biotechnol-10.1038%2Fs41587--026--03095--3-blue)](https://doi.org/10.1038/s41587-026-03095-3) 
+[![Scientific Reports 10.1038/srep33964](https://img.shields.io/badge/Sci%20Rep-10.1038%2Fsrep33964-blue)](https://www.nature.com/articles/srep33964)
 
 FAMSA2 is a progressive algorithm for large-scale multiple sequence alignments:
 * the entire Pfam-A v37.0 (~22 thousand families, ~62 million sequences) was analyzed in 8 hours,	
@@ -20,6 +24,11 @@ FAMSA2 is a progressive algorithm for large-scale multiple sequence alignments:
 ## Overview and features
 
 ![extHomFam-SP-comparison](./img/overview.png)
+
+## Online version
+The simplest way to align proteins is to run FAMSA directly in the browser without installation. 
+Because it is compiled to WebAssembly, all computations run locally on the device &ndash; your data never leaves your machine.
+The <a href="https://refresh-bio.github.io/tools/famsa/">online version</a> supports input files up to 100,000 sequences.
 
 ## Quick start
 
