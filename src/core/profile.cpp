@@ -331,10 +331,8 @@ void CProfile::AppendRawSequence(const CGappedSequence &gs)
 	// Check that the sequence is of correct length
 	if(data.empty())
 	{
-		if(*(gs.symbols) != GUARD)
-			width = gs.gapped_size;
-		else
-			width = gs.gapped_size - 1;
+		// gapped_size never counts the guard (see CalculateCountersScores, Condense)
+		width = gs.gapped_size;
 		counters.resize(width + 1);
 		counters.set_zeros(params->instruction_set);
 		scores.resize(width + 1);
@@ -342,11 +340,7 @@ void CProfile::AppendRawSequence(const CGappedSequence &gs)
 	}
 	else
 	{
-		size_t curr_size;
-		if(*(gs.symbols) != GUARD)
-			curr_size = gs.gapped_size;
-		else
-			curr_size = gs.gapped_size - 1;
+		size_t curr_size = gs.gapped_size;
 		if (curr_size != width)
 			assert(0);
 	}
