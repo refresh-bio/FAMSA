@@ -1474,10 +1474,10 @@ score_t CProfile::CalculateTotalScore(void)
 	// Gaps of length 2
 	if(gap_len_active[2])
 		for (i = 1; i <= (int) width - 1; ++i)
-			gap_ranges[2][i] = gap_matrix[1][i] + gap_matrix[1][i + 1] + gap_matrix[2][i];
+			gap_ranges[2][i] = gap_ranges[1][i] + gap_ranges[1][i + 1] + gap_matrix[2][i];
 	else
 		for (i = 1; i <= (int) width - 1; ++i)
-			gap_ranges[2][i] = gap_matrix[1][i] + gap_matrix[1][i + 1];
+			gap_ranges[2][i] = gap_ranges[1][i] + gap_ranges[1][i + 1];
 
 	// Gaps longer than 2
 	for (len = 3; len <= (int) width; ++len)
